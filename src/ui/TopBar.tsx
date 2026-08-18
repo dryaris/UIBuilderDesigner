@@ -12,6 +12,7 @@ import { exportUmgFile } from "../export/umg";
 import { exportSpecSheetFile } from "../export/spec";
 import { exportLottieFile } from "../export/lottie";
 import { exportTokensFile } from "../export/tokens";
+import { exportReviewPdf } from "../export/pdf";
 import { Menu } from "./Menu";
 import { IconButton } from "./Menu";
 
@@ -179,6 +180,14 @@ export function TopBar() {
             onClick: () => {
               exportSpecSheetFile(useStore.getState().doc);
               useStore.getState().showToast("Spec sheet exportado");
+            },
+          },
+          {
+            label: "Exportar PDF de revisión (anotaciones + specs)",
+            onClick: () => {
+              const s = useStore.getState();
+              exportReviewPdf(s.doc);
+              s.showToast("Revisión lista — elige Guardar como PDF");
             },
           },
           { divider: true },

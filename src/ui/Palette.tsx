@@ -9,6 +9,7 @@ import { exportUmgFile } from "../export/umg";
 import { exportSpecSheetFile } from "../export/spec";
 import { exportLottieFile } from "../export/lottie";
 import { exportTokensFile } from "../export/tokens";
+import { exportReviewPdf } from "../export/pdf";
 
 interface Action {
   id: string;
@@ -58,6 +59,11 @@ export function Palette() {
       { id: "tokens", label: "Exportar tokens (DTCG + Style Dictionary)", keywords: "tokens design tokens dtcg w3c style dictionary css variables sistema diseño", run: () => {
         const s = useStore.getState();
         void exportTokensFile(s.doc).then(() => s.showToast("Design tokens exportados"));
+      } },
+      { id: "review", label: "Exportar PDF de revisión (anotaciones + specs)", keywords: "revisión review pdf anotaciones pins specs entregable cliente imprimir", run: () => {
+        const s = useStore.getState();
+        exportReviewPdf(s.doc);
+        s.showToast("Revisión lista — elige Guardar como PDF");
       } },
       { id: "fit", label: "Ajustar a pantalla", keywords: "zoom ajustar fit encuadrar", run: () => st().fitTo(nodeRect(st().doc.root)) },
       { id: "zoom100", label: "Zoom 100%", keywords: "zoom tamaño real", run: () => st().zoomTo(1, center()) },

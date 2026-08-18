@@ -10,17 +10,23 @@ import { resolveColor, resolveRadius } from "../core/tokens";
 import { downloadBlob, projectFileName } from "./png";
 import { escapeHtml } from "./html";
 
-interface SpecEntry {
+export interface SpecEntry {
   name: string;
   rect: { x: number; y: number; width: number; height: number };
   details: string[];
   colors: string[];
 }
 
-export function exportSpecSheet(doc: CanvasDoc, nodeId?: string): string {
+/** Recoge las entradas de spec de un subárbol (compartido con el PDF de revisión). */
+export function collectSpecEntries(doc: CanvasDoc, nodeId?: string): { root: Node; entries: SpecEntry[] } {
   const root = nodeId ? findNodeById(doc, nodeId) ?? doc.root : doc.root;
   const entries: SpecEntry[] = [];
   collect(root, doc, entries);
+  return { root, entries };
+}
+
+export function exportSpecSheet(doc: CanvasDoc, nodeId?: string): string {
+  const { root, entries } = collectSpecEntries(doc, nodeId);
 
   const colors = new Map<string, string>();
   for (const e of entries) {

@@ -7,9 +7,10 @@
  * fundido; el exportador HTML reproduce el mismo flujo.
  */
 import { useState } from "react";
-import { Plus, Copy, Trash2, MonitorPlay, Link2, MessageSquareText } from "lucide-react";
+import { Plus, Copy, Trash2, MonitorPlay, Link2, MessageSquareText, FileDown } from "lucide-react";
 import { useStore } from "../state/store";
 import { findNode } from "../core/tree";
+import { exportReviewPdf } from "../export/pdf";
 
 export function PrototypePanel() {
   const doc = useStore((s) => s.doc);
@@ -223,6 +224,16 @@ export function PrototypePanel() {
               <MessageSquareText size={12} /> Anotaciones
             </span>
             <div className="design-section-actions">
+              <button
+                className="mini-btn"
+                title="Exportar PDF de revisión (anotaciones + specs de todas las pantallas)"
+                onClick={() => {
+                  exportReviewPdf(st().doc);
+                  st().showToast("Revisión lista — elige Guardar como PDF");
+                }}
+              >
+                <FileDown size={12} /> PDF
+              </button>
               <button
                 className={`mini-btn${annotateMode ? " is-active" : ""}`}
                 title="Añadir anotación: clic en el lienzo coloca un pin"
