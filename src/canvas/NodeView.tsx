@@ -7,11 +7,12 @@
  * salen gratis). El IR está desacoplado del render, por lo que un renderer
  * PixiJS puede sustituirse después sin tocar el modelo.
  */
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
-import type { Node, Style, Tokens } from "../core/ir";
+import { useShallow } from "zustand/react/shallow";
+import type { Node, Rect, Style, Tokens } from "../core/ir";
 import { resolveColor, resolveRadius } from "../core/tokens";
-import { useStore } from "../state/store";
+import { useStore, type DragSession } from "../state/store";
 
 function gradientCss(g: NonNullable<Style["gradient"]>, tokens: Tokens): string {
   const stops = g.stops
@@ -82,10 +83,29 @@ function textCss(s: Style, tokens: Tokens): CSSProperties {
   return css;
 }
 
-export function NodeView({ node }: { node: Node }) {
-  const drag = useStore((s) => s.drag);
+/**
+ * Vista previa de drag SOLO si este nodo participa: el selector devuelve
+ * null (estable) para todos los demás, así mover no re-renderiza la escena.
+ * `shallow` compara dx/dy o el rect por valor: el nodo arrastrado solo se
+ * re-renderiza cuando cambia realmente.
+ */
+type DragPreview = { kind: "move"; dx: number; dy: number } | { kind: "resize"; rect: Rect } | null;
+
+const selectDragPreview = (nodeId: string) => (s: { drag: DragSession | null }): DragPreview => {
+  const d = s.drag;
+  if (!d) return null;
+  if (d.kind === "move" && d.ids?.includes(nodeId)) return { kind: "move", dx: d.dx, dy: d.dy };
+  if (d.kind === "resize" && d.id === nodeId) return { kind: "resize", rect: d.rect };
+  return null;
+};
+
+export const NodeView = memo(function NodeView({ node }: { node: Node }) {
+  const drag = useStore(useShallow(selectDragPreview(node.id)));
   const editingTextId = useStore((s) => s.editingTextId);
-  const previewState = useStore((s) => s.previewState);
+  // Solo el nodo previsualizado se re-renderiza cuando cambia previewState.
+  const previewState = useStore((s) =>
+    s.previewState && s.previewState.nodeId === node.id ? s.previewState : null,
+  );
   const previewMode = useStore((s) => s.previewMode);
   // Señal de re-render por nodo: cambia al entrar/salir de hover o press.
   const previewActive = useStore((s) =>
@@ -99,9 +119,9 @@ export function NodeView({ node }: { node: Node }) {
 
   // Vista previa en vivo durante drag (el doc real solo cambia al soltar).
   let s = node.style;
-  if (drag?.kind === "move" && drag.ids.includes(node.id)) {
+  if (drag?.kind === "move") {
     s = { ...s, x: s.x + drag.dx, y: s.y + drag.dy };
-  } else if (drag?.kind === "resize" && drag.id === node.id) {
+  } else if (drag?.kind === "resize") {
     s = { ...s, x: drag.rect.x, y: drag.rect.y, width: drag.rect.width, height: drag.rect.height };
   }
 
@@ -146,7 +166,7 @@ export function NodeView({ node }: { node: Node }) {
       )}
     </div>
   );
-}
+});
 
 /** Primera transición definida en los estados del nodo (para salir suave). */
 function firstStateTransition(node: Node) {
@@ -158,7 +178,7 @@ function firstStateTransition(node: Node) {
 }
 
 /** Texto editable inline (doble clic o herramienta Text). Al blur se mide y commitea. */
-function EditableText({ node, editing }: { node: Node; editing: boolean }) {
+const EditableText = memo(function EditableText({ node, editing }: { node: Node; editing: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const tokens = useStore((s) => s.doc.tokens);
 
@@ -208,4 +228,4 @@ function EditableText({ node, editing }: { node: Node; editing: boolean }) {
       {node.text ?? ""}
     </div>
   );
-}
+});
