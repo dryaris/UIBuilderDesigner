@@ -121,6 +121,19 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 
 Los binarios se compilan en GitHub Actions (los binarios nativos requieren su propio sistema): al pushear un tag `v*` el workflow `.github/workflows/release.yml` compila en runners de **macOS** (`.app` + `.dmg` universal, Apple Silicon + Intel) y **Windows** (`.msi` + `.exe` NSIS) y crea un **Release borrador** con los instaladores. Los iconos se regeneran desde `logo.png` con `bunx @tauri-apps/cli icon logo.png` (el generador está en `scripts/gen-logo.mjs`).
 
+**Firma y notarización de macOS** (opcional): añade estos secretos en **Settings → Secrets and variables → Actions** y el siguiente build firmará el `.dmg` con tu certificado y lo notarizará ante Apple:
+
+| Secreto | Valor |
+|---|---|
+| `APPLE_CERTIFICATE` | Tu certificado **Developer ID Application** exportado como `.p12` y codificado en base64 (`base64 -i cert.p12` en macOS) |
+| `APPLE_CERTIFICATE_PASSWORD` | La contraseña del `.p12` |
+| `APPLE_SIGNING_IDENTITY` | (opcional) Identidad de firma; por defecto `Developer ID Application` |
+| `APPLE_ID` | Tu Apple ID (email de la cuenta de desarrollador) |
+| `APPLE_PASSWORD` | **App-Specific Password** generada en appleid.apple.com (no la contraseña de la cuenta) |
+| `APPLE_TEAM_ID` | Tu Team ID (Membership → Team ID en developer.apple.com) |
+
+Sin estos secretos el build sale sin firmar (Gatekeeper pedirá abrir con clic derecho → Abrir). El `.msi`/`.exe` de Windows se firma aparte con un certificado de código Authenticode (aún no configurado).
+
 ## Atajos
 
 | Atajo | Acción |

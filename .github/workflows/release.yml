@@ -41,6 +41,15 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Firma y notarización de macOS (opcional). Sin estos secretos el
+          # build sale SIN firmar; con ellos, tauri-action firma el .dmg con el
+          # certificado y lo notariza ante Apple. Ver README → Releases.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY || 'Developer ID Application' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Canvas ${{ github.ref_name }}"
@@ -53,8 +62,8 @@ jobs:
             - Exporta a HTML/CSS, PNG 1x/2x/3x, Unity UI Toolkit y Unreal UMG.
 
             Instaladores:
-            - **macOS** `.dmg` (universal: Apple Silicon + Intel; sin firma/notarización — abre con clic derecho → Abrir si Gatekeeper lo bloquea)
-            - **Windows** `.msi` y `.exe` (NSIS; WebView2 se instala automáticamente)
+            - **macOS** `.dmg` (universal: Apple Silicon + Intel). Firmado y notarizado cuando los secretos de Apple están configurados.
+            - **Windows** `.msi` y `.exe` (NSIS; WebView2 se instala automáticamente).
           releaseDraft: true
           prerelease: false
           args: ${{ runner.os == 'macOS' && '--target universal-apple-darwin' || '' }}
