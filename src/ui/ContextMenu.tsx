@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { Copy, ClipboardPaste, Trash2, Frame, Group, Layers, CornerDownRight, Component } from "lucide-react";
+import { Copy, ClipboardPaste, Trash2, Frame, Group, Layers, CornerDownRight, Component, RefreshCw } from "lucide-react";
 import { useStore } from "../state/store";
 import { findNode } from "../core/tree";
 
@@ -74,6 +74,14 @@ export function ContextMenu({
             item("Duplicar", <Copy size={14} />, () => st.duplicateSelection(), "⌘D"),
             item("Envolver en frame", <CornerDownRight size={14} />, () => st.groupSelection("Frame"), undefined, false),
             item("Agrupar", <Group size={14} />, () => st.groupSelection("Grupo"), "⌘G"),
+            ...(node.ref?.startsWith("comp:")
+              ? [
+                  item("Actualizar componente", <RefreshCw size={14} />, () => {
+                    if (!st.selection.includes(node.id)) st.select([node.id]);
+                    st.updateComponent(node.ref!.slice(5));
+                  }),
+                ]
+              : []),
             item("Crear componente", <Component size={14} />, () => {
               // El componente se crea desde el nodo pulsado (o la selección si lo incluye).
               if (!st.selection.includes(node.id)) st.select([node.id]);

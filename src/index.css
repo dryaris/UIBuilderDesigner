@@ -383,6 +383,13 @@ body {
   outline: none;
 }
 
+.layer-comp-badge {
+  margin-left: auto;
+  color: var(--accent-text);
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
 /* ------------------------------------------------------------------ Canvas */
 
 .canvas-wrap {
@@ -1611,6 +1618,71 @@ input[type="range"] {
 }
 
 /* Librería de componentes */
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.library-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.library-card-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.library-card-row .library-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.library-variant-btn {
+  width: 30px;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text-dim);
+}
+
+.library-variant-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.library-variant-form input {
+  width: 100%;
+}
+
+.library-variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.variant-chip {
+  padding: 3px 9px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.variant-chip:hover {
+  border-color: var(--accent);
+  border-style: solid;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
 
 .library-grid {
   display: grid;

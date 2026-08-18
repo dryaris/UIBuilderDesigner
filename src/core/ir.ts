@@ -217,6 +217,8 @@ export interface LibraryComponent {
   name: string;
   type: NodeType;
   root: Node;
+  /** Si es una variante de otro componente, id del componente base (Fase 7). */
+  variantOf?: string;
 }
 
 export interface Library {

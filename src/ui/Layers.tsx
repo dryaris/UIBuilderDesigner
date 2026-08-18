@@ -113,6 +113,9 @@ function LayerRow({
       ) : (
         <span className={`layer-name${node.hidden ? " dim" : ""}`}>{node.name}</span>
       )}
+      {node.ref?.startsWith("comp:") && (
+        <span className="layer-comp-badge" title="Instancia de componente">◆</span>
+      )}
     </div>
   );
 }

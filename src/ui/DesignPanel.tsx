@@ -10,7 +10,7 @@
  * a los nodos desde aquí o desde el Inspector.
  */
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { Plus, Trash2, ArrowLeft, Component, Boxes } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Component, Boxes, Copy } from "lucide-react";
 import { useStore } from "../state/store";
 import type { Node, Tokens, Typography } from "../core/ir";
 import { resolveColor, resolveRadius } from "../core/tokens";
@@ -420,7 +420,25 @@ function TypographyRow({ name, value }: { name: string; value: Typography }) {
 
 function LibrarySection() {
   const components = useStore((s) => s.doc.library.components);
-  const list = Object.values(components);
+  const st = () => useStore.getState();
+  const bases = Object.values(components).filter((c) => !c.variantOf);
+  const variants = Object.values(components).filter((c) => c.variantOf);
+  const [newVariantFor, setNewVariantFor] = useState<string | null>(null);
+  const [variantName, setVariantName] = useState("");
+
+  const startVariant = (compId: string) => {
+    const n = variants.filter((v) => v.variantOf === compId).length + 1;
+    setVariantName(`Variante ${n}`);
+    setNewVariantFor(compId);
+  };
+
+  const commitVariant = () => {
+    if (newVariantFor) {
+      st().addVariant(newVariantFor, variantName.trim() || "Variante");
+    }
+    setNewVariantFor(null);
+    setVariantName("");
+  };
 
   return (
     <div className="design-section library-section">
@@ -430,7 +448,7 @@ function LibrarySection() {
         </span>
       </div>
       <div className="design-section-body">
-        {list.length === 0 ? (
+        {bases.length === 0 ? (
           <div className="design-empty dim">
             <Component size={14} />
             <span>
@@ -438,20 +456,63 @@ function LibrarySection() {
             </span>
           </div>
         ) : (
-          <div className="library-grid">
-            {list.map((comp) => (
-              <button
-                key={comp.id}
-                className="library-card"
-                title={`Insertar “${comp.name}”`}
-                onClick={() => useStore.getState().insertComponent(comp.id)}
-              >
-                <div className="library-preview">
-                  <MiniNode node={comp.root} />
+          <div className="library-list">
+            {bases.map((comp) => {
+              const compVariants = variants.filter((v) => v.variantOf === comp.id);
+              return (
+                <div key={comp.id} className="library-group">
+                  <div className="library-card-row">
+                    <button
+                      className="library-card"
+                      title={`Insertar “${comp.name}”`}
+                      onClick={() => st().insertComponent(comp.id)}
+                    >
+                      <div className="library-preview">
+                        <MiniNode node={comp.root} />
+                      </div>
+                      <span className="library-name">{comp.name}</span>
+                    </button>
+                    <button
+                      className="icon-btn library-variant-btn"
+                      title={`Crear variante de ${comp.name}`}
+                      onClick={() => startVariant(comp.id)}
+                    >
+                      <Copy size={13} />
+                    </button>
+                  </div>
+                  {newVariantFor === comp.id && (
+                    <div className="library-variant-form">
+                      <input
+                        className="text-input"
+                        autoFocus
+                        value={variantName}
+                        placeholder="Nombre de la variante"
+                        onChange={(e) => setVariantName(e.target.value)}
+                        onBlur={commitVariant}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") commitVariant();
+                          if (e.key === "Escape") setNewVariantFor(null);
+                        }}
+                      />
+                    </div>
+                  )}
+                  {compVariants.length > 0 && (
+                    <div className="library-variants">
+                      {compVariants.map((v) => (
+                        <button
+                          key={v.id}
+                          className="variant-chip"
+                          title={`Insertar “${v.name}”`}
+                          onClick={() => st().insertComponent(v.id)}
+                        >
+                          {v.name.replace(`${comp.name} · `, "")}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <span className="library-name">{comp.name}</span>
-              </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

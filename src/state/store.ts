@@ -170,6 +170,10 @@ interface EditorState {
   createComponent: (name: string) => void;
   insertComponent: (componentId: string) => void;
 
+  // ---- variantes e instancias con overrides (Fase 7) ----
+  addVariant: (componentId: string, name: string) => void;
+  updateComponent: (componentId: string) => void;
+
   fitTo: (rect: Rect) => void;
   zoomBy: (factor: number, center: Vec) => void;
   zoomTo: (zoom: number, center: Vec) => void;
@@ -621,6 +625,47 @@ export const useStore = create<EditorState>()((set, get) => ({
     });
     get().select([clone.id]);
     get().showToast(`Instancia de “${comp.name}” insertada`);
+  },
+
+  addVariant: (componentId, name) => {
+    const comp = get().doc.library.components[componentId];
+    if (!comp) return;
+    const template = cloneNode(comp.root);
+    remapIds(template);
+    template.style.x = 0;
+    template.style.y = 0;
+    const variantId = uid();
+    get().apply((d) => {
+      d.library.components[variantId] = {
+        id: variantId,
+        name: `${comp.name} · ${name}`,
+        type: comp.type,
+        root: template,
+        variantOf: componentId,
+      };
+    });
+    get().showToast(`Variante “${name}” creada`);
+  },
+
+  updateComponent: (componentId) => {
+    const comp = get().doc.library.components[componentId];
+    const ids = get().selection;
+    const sel = ids.length === 1 ? findNode(get().doc.root, ids[0]) : null;
+    if (!comp || !sel) {
+      get().showToast("Selecciona una instancia del componente");
+      return;
+    }
+    const template = cloneNode(sel);
+    remapIds(template);
+    template.style.x = 0;
+    template.style.y = 0;
+    get().apply((d) => {
+      const c = d.library.components[componentId];
+      if (!c) return;
+      c.root = template;
+      c.name = sel.name || c.name;
+    });
+    get().showToast("Componente actualizado (futuras instancias heredarán los cambios)");
   },
 
   setNodeName: (id, name) =>
