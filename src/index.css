@@ -1726,6 +1726,226 @@ input[type="range"] {
   white-space: nowrap;
 }
 
+/* ------------------------------------------------------------------ Prototipo (Fase 7) */
+
+.screen-row-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.screen-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.screen-row:hover {
+  border-color: var(--accent);
+}
+
+.screen-row.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.screen-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.screen-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.screen-size {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex: none;
+}
+
+.screen-del {
+  flex: none;
+}
+
+.conn-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conn-form-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.conn-dur {
+  width: 64px;
+  flex: none;
+}
+
+.conn-easing {
+  width: 96px;
+  flex: none;
+  font-size: 10.5px;
+}
+
+.conn-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-2);
+  margin-top: 6px;
+}
+
+.conn-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+}
+
+.conn-from,
+.conn-to {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conn-from {
+  color: var(--accent-text);
+}
+
+.conn-arrow {
+  color: var(--text-dim);
+  flex: none;
+}
+
+.conn-to {
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ Anotaciones (Fase 7) */
+
+.annotate-hint {
+  padding: 7px 9px;
+  border: 1px dashed var(--accent);
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.annotation-row {
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+
+.annotation-row.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.annotation-row.is-resolved .annotation-text {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+
+.annotation-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  flex: none;
+}
+
+.annotation-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+}
+
+/* Pins sobre el lienzo */
+
+.annotations-layer {
+  pointer-events: none;
+}
+
+.annotation-pin {
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.annotation-pin circle {
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.annotation-pin.is-selected circle {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.annotation-pin.is-resolved circle {
+  opacity: 0.75;
+}
+
+.annotation-num {
+  fill: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+  font-family: inherit;
+  pointer-events: none;
+}
+
+.annotation-tail {
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 1;
+}
+
+.annotation-bubble {
+  fill: #22263a;
+  stroke: rgba(255, 255, 255, 0.14);
+}
+
+.annotation-bubble-text {
+  fill: #e8eaf2;
+  font-size: 10.5px;
+  font-family: inherit;
+  pointer-events: none;
+}
+
 /* ------------------------------------------------------------------ Gizmos Fase 2 */
 
 .spacing-hint line {

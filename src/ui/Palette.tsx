@@ -57,6 +57,13 @@ export function Palette() {
       { id: "ungroup", label: "Desagrupar", keywords: "desagrupar ungroup", run: () => st().ungroupSelection() },
       { id: "comp", label: "Crear componente desde selección", keywords: "componente component reutilizar librería", run: () => { st().createComponent("Componente"); } },
       { id: "design", label: "Abrir sistema de diseño (tokens y componentes)", keywords: "tokens colores radios tipografía sombras easing diseño componentes librería", run: () => st().setRightTab("design") },
+      { id: "prototype", label: "Abrir prototipo (pantallas, conexiones, anotaciones)", keywords: "prototipo pantallas conexiones flujo navegación anotaciones review", run: () => st().setRightTab("prototype") },
+      { id: "annotate", label: "Anotar la pantalla (pin de review)", keywords: "anotar comentario review nota pin", run: () => {
+        const s = useStore.getState();
+        s.setPreviewMode(false);
+        s.setRightTab("prototype");
+        s.setAnnotateMode(true);
+      } },
       { id: "alignL", label: "Alinear izquierda", keywords: "alinear left izquierda", run: () => st().alignSelection("left") },
       { id: "alignC", label: "Alinear centro horizontal", keywords: "alinear center centrar h", run: () => st().alignSelection("centerH") },
       { id: "alignR", label: "Alinear derecha", keywords: "alinear right derecha", run: () => st().alignSelection("right") },

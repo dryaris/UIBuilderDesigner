@@ -34,6 +34,8 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
   const showGuides = useStore((s) => s.showGuides);
   const showSafeAreas = useStore((s) => s.showSafeAreas);
   const showGrid = useStore((s) => s.showGrid);
+  const selectedAnnotationId = useStore((s) => s.selectedAnnotationId);
+  const setSelectedAnnotationId = useStore((s) => s.setSelectedAnnotationId);
 
   const canvas = canvasRef.current;
   const toS = (wx: number, wy: number) => toScreen(canvas as HTMLDivElement, wx, wy, vp);
@@ -159,6 +161,16 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
 
       {/* Vista previa de marquee / creación / zoom */}
       {preview && <rect className="preview-box" x={preview.x} y={preview.y} width={preview.width} height={preview.height} />}
+
+      {/* Pins de anotaciones (solo en edición; los pins son de la pantalla del editor) */}
+      {!previewMode && (
+        <AnnotationsLayer
+          toS={toS}
+          annotations={doc.annotations ?? []}
+          selectedId={selectedAnnotationId}
+          onSelect={(id) => setSelectedAnnotationId(id)}
+        />
+      )}
     </svg>
   );
 }
@@ -308,6 +320,58 @@ function LayoutGridOverlay({ frame, toS }: { frame: Node; toS: (x: number, y: nu
         const a = toS(c.x, c.y);
         const b = toS(c.x + c.width, c.y + c.height);
         return <rect key={i} x={a.x} y={a.y} width={b.x - a.x} height={b.y - a.y} rx={1} />;
+      })}
+    </g>
+  );
+}
+
+/**
+ * Pins de anotación (Fase 7): círculos numerados sobre la pantalla. Clic =
+ * seleccionar la anotación para editarla en el panel Prototipo; el pin
+ * seleccionado se resalta.
+ */
+function AnnotationsLayer({
+  toS,
+  annotations,
+  selectedId,
+  onSelect,
+}: {
+  toS: (x: number, y: number) => { x: number; y: number };
+  annotations: { id: string; x: number; y: number; color: string; text: string; resolved?: boolean }[];
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  return (
+    <g className="annotations-layer">
+      {annotations.map((a, i) => {
+        const p = toS(a.x, a.y);
+        const sel = a.id === selectedId;
+        return (
+          <g
+            key={a.id}
+            className={`annotation-pin${sel ? " is-selected" : ""}${a.resolved ? " is-resolved" : ""}`}
+            transform={`translate(${p.x}, ${p.y})`}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onSelect(sel ? null : a.id);
+            }}
+          >
+            <circle r={9} fill={a.resolved ? "#3f8f5f" : a.color} />
+            <text y={3.5} textAnchor="middle" className="annotation-num">
+              {i + 1}
+            </text>
+            {a.text && !a.resolved && (
+              <g>
+                <path d={`M 0 9 L 0 18`} className="annotation-tail" />
+                <rect x={14} y={4} rx={4} className="annotation-bubble" width={160} height={22} />
+                <text x={22} y={19} className="annotation-bubble-text" style={{ pointerEvents: "none" }}>
+                  {a.text.length > 26 ? `${a.text.slice(0, 26)}…` : a.text}
+                </text>
+              </g>
+            )}
+            <title>{a.text || `Anotación ${i + 1}`}</title>
+          </g>
+        );
       })}
     </g>
   );

@@ -79,6 +79,15 @@ export function useCanvasPointer() {
 
     const wp = worldOf(e.clientX, e.clientY);
 
+    // Modo anotación (Fase 7): clic coloca un pin en la pantalla (como el
+    // comentario de Figma) y vuelve a Select para escribir la nota en el panel.
+    if (s.annotateMode) {
+      const hit = hitTest(s.doc.root, wp.x, wp.y);
+      s.addAnnotation(wp.x, wp.y, hit?.id);
+      s.setAnnotateMode(false);
+      return;
+    }
+
     switch (s.tool) {
       case "zoom":
         s.setDrag({ kind: "zoom-marquee", start: wp, current: wp });
@@ -324,6 +333,7 @@ export function useCanvasPointer() {
             drag.start.y >= r.y &&
             drag.start.y <= r.y + r.height;
           s2.select(inside ? [root.id] : []);
+          s2.setSelectedAnnotationId(null);
           return;
         }
         const ids = s2.doc.root.children

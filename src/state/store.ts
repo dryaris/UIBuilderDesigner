@@ -8,7 +8,7 @@
  */
 import { create } from "zustand";
 import { applyPatches, produceWithPatches, type Patch } from "immer";
-import type { CanvasDoc, Node, PrototypeConnection, Rect, StateKey, Style, Timeline, Tokens, Vec } from "../core/ir";
+import type { Annotation, CanvasDoc, Node, PrototypeConnection, Rect, StateKey, Style, Timeline, Tokens, Vec } from "../core/ir";
 import { findNode, findParent, cloneNode, bbox, nodeRect, rectsIntersect, uid } from "../core/tree";
 import { topLevelNodes } from "../core/tree";
 import { frameNode } from "../core/defaults";
@@ -141,6 +141,14 @@ interface EditorState {
   addConnection: (fromNodeId: string, toScreenId: string, transition?: PrototypeConnection["transition"]) => void;
   removeConnection: (id: string) => void;
   updateConnection: (id: string, partial: Partial<PrototypeConnection>) => void;
+  // ---- anotaciones de review (Fase 7) ----
+  annotateMode: boolean;
+  selectedAnnotationId: string | null;
+  setAnnotateMode: (v: boolean) => void;
+  setSelectedAnnotationId: (id: string | null) => void;
+  addAnnotation: (x: number, y: number, nodeId?: string) => void;
+  updateAnnotation: (id: string, partial: Partial<Pick<Annotation, "text" | "resolved" | "x" | "y" | "color">>) => void;
+  removeAnnotation: (id: string) => void;
   setHover: (id: string | null) => void;
   setSpaceDown: (v: boolean) => void;
   setViewport: (p: Partial<Viewport>) => void;
@@ -241,6 +249,8 @@ export const useStore = create<EditorState>()((set, get) => ({
   paletteOpen: false,
   newProjectOpen: false,
   toast: null,
+  annotateMode: false,
+  selectedAnnotationId: null,
 
   apply: (recipe) => {
     const [next, patches, inverse] = produceWithPatches(get().doc, recipe);
@@ -254,7 +264,7 @@ export const useStore = create<EditorState>()((set, get) => ({
 
   replaceDoc: (doc) =>
     set({
-      doc: { ...doc, screens: doc.screens ?? [], connections: doc.connections ?? [] },
+      doc: { ...doc, screens: doc.screens ?? [], connections: doc.connections ?? [], annotations: doc.annotations ?? [] },
       screens: doc.screens ?? [],
       connections: doc.connections ?? [],
       selection: [],
@@ -268,6 +278,8 @@ export const useStore = create<EditorState>()((set, get) => ({
       activeTimelineId: null,
       previewScreen: null,
       previewTransitionMs: null,
+      annotateMode: false,
+      selectedAnnotationId: null,
     }),
 
   undo: () => {
@@ -304,6 +316,8 @@ export const useStore = create<EditorState>()((set, get) => ({
       previewPressId: null,
       previewScreen: previewMode ? s.previewScreen : null,
       previewTransitionMs: previewMode ? s.previewTransitionMs : null,
+      // El modo anotación es de edición: al entrar en preview se apaga.
+      annotateMode: previewMode ? false : s.annotateMode,
     })),
   setPreviewHoverId: (previewHoverId) => set({ previewHoverId }),
   setPreviewPressId: (previewPressId) => set({ previewPressId }),
@@ -392,6 +406,41 @@ export const useStore = create<EditorState>()((set, get) => ({
         c.id === id ? { ...c, ...partial } : c,
       );
     }),
+
+  setAnnotateMode: (annotateMode) => set({ annotateMode }),
+  setSelectedAnnotationId: (selectedAnnotationId) => set({ selectedAnnotationId }),
+
+  addAnnotation: (x, y, nodeId) => {
+    const ann: Annotation = {
+      id: uid(),
+      x: Math.round(x),
+      y: Math.round(y),
+      text: "",
+      color: "#f59e0b",
+      screenId: get().doc.root.id,
+      nodeId,
+      resolved: false,
+    };
+    get().apply((d) => {
+      d.annotations = [...(d.annotations ?? []), ann];
+    });
+    set({ selectedAnnotationId: ann.id });
+    get().showToast("Anotación añadida (escribe la nota en Prototipo)");
+  },
+
+  updateAnnotation: (id, partial) =>
+    get().apply((d) => {
+      d.annotations = (d.annotations ?? []).map((a) =>
+        a.id === id ? { ...a, ...partial } : a,
+      );
+    }),
+
+  removeAnnotation: (id) => {
+    get().apply((d) => {
+      d.annotations = (d.annotations ?? []).filter((a) => a.id !== id);
+    });
+    if (get().selectedAnnotationId === id) set({ selectedAnnotationId: null });
+  },
   setHover: (hoverId) => set({ hoverId }),
   setSpaceDown: (spaceDown) => set({ spaceDown }),
   setViewport: (p) => set((s) => ({ viewport: { ...s.viewport, ...p } })),

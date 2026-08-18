@@ -7,7 +7,7 @@
  * fundido; el exportador HTML reproduce el mismo flujo.
  */
 import { useState } from "react";
-import { Plus, Copy, Trash2, MonitorPlay, Link2 } from "lucide-react";
+import { Plus, Copy, Trash2, MonitorPlay, Link2, MessageSquareText } from "lucide-react";
 import { useStore } from "../state/store";
 import { findNode } from "../core/tree";
 
@@ -17,6 +17,9 @@ export function PrototypePanel() {
   const connections = useStore((s) => s.connections);
   const previewMode = useStore((s) => s.previewMode);
   const setPreviewMode = useStore((s) => s.setPreviewMode);
+  const annotateMode = useStore((s) => s.annotateMode);
+  const selectedAnnotationId = useStore((s) => s.selectedAnnotationId);
+  const setSelectedAnnotationId = useStore((s) => s.setSelectedAnnotationId);
   const st = () => useStore.getState();
   const [targetScreen, setTargetScreen] = useState("");
   const [connDuration, setConnDuration] = useState("200");
@@ -214,6 +217,78 @@ export function PrototypePanel() {
           </div>
         </div>
 
+        <div className="design-section">
+          <div className="design-section-head">
+            <span className="design-section-title">
+              <MessageSquareText size={12} /> Anotaciones
+            </span>
+            <div className="design-section-actions">
+              <button
+                className={`mini-btn${annotateMode ? " is-active" : ""}`}
+                title="Añadir anotación: clic en el lienzo coloca un pin"
+                onClick={() => {
+                  if (annotateMode) {
+                    st().setAnnotateMode(false);
+                  } else {
+                    setPreviewMode(false);
+                    st().setAnnotateMode(true);
+                  }
+                }}
+              >
+                <Plus size={12} /> Añadir
+              </button>
+            </div>
+          </div>
+          <div className="design-section-body">
+            {annotateMode && (
+              <div className="annotate-hint">Haz clic en la pantalla para colocar el pin (Esc para cancelar).</div>
+            )}
+            {(doc.annotations ?? []).length === 0 && !annotateMode && (
+              <div className="design-empty dim">
+                Sin anotaciones todavía. Pulsa “Añadir” y haz clic sobre la pantalla para dejar notas de review.
+              </div>
+            )}
+            {(doc.annotations ?? []).map((a, i) => (
+              <div
+                key={a.id}
+                className={`conn-row annotation-row${selectedAnnotationId === a.id ? " is-selected" : ""}${a.resolved ? " is-resolved" : ""}`}
+                onClick={() => setSelectedAnnotationId(selectedAnnotationId === a.id ? null : a.id)}
+              >
+                <span className="annotation-badge" style={{ background: a.resolved ? "#3f8f5f" : a.color }}>
+                  {i + 1}
+                </span>
+                <input
+                  className="text-input annotation-text"
+                  value={a.text}
+                  placeholder="Nota de revisión…"
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => st().updateAnnotation(a.id, { text: e.target.value })}
+                />
+                <button
+                  className={`icon-btn${a.resolved ? " is-active" : ""}`}
+                  title={a.resolved ? "Reabrir" : "Marcar como resuelta"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    st().updateAnnotation(a.id, { resolved: !a.resolved });
+                  }}
+                >
+                  ✓
+                </button>
+                <button
+                  className="icon-btn screen-del"
+                  title="Eliminar anotación"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    st().removeAnnotation(a.id);
+                  }}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <button
           className={`mini-btn preview-toggle${previewMode ? " is-active" : ""}`}
           onClick={() => {
@@ -221,6 +296,7 @@ export function PrototypePanel() {
               setPreviewMode(false);
               st().setPlaying(false);
             } else {
+              st().setAnnotateMode(false);
               setPreviewMode(true);
             }
           }}

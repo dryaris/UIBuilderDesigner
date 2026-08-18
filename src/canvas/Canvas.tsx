@@ -20,6 +20,7 @@ export function Canvas({
   const tool = useStore((s) => s.tool);
   const spaceDown = useStore((s) => s.spaceDown);
   const previewMode = useStore((s) => s.previewMode);
+  const annotateMode = useStore((s) => s.annotateMode);
   const previewScreen = useStore((s) => s.previewScreen);
   const previewTransitionMs = useStore((s) => s.previewTransitionMs);
   const drag = useStore((s) => s.drag);
@@ -43,19 +44,21 @@ export function Canvas({
 
   const cursor = previewMode
     ? "default"
-    : drag?.kind === "pan"
-      ? "grabbing"
-      : spaceDown
-        ? "grab"
-      : tool === "hand"
-        ? "grab"
-        : tool === "select"
-          ? handleCursor() ?? "default"
-          : tool === "text"
-            ? "text"
-            : tool === "zoom"
-              ? "zoom-in"
-              : "crosshair";
+    : annotateMode
+      ? "crosshair"
+      : drag?.kind === "pan"
+        ? "grabbing"
+        : spaceDown
+          ? "grab"
+          : tool === "hand"
+            ? "grab"
+            : tool === "select"
+              ? handleCursor() ?? "default"
+              : tool === "text"
+                ? "text"
+                : tool === "zoom"
+                  ? "zoom-in"
+                  : "crosshair";
 
   const spacing = Math.max(8, 24 * viewport.zoom);
 

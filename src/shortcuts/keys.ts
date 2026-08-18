@@ -113,7 +113,8 @@ export function useKeyboard(): void {
         if (st.previewMode) {
           st.setPreviewMode(false);
           st.setPlaying(false);
-        } else if (st.paletteOpen) st.setPaletteOpen(false);
+        } else if (st.annotateMode) st.setAnnotateMode(false);
+        else if (st.paletteOpen) st.setPaletteOpen(false);
         else if (st.editingTextId) st.setEditingText(null);
         else st.select([]);
         return;

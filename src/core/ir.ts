@@ -187,6 +187,23 @@ export interface PrototypeConnection {
   transition?: { durationMs: number; easing: string };
 }
 
+/** Anotación de review (Fase 7): pin sobre la pantalla con nota de revisión. */
+export interface Annotation {
+  id: string;
+  /** Posición en el espacio de la pantalla (world). */
+  x: number;
+  y: number;
+  text: string;
+  /** Color del pin (para distinguir autores/revisores). */
+  color: string;
+  /** Pantalla a la que pertenece (doc.root.id = pantalla inicial). */
+  screenId: string;
+  /** Nodo al que apunta (opcional). */
+  nodeId?: string;
+  /** Marcada como resuelta. */
+  resolved?: boolean;
+}
+
 export interface AnimationTrigger {
   trigger: AnimTriggerKind;
   timelineId: string;
@@ -281,6 +298,8 @@ export interface CanvasDoc {
   screens?: Node[];
   /** Conexiones de prototipo entre nodos y pantallas (Fase 7). */
   connections?: PrototypeConnection[];
+  /** Anotaciones de review sobre las pantallas (Fase 7). */
+  annotations?: Annotation[];
 }
 
 // ---------------------------------------------------------------------------
@@ -315,6 +334,7 @@ export const MIGRATIONS: Migration[] = [
       assets: doc.assets ?? [],
       screens: doc.screens ?? [],
       connections: doc.connections ?? [],
+      annotations: doc.annotations ?? [],
     }),
   },
 ];
