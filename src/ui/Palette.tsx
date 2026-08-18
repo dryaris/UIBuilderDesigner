@@ -4,6 +4,7 @@ import { nodeRect } from "../core/tree";
 import { saveProjectFile, openProjectFile } from "../export/project";
 import { exportHtml } from "../export/html";
 import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
+import { exportUnityFile } from "../export/unity";
 
 interface Action {
   id: string;
@@ -30,6 +31,11 @@ export function Palette() {
       { id: "png2", label: "Exportar PNG 2x", keywords: "exportar png imagen asset 2x retina", run: () => exportPngAt(2) },
       { id: "png3", label: "Exportar PNG 3x", keywords: "exportar png imagen asset 3x", run: () => exportPngAt(3) },
       { id: "bundle", label: "Exportar paquete (HTML + PNG 1x/2x/3x)", keywords: "exportar paquete bundle zip web html png", run: () => exportBundleAndToast() },
+      { id: "unity", label: "Exportar Unity UI Toolkit (.uxml/.uss)", keywords: "unity uxml uss toolkit motor juego exportar", run: () => {
+        const s = useStore.getState();
+        exportUnityFile(s.doc);
+        s.showToast("Unity UI Toolkit exportado");
+      } },
       { id: "fit", label: "Ajustar a pantalla", keywords: "zoom ajustar fit encuadrar", run: () => st().fitTo(nodeRect(st().doc.root)) },
       { id: "zoom100", label: "Zoom 100%", keywords: "zoom tamaño real", run: () => st().zoomTo(1, center()) },
       { id: "undo", label: "Deshacer", keywords: "deshacer undo atras", run: () => st().undo() },

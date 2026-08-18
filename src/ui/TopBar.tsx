@@ -5,6 +5,7 @@ import { nodeRect } from "../core/tree";
 import { saveProjectFile, openProjectFile } from "../export/project";
 import { exportHtml } from "../export/html";
 import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
+import { exportUnityFile } from "../export/unity";
 import { Menu } from "./Menu";
 import { IconButton } from "./Menu";
 
@@ -99,6 +100,14 @@ export function TopBar() {
           { label: "Exportar PNG 3x", onClick: () => exportPngAt(3) },
           { divider: true },
           { label: "Exportar paquete (HTML + PNG 1x/2x/3x)", onClick: exportBundleFile },
+          { divider: true },
+          {
+            label: "Exportar Unity UI Toolkit (.uxml/.uss)",
+            onClick: () => {
+              exportUnityFile(useStore.getState().doc);
+              useStore.getState().showToast("Unity UI Toolkit exportado");
+            },
+          },
           { divider: true },
           { label: "Editor 100% offline · sin cuenta", disabled: true, onClick: () => {} },
         ]}
