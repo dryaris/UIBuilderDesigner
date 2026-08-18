@@ -1,0 +1,60 @@
+name: Release (macOS + Windows)
+
+# Compila la app de escritorio en cada sistema y sube los binarios al Release.
+# Se dispara al pushear un tag v* (ej: v0.1.0). El Release se crea como
+# borrador: revísalo y publícalo desde la página de Releases.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - macos-latest # .app + .dmg (universal: Apple Silicon + Intel)
+          - windows-latest # .msi + .exe (NSIS)
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Rust targets para el binario macOS universal
+        if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - name: Build + subir al Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Canvas ${{ github.ref_name }}"
+          releaseBody: |
+            **Canvas** — editor visual de UI/UX offline, agnóstico y multi-destino.
+
+            - 100% offline, sin cuenta: todo se guarda localmente.
+            - Diseña con memoria muscular de Figma: snapping, guías, atajos, tokens, componentes.
+            - Anima con timelines y estados, prototipa entre pantallas.
+            - Exporta a HTML/CSS, PNG 1x/2x/3x, Unity UI Toolkit y Unreal UMG.
+
+            Instaladores:
+            - **macOS** `.dmg` (universal: Apple Silicon + Intel; sin firma/notarización — abre con clic derecho → Abrir si Gatekeeper lo bloquea)
+            - **Windows** `.msi` y `.exe` (NSIS; WebView2 se instala automáticamente)
+          releaseDraft: true
+          prerelease: false
+          args: ${{ runner.os == 'macOS' && '--target universal-apple-darwin' || '' }}

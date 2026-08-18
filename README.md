@@ -117,6 +117,10 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 
 > El editor funciona **igual en navegador que en escritorio** gracias a la abstracción de plataforma (`src/persistence/persistence.ts` + `tauriBridge.ts`).
 
+### Releases de escritorio (macOS + Windows)
+
+Los binarios se compilan en GitHub Actions (los binarios nativos requieren su propio sistema): al pushear un tag `v*` el workflow `.github/workflows/release.yml` compila en runners de **macOS** (`.app` + `.dmg` universal, Apple Silicon + Intel) y **Windows** (`.msi` + `.exe` NSIS) y crea un **Release borrador** con los instaladores. Los iconos se regeneran desde `logo.png` con `bunx @tauri-apps/cli icon logo.png` (el generador está en `scripts/gen-logo.mjs`).
+
 ## Atajos
 
 | Atajo | Acción |

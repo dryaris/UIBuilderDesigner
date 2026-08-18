@@ -26,8 +26,17 @@
     }
   },
   "bundle": {
-    "active": false,
+    "active": true,
     "targets": "all",
-    "icon": []
+    "category": "DeveloperTool",
+    "shortDescription": "Editor visual de UI/UX offline, agnóstico y multi-destino",
+    "publisher": "Canvas",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   }
 }
