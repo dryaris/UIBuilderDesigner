@@ -8,6 +8,7 @@ import { exportUnityFile } from "../export/unity";
 import { exportUmgFile } from "../export/umg";
 import { exportSpecSheetFile } from "../export/spec";
 import { exportLottieFile } from "../export/lottie";
+import { exportTokensFile } from "../export/tokens";
 
 interface Action {
   id: string;
@@ -53,6 +54,10 @@ export function Palette() {
         const s = useStore.getState();
         const ok = exportLottieFile(s.doc, s.activeTimelineId ?? undefined);
         s.showToast(ok ? "Lottie exportado" : "Crea una línea de tiempo con keyframes primero");
+      } },
+      { id: "tokens", label: "Exportar tokens (DTCG + Style Dictionary)", keywords: "tokens design tokens dtcg w3c style dictionary css variables sistema diseño", run: () => {
+        const s = useStore.getState();
+        void exportTokensFile(s.doc).then(() => s.showToast("Design tokens exportados"));
       } },
       { id: "fit", label: "Ajustar a pantalla", keywords: "zoom ajustar fit encuadrar", run: () => st().fitTo(nodeRect(st().doc.root)) },
       { id: "zoom100", label: "Zoom 100%", keywords: "zoom tamaño real", run: () => st().zoomTo(1, center()) },

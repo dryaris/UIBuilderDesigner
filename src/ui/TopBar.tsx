@@ -11,6 +11,7 @@ import { exportUnityFile } from "../export/unity";
 import { exportUmgFile } from "../export/umg";
 import { exportSpecSheetFile } from "../export/spec";
 import { exportLottieFile } from "../export/lottie";
+import { exportTokensFile } from "../export/tokens";
 import { Menu } from "./Menu";
 import { IconButton } from "./Menu";
 
@@ -151,6 +152,13 @@ export function TopBar() {
           { divider: true },
           { label: "Exportar paquete (HTML + PNG 1x/2x/3x)", onClick: exportBundleFile },
           { divider: true },
+          {
+            label: "Exportar tokens (DTCG + Style Dictionary)",
+            onClick: () => {
+              const s = useStore.getState();
+              void exportTokensFile(s.doc).then(() => s.showToast("Design tokens exportados (DTCG + Style Dictionary)"));
+            },
+          },
           {
             label: "Exportar Unity UI Toolkit (.uxml/.uss)",
             onClick: () => {
