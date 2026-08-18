@@ -7,6 +7,7 @@ import { exportHtml } from "../export/html";
 import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
 import { exportUnityFile } from "../export/unity";
 import { exportUmgFile } from "../export/umg";
+import { exportSpecSheetFile } from "../export/spec";
 import { Menu } from "./Menu";
 import { IconButton } from "./Menu";
 
@@ -114,6 +115,14 @@ export function TopBar() {
             onClick: () => {
               exportUmgFile(useStore.getState().doc);
               useStore.getState().showToast("Unreal UMG exportado");
+            },
+          },
+          { divider: true },
+          {
+            label: "Exportar spec sheet (modo Dev)",
+            onClick: () => {
+              exportSpecSheetFile(useStore.getState().doc);
+              useStore.getState().showToast("Spec sheet exportado");
             },
           },
           { divider: true },

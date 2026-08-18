@@ -6,6 +6,7 @@ import { exportHtml } from "../export/html";
 import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
 import { exportUnityFile } from "../export/unity";
 import { exportUmgFile } from "../export/umg";
+import { exportSpecSheetFile } from "../export/spec";
 
 interface Action {
   id: string;
@@ -41,6 +42,11 @@ export function Palette() {
         const s = useStore.getState();
         exportUmgFile(s.doc);
         s.showToast("Unreal UMG exportado");
+      } },
+      { id: "spec", label: "Exportar spec sheet (modo Dev)", keywords: "spec dev medidas colores tipografía entregable desarrollador", run: () => {
+        const s = useStore.getState();
+        exportSpecSheetFile(s.doc);
+        s.showToast("Spec sheet exportado");
       } },
       { id: "fit", label: "Ajustar a pantalla", keywords: "zoom ajustar fit encuadrar", run: () => st().fitTo(nodeRect(st().doc.root)) },
       { id: "zoom100", label: "Zoom 100%", keywords: "zoom tamaño real", run: () => st().zoomTo(1, center()) },

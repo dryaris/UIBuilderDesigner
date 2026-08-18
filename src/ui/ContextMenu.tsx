@@ -1,7 +1,8 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { Copy, ClipboardPaste, Trash2, Frame, Group, Layers, CornerDownRight, Component, RefreshCw } from "lucide-react";
+import { Copy, ClipboardPaste, Trash2, Frame, Group, Layers, CornerDownRight, Component, RefreshCw, Ruler } from "lucide-react";
 import { useStore } from "../state/store";
 import { findNode } from "../core/tree";
+import { exportSpecSheetFile } from "../export/spec";
 
 export interface ContextMenuState {
   x: number;
@@ -88,6 +89,10 @@ export function ContextMenu({
               st.createComponent(node.name || "Componente");
             }),
             item("Copiar estilo", <Copy size={14} />, () => st.copyStyle(), "⇧⌘C"),
+            item("Spec sheet de este nodo", <Ruler size={14} />, () => {
+              exportSpecSheetFile(useStore.getState().doc, node.id);
+              useStore.getState().showToast("Spec del nodo exportado");
+            }),
             item("Pegar estilo", <ClipboardPaste size={14} />, () => st.pasteStyle(), "⇧⌘V"),
             item("Eliminar", <Trash2 size={14} />, () => st.deleteSelection(), "Supr", true),
           ]
