@@ -8,7 +8,7 @@ import { useStore } from "../state/store";
 import { findNode } from "../core/tree";
 import { FRAME_PRESETS } from "../core/defaults";
 import { resolveColor } from "../core/tokens";
-import type { Node } from "../core/ir";
+import type { LayoutGrid, Node, Typography } from "../core/ir";
 
 export function Inspector() {
   const selection = useStore((s) => s.selection);
@@ -118,6 +118,7 @@ function NodeInspector({ node }: { node: Node }) {
         />
         <div className="field">
           <span className="field-label">Esquinas</span>
+          <RadiusChips value={s.borderRadius} onPick={(ref) => setStyle({ borderRadius: ref })} />
           <input
             type="number"
             className="text-input"
@@ -148,6 +149,19 @@ function NodeInspector({ node }: { node: Node }) {
 
       {node.type === "text" && (
         <Section title="Texto">
+          <TypographyStyleSelect
+            onApply={(typo) =>
+              setStyle({
+                fontFamily: typo.fontFamily,
+                fontWeight: typo.fontWeight,
+                fontSize: typo.fontSize,
+                letterSpacing: typo.letterSpacing,
+                lineHeight: typo.lineHeight,
+                textAlign: typo.textAlign,
+                textTransform: typo.textTransform,
+              })
+            }
+          />
           <textarea
             className="text-area"
             rows={3}
@@ -169,6 +183,7 @@ function NodeInspector({ node }: { node: Node }) {
               ))}
             </select>
           </div>
+          <ColorField label="Color" value={s.color} onCommit={(v) => setStyle({ color: v })} field="color" />
           <div className="field-grid">
             <Num label="Tamaño" value={s.fontSize ?? 16} onCommit={(v) => setStyle({ fontSize: v })} />
             <div className="field">
@@ -254,6 +269,7 @@ function NodeInspector({ node }: { node: Node }) {
           <div className="safe-hint dim">
             {node.guides ? `${node.guides.vertical.length}V · ${node.guides.horizontal.length}H guías` : "Sin guías"}
           </div>
+          <LayoutGridEditor node={node} patch={patch} />
         </Section>
       )}
     </div>
@@ -337,16 +353,28 @@ function ColorField({
   value,
   onCommit,
   inputRef,
+  field = "backgroundColor",
 }: {
   label: string;
   value: string | undefined;
   onCommit: (v: string | undefined) => void;
   inputRef?: RefObject<HTMLInputElement | null>;
+  field?: "backgroundColor" | "color";
 }) {
   const [text, setText] = useState(value ?? "");
   const tokens = useStore((s) => s.doc.tokens);
   const resolved = resolveColor(tokens, value);
   const isHex = resolved?.startsWith("#");
+  const isToken = value?.startsWith("$") ?? false;
+  const saveAsToken = () => {
+    if (isToken) {
+      useStore.getState().showToast("Este color ya es un token");
+      return;
+    }
+    const raw = (value ?? text).trim();
+    if (!raw) return;
+    useStore.getState().saveColorAsToken(raw, field);
+  };
   return (
     <div className="field">
       <span className="field-label">{label}</span>
@@ -373,6 +401,126 @@ function ColorField({
           }}
         />
       </div>
+      <ColorTokenChips current={value} onPick={onCommit} />
+      <button className="mini-btn token-save-btn" onClick={saveAsToken}>
+        + Guardar como token
+      </button>
+    </div>
+  );
+}
+
+/** Chips de tokens de color: un clic aplica "$nombre" (Fase 2). */
+function ColorTokenChips({
+  current,
+  onPick,
+}: {
+  current: string | undefined;
+  onPick: (ref: string) => void;
+}) {
+  const colors = useStore((s) => s.doc.tokens.colors);
+  const tokens = useStore((s) => s.doc.tokens);
+  const entries = Object.entries(colors);
+  if (entries.length === 0) return null;
+  return (
+    <div className="token-chips">
+      {entries.map(([name, raw]) => {
+        const ref = `$${name}`;
+        const resolved = resolveColor(tokens, raw) ?? raw;
+        return (
+          <button
+            key={name}
+            className={`token-chip${current === ref ? " is-active" : ""}`}
+            title={`${ref} · ${raw}`}
+            onClick={() => onPick(ref)}
+          >
+            <span className="token-chip-swatch" style={{ background: resolved }} />
+            <span className="token-chip-name">{name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Chips de tokens de radio: un clic aplica "$nombre". */
+function RadiusChips({ value, onPick }: { value: number | string | undefined; onPick: (ref: string) => void }) {
+  const radii = useStore((s) => s.doc.tokens.radii);
+  const entries = Object.entries(radii);
+  if (entries.length === 0) return null;
+  return (
+    <div className="token-chips">
+      {entries.map(([name, val]) => {
+        const ref = `$${name}`;
+        return (
+          <button
+            key={name}
+            className={`token-chip${value === ref ? " is-active" : ""}`}
+            title={`${ref} · ${val}px`}
+            onClick={() => onPick(ref)}
+          >
+            <span className="token-chip-name">{name}</span>
+            <span className="token-chip-value dim">{val}px</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Selector de estilos de texto reutilizables (tokens de tipografía). */
+function TypographyStyleSelect({ onApply }: { onApply: (t: Typography) => void }) {
+  const typographies = useStore((s) => s.doc.tokens.typography);
+  const entries = Object.entries(typographies);
+  if (entries.length === 0) return null;
+  return (
+    <div className="field">
+      <span className="field-label">Estilo de texto</span>
+      <select
+        className="text-input"
+        value=""
+        onChange={(e) => {
+          const typo = typographies[e.target.value];
+          if (typo) onApply(typo);
+        }}
+      >
+        <option value="" disabled>
+          Aplicar estilo…
+        </option>
+        {entries.map(([name, typo]) => (
+          <option key={name} value={name}>
+            {name} · {typo.fontSize ?? 16}px / {typo.fontWeight ?? 400}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/** Cuadrícula de layout del frame (columnas/filas con margin y gutter). */
+function LayoutGridEditor({ node, patch }: { node: Node; patch: (recipe: (n: Node) => void) => void }) {
+  const g: LayoutGrid = node.layoutGrid ?? { enabled: false, columns: 12, rows: 0, gutter: 24, margin: 48 };
+  const setGrid = (partial: Partial<LayoutGrid>) =>
+    patch((n) => {
+      n.layoutGrid = { enabled: true, columns: 12, rows: 0, gutter: 24, margin: 48, ...n.layoutGrid, ...partial };
+    });
+  return (
+    <div className="grid-editor">
+      <div className="shadow-head">
+        <span className="field-label">Cuadrícula de layout</span>
+        <input
+          type="checkbox"
+          checked={g.enabled}
+          onChange={(e) => setGrid({ enabled: e.target.checked })}
+        />
+      </div>
+      {g.enabled && (
+        <div className="field-grid">
+          <Num label="Columnas" value={g.columns} onCommit={(v) => setGrid({ columns: Math.max(0, Math.round(v)) })} />
+          <Num label="Filas" value={g.rows} onCommit={(v) => setGrid({ rows: Math.max(0, Math.round(v)) })} />
+          <Num label="Gutter" value={g.gutter} onCommit={(v) => setGrid({ gutter: Math.max(0, Math.round(v)) })} />
+          <Num label="Margen" value={g.margin} onCommit={(v) => setGrid({ margin: Math.max(0, Math.round(v)) })} />
+        </div>
+      )}
     </div>
   );
 }

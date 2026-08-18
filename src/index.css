@@ -1192,6 +1192,313 @@ input[type="range"] {
   }
 }
 
+/* ------------------------------------------------------------------ Panel derecho con pestañas */
+
+.right-side {
+  display: flex;
+  flex-direction: column;
+  width: 264px;
+  min-height: 0;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+}
+
+.right-side .panel {
+  flex: 1;
+  min-height: 0;
+  width: auto;
+  border-left: none;
+}
+
+.right-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+
+.right-tab {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  border-radius: 7px 7px 0 0;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.right-tab:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.right-tab.is-active {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+
+/* ------------------------------------------------------------------ Diseño (tokens + librería) */
+
+.design-section {
+  margin-bottom: 16px;
+}
+
+.design-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.design-section-head .mini-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.design-section-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+}
+
+.design-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.design-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  padding: 8px 2px;
+}
+
+.design-empty svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.token-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.token-row-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.token-row-stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.token-name {
+  flex: 0 1 auto;
+  max-width: 84px;
+  font-size: 11px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.token-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  padding: 4px 6px;
+}
+
+.token-suffix {
+  font-size: 10.5px;
+  flex-shrink: 0;
+}
+
+.token-num {
+  width: 56px;
+  flex: none;
+  font-size: 11.5px;
+  padding: 4px 6px;
+}
+
+.token-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.token-swatch input[type="color"] {
+  position: absolute;
+  inset: -8px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.token-save-btn {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.token-del,
+.token-apply {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.token-del:hover {
+  color: #ff5c7a;
+}
+
+/* Chips de tokens (Inspector) */
+
+.token-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.token-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.token-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.token-chip.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.token-chip-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  flex-shrink: 0;
+}
+
+.token-chip-value {
+  font-size: 10px;
+}
+
+.grid-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* Librería de componentes */
+
+.library-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.library-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, transform 0.12s;
+}
+
+.library-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.library-preview {
+  position: relative;
+  height: 56px;
+  border-radius: 6px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.library-name {
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ Gizmos Fase 2 */
+
+.spacing-hint line {
+  stroke: #ff3d6e;
+  stroke-width: 1;
+}
+
+.spacing-hint text {
+  fill: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: inherit;
+  paint-order: stroke;
+  stroke: #ff3d6e;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.layout-grid rect {
+  fill: var(--accent);
+  fill-opacity: 0.05;
+  stroke: var(--accent);
+  stroke-opacity: 0.35;
+  stroke-width: 1;
+}
+
 /* ------------------------------------------------------------------ Scrollbars */
 
 ::-webkit-scrollbar {

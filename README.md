@@ -4,22 +4,28 @@ Un editor de diseño de interfaces **100% offline, sin cuenta y sin backend**, t
 
 > "Un Figma más agnóstico": el diseñador no necesita saber nada de motores ni de código; un diseñador técnico llega al detalle fino.
 
-## Estado actual — Fase 1 (fundamentos tipo Figma) ✅
+## Estado actual — Fases 1 y 2 completas, Fase 3 en curso ✅
 
-Lo que ya funciona en esta fase:
+Lo que ya funciona:
 
-- **Canvas con drag & drop**: selección (clic, Shift+clic, marquee), mover, redimensionar con 8 handles, **pixel-snap estricto a enteros** y **snapping** a guías, bordes del frame y nodos hermanos con líneas de guía visuales.
+- **Canvas con drag & drop**: selección (clic, Shift+clic, marquee, clic en vacío dentro del artboard = seleccionar pantalla), mover, redimensionar con 8 handles, **pixel-snap estricto a enteros** y **snapping** a guías, bordes del frame y nodos hermanos con líneas de guía visuales.
+- **Spacing hints (medición al mover)**: al arrastrar un nodo cerca de otros se muestran las distancias exactas en px, estilo Figma (líneas rojas con etiqueta).
+- **Alineación y distribución**: `Alt+A/D/W/S` = izquierda/derecha/arriba/abajo, `Alt+C/M` = centrar H/V, `Alt+Shift+H/V` = distribuir — los atajos exactos de Figma.
+- **Cuadrículas de layout por frame**: columnas/filas con margin y gutter, configurables desde el Inspector y dibujadas sobre el lienzo.
+- **Design tokens de primera clase**: pestaña **Diseño** con editor visual de colores, radios, espaciado, tipografías, sombras y easing. Los colores y radios se aplican como referencias `"$nombre"` desde chips en el Inspector, y cualquier color se puede guardar como token con un clic.
+- **Librería de componentes**: clic derecho → **Crear componente** guarda el elemento en tu librería; desde la pestaña Diseño insertas instancias con un clic (se colocan en el centro del lienzo).
 - **Atajos sagrados (memoria muscular de Figma)**: `Espacio` = pan, `Cmd/Ctrl+scroll` = zoom al cursor, flechas = nudge 1px, `Shift+flechas` = 10px, `Cmd+D` = duplicar, `Cmd+Z` = undo, `Cmd+K` = palette de acciones.
 - **Frames con presets de videojuego**: TV 1080p/720p/4K, ultrawide 21:9, iPhone, Android y web — con **overlays de safe areas** (5% title / 10% action) desde el primer día.
 - **Reglas y guías**: arrastrables desde las reglas, con snap y borrado (arrastra la guía fuera del canvas).
 - **Herramientas**: Select (V), Frame (F), Text (T, edición inline con doble clic), Rect (R), Elipse (O), Línea (L), Mano (H), Zoom (Z, marquee para ampliar zona).
-- **Menú contextual** en nodos: duplicar, envolver en frame, agrupar, copiar/pegar estilo, eliminar.
+- **Menú contextual** en nodos: duplicar, envolver en frame, agrupar, crear componente, copiar/pegar estilo, eliminar.
 - **Undo/redo** con patches de Immer (100 pasos) y **autosave** con debounce de 3s + recuperación al abrir.
 - **Formato `.canvas`** (ZIP con `project.json` versionado + migraciones SemVer + slots para assets/thumb/annotations).
-- **Exportador HTML/CSS temprano** que valida el IR: tokens → custom properties, estados → pseudo-clases.
+- **Exportador HTML/CSS completo** que valida el IR: tokens → custom properties, estados → pseudo-clases, y un `.html` autocontenido que escala la pantalla al viewport.
+- **Export de assets PNG 1x/2x/3x** y **paquete web** (HTML + PNGs en un `.zip`), renderizado offscreen con el mismo motor que el editor (WYSIWYG exacto).
 - **Panel de capas, inspector sin jerga técnica** (sliders, pickers, iconos), tema claro/oscuro, palette `⌘K`, starter kits (menú de juego 1080p, HUD móvil).
 
-**Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge.
+**Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 
 ## Arquitectura
 
@@ -98,7 +104,7 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 
 > El editor funciona **igual en navegador que en escritorio** gracias a la abstracción de plataforma (`src/persistence/persistence.ts` + `tauriBridge.ts`).
 
-## Atajos (Fase 1)
+## Atajos
 
 | Atajo | Acción |
 |---|---|
@@ -110,6 +116,9 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 | `Cmd/Ctrl + A` | Seleccionar todo |
 | `Cmd/Ctrl + G` / `Shift+G` | Agrupar / Desagrupar |
 | `Cmd/Ctrl + Shift + C/V` | Copiar / Pegar estilo |
+| `Alt+A/D/W/S` | Alinear izquierda / derecha / arriba / abajo |
+| `Alt+C` / `Alt+M` | Alinear centro H / centro V |
+| `Alt+Shift+H` / `Alt+Shift+V` | Distribuir horizontal / vertical |
 | `Cmd/Ctrl + K` | Palette de acciones |
 | `Cmd/Ctrl + S` / `Shift+O` | Guardar / Abrir `.canvas` |
 | `V F T R O L H Z` | Select / Frame / Text / Rect / Elipse / Línea / Mano / Zoom |
@@ -118,9 +127,9 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 
 ## Roadmap de fases
 
-1. **Fase 1 (actual)** — Fundamentos tipo Figma: drag & drop con snap, atajos sagrados, presets + safe areas, reglas/guías, menú contextual, undo/redo, autosave.
-2. **Fase 2** — Alineación/distribución, grids, spacing hints, **tokens y componentes básicos ANTES de animar**, exportador HTML/CSS completo, export de assets 1x/2x/3x.
-3. **Fase 3** — Auto-layout visual (flexbox tras iconos), constraints/responsive, estados interactivos, comprobador de contraste WCAG.
+1. **Fase 1** — Fundamentos tipo Figma: drag & drop con snap, atajos sagrados, presets + safe areas, reglas/guías, menú contextual, undo/redo, autosave. ✅
+2. **Fase 2** — Alineación/distribución, grids, spacing hints, **tokens y componentes ANTES de animar**, exportador HTML/CSS completo y export de assets PNG 1x/2x/3x. ✅
+3. **Fase 3 (actual)** — Auto-layout visual (flexbox tras iconos), constraints/responsive, estados interactivos, comprobador de contraste WCAG.
 4. **Fase 4** — Máquina de estados + preview local, timelines/keyframes, editor de easing. Aquí el diseñador anima componentes reales con tokens.
 5. **Fase 5** — Exportador Unity UI Toolkit (UXML/USS).
 6. **Fase 6** — Exportador Unreal UMG.

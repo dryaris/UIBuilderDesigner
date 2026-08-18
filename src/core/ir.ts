@@ -154,6 +154,18 @@ export type ShapeKind = "rect" | "ellipse" | "line";
 /** Estados interactivos de un nodo (Fase 3). */
 export type StateKey = "default" | "hover" | "pressed" | "disabled" | "focused";
 
+export interface LayoutGrid {
+  enabled: boolean;
+  /** Número de columnas (0 = sin columnas). */
+  columns: number;
+  /** Número de filas (0 = sin filas). */
+  rows: number;
+  /** Separación entre columnas/filas en px. */
+  gutter: number;
+  /** Margen exterior en px. */
+  margin: number;
+}
+
 export interface NodeState {
   /** Overrides parciales de style para este estado. */
   style: Partial<Style>;
@@ -229,6 +241,8 @@ export interface Node {
   guides?: { vertical: number[]; horizontal: number[] };
   /** Áreas seguras TV/consola como fracción del tamaño (Fase 1). */
   safeArea?: { title: number; action: number };
+  /** Cuadrícula de layout del frame: columnas/filas con margin y gutter (Fase 2). */
+  layoutGrid?: LayoutGrid;
   /** Para nodos type === "shape". */
   shape?: ShapeKind;
   /** Para nodos type === "text". */

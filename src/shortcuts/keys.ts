@@ -128,6 +128,20 @@ export function useKeyboard(): void {
         st.nudgeSelection(dx, dy);
         return;
       }
+      // Alinear y distribuir (memoria muscular de Figma):
+      // Alt+A/D/W/S = izquierda/derecha/arriba/abajo · Alt+C/M = centrar H/V
+      // Alt+Shift+H/V = distribuir horizontal/vertical.
+      if (e.altKey && !mod) {
+        const k = key;
+        if (k === "a") { e.preventDefault(); st.alignSelection("left"); return; }
+        if (k === "d") { e.preventDefault(); st.alignSelection("right"); return; }
+        if (k === "w") { e.preventDefault(); st.alignSelection("top"); return; }
+        if (k === "s") { e.preventDefault(); st.alignSelection("bottom"); return; }
+        if (k === "c") { e.preventDefault(); st.alignSelection("centerH"); return; }
+        if (k === "m") { e.preventDefault(); st.alignSelection("centerV"); return; }
+        if (e.shiftKey && k === "h") { e.preventDefault(); st.distributeSelection("h"); return; }
+        if (e.shiftKey && k === "v") { e.preventDefault(); st.distributeSelection("v"); return; }
+      }
       if (e.shiftKey && e.key === "1") {
         e.preventDefault();
         st.fitTo(nodeRect(st.doc.root));

@@ -71,7 +71,7 @@ function renderNode(node: Node, tokens: Tokens, cls: string, css: string[]): str
   return `<div class="${cls}${disabled}">${inner}</div>`;
 }
 
-function styleToCss(s: Style, tokens: Tokens): string {
+export function styleToCss(s: Style, tokens: Tokens): string {
   const rules: string[] = [];
   rules.push(`position: absolute; left: ${s.x}px; top: ${s.y}px; width: ${s.width}px; height: ${s.height}px;`);
   const bg = resolveColor(tokens, s.backgroundColor);
@@ -132,7 +132,7 @@ function shadowCss(s: NonNullable<Style["boxShadow"]>, tokens: Tokens): string {
   return `${s.inset ? "inset " : ""}${s.x}px ${s.y}px ${s.blur}px ${s.spread ?? 0}px ${color}`;
 }
 
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

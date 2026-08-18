@@ -12,6 +12,7 @@ import { Toolbar } from "../ui/Toolbar";
 import { TopBar } from "../ui/TopBar";
 import { StatusBar } from "../ui/StatusBar";
 import { Inspector } from "../ui/Inspector";
+import { DesignPanel } from "../ui/DesignPanel";
 import { Layers } from "../ui/Layers";
 import { Palette } from "../ui/Palette";
 import { NewProjectModal } from "../ui/NewProjectModal";
@@ -21,6 +22,8 @@ export function Editor() {
   const [booted, setBooted] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
   const toast = useStore((s) => s.toast);
+  const rightTab = useStore((s) => s.rightTab);
+  const setRightTab = useStore((s) => s.setRightTab);
 
   useKeyboard();
 
@@ -53,7 +56,23 @@ export function Editor() {
           <Rulers />
           <Canvas openContextMenu={setCtxMenu} />
         </div>
-        <Inspector />
+        <div className="right-side">
+          <div className="right-tabs">
+            <button
+              className={`right-tab${rightTab === "inspector" ? " is-active" : ""}`}
+              onClick={() => setRightTab("inspector")}
+            >
+              Inspector
+            </button>
+            <button
+              className={`right-tab${rightTab === "design" ? " is-active" : ""}`}
+              onClick={() => setRightTab("design")}
+            >
+              Diseño
+            </button>
+          </div>
+          {rightTab === "inspector" ? <Inspector /> : <DesignPanel />}
+        </div>
       </div>
       <StatusBar />
       <Palette />

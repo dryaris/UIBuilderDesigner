@@ -4,7 +4,7 @@
  * guías arrastrables, áreas seguras TV/consola y cuadrícula de puntos.
  */
 import type { ReactNode, RefObject } from "react";
-import type { DragSession, Viewport } from "../state/store";
+import type { DragSession, SpacingHint, Viewport } from "../state/store";
 import { useStore } from "../state/store";
 import type { Node, Rect } from "../core/ir";
 import { findNode, nodeRect } from "../core/tree";
@@ -53,6 +53,19 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
   // Líneas de snap activas durante el drag (solo move/resize las generan).
   const snapLines =
     drag && (drag.kind === "move" || drag.kind === "resize") ? drag.lines : [];
+
+  // Pistas de medición durante un move (Fase 2: spacing hints).
+  const hints = drag?.kind === "move" ? drag.hints : [];
+
+  // Cuadrícula de layout del frame activo (el seleccionado con layoutGrid o el root).
+  const gridFrame =
+    selection.length === 1 ? findNode(doc.root, selection[0]) : null;
+  const layoutGridNode =
+    gridFrame?.layoutGrid?.enabled
+      ? gridFrame
+      : doc.root.layoutGrid?.enabled
+        ? doc.root
+        : null;
 
   // Rectángulos de vista previa (marquee / create / zoom).
   const preview = drag && (drag.kind === "marquee" || drag.kind === "create" || drag.kind === "zoom-marquee") ? previewRect(drag, vp, canvas) : null;
@@ -103,6 +116,14 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
         const p2 = toS(l.axis === "x" ? l.pos : l.to, l.axis === "x" ? l.to : l.pos);
         return <line key={i} className="snap-line" x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} />;
       })}
+
+      {/* Pistas de medición (spacing hints) */}
+      {hints.map((h, i) => (
+        <SpacingHintView key={i} hint={h} toS={toS} />
+      ))}
+
+      {/* Cuadrícula de layout del frame */}
+      {layoutGridNode && <LayoutGridOverlay frame={layoutGridNode} toS={toS} />}
 
       {/* Hover */}
       {hoverId && !selection.includes(hoverId) && (
@@ -211,6 +232,81 @@ function SafeAreas({ frame, toS }: { frame: Node; toS: (x: number, y: number) =>
     <g>
       {safe.action > 0 && draw(safe.action, SAFE_ACTION, `${Math.round(safe.action * 100)}% action safe`)}
       {safe.title > 0 && draw(safe.title, SAFE_TITLE, `${Math.round(safe.title * 100)}% title safe`)}
+    </g>
+  );
+}
+
+/** Pinta una pista de medición estilo Figma: línea roja con ticks y etiqueta. */
+function SpacingHintView({ hint, toS }: { hint: SpacingHint; toS: (x: number, y: number) => { x: number; y: number } }) {
+  if (hint.axis === "h") {
+    const a = toS(hint.from, hint.at);
+    const b = toS(hint.to, hint.at);
+    return (
+      <g className="spacing-hint">
+        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+        <line x1={a.x} y1={a.y - 5} x2={a.x} y2={a.y + 5} />
+        <line x1={b.x} y1={b.y - 5} x2={b.x} y2={b.y + 5} />
+        <text x={(a.x + b.x) / 2} y={a.y - 7} textAnchor="middle">
+          {hint.value}
+        </text>
+      </g>
+    );
+  }
+  const a = toS(hint.at, hint.from);
+  const b = toS(hint.at, hint.to);
+  return (
+    <g className="spacing-hint">
+      <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
+      <line x1={a.x - 5} y1={a.y} x2={a.x + 5} y2={a.y} />
+      <line x1={b.x - 5} y1={b.y} x2={b.x + 5} y2={b.y} />
+      <text x={a.x + 7} y={(a.y + b.y) / 2 + 3} textAnchor="middle">
+        {hint.value}
+      </text>
+    </g>
+  );
+}
+
+/** Cuadrícula de layout del frame: columnas/filas con margin y gutter (Fase 2). */
+function LayoutGridOverlay({ frame, toS }: { frame: Node; toS: (x: number, y: number) => { x: number; y: number } }) {
+  const g = frame.layoutGrid;
+  if (!g || !g.enabled) return null;
+  const r = nodeRect(frame);
+  const margin = g.margin || 0;
+  const gutter = g.gutter || 0;
+  const cells: Rect[] = [];
+
+  if (g.columns > 0) {
+    const usable = Math.max(0, r.width - margin * 2 - gutter * (g.columns - 1));
+    const colW = usable / g.columns;
+    for (let i = 0; i < g.columns; i++) {
+      cells.push({
+        x: r.x + margin + i * (colW + gutter),
+        y: r.y + margin,
+        width: colW,
+        height: Math.max(0, r.height - margin * 2),
+      });
+    }
+  }
+  if (g.rows > 0) {
+    const usableH = Math.max(0, r.height - margin * 2 - gutter * (g.rows - 1));
+    const rowH = usableH / g.rows;
+    for (let i = 0; i < g.rows; i++) {
+      cells.push({
+        x: r.x + margin,
+        y: r.y + margin + i * (rowH + gutter),
+        width: Math.max(0, r.width - margin * 2),
+        height: rowH,
+      });
+    }
+  }
+
+  return (
+    <g className="layout-grid">
+      {cells.map((c, i) => {
+        const a = toS(c.x, c.y);
+        const b = toS(c.x + c.width, c.y + c.height);
+        return <rect key={i} x={a.x} y={a.y} width={b.x - a.x} height={b.y - a.y} rx={1} />;
+      })}
     </g>
   );
 }

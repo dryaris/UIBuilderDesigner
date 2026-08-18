@@ -4,6 +4,7 @@ import { useStore } from "../state/store";
 import { nodeRect } from "../core/tree";
 import { saveProjectFile, openProjectFile } from "../export/project";
 import { exportHtml } from "../export/html";
+import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
 import { Menu } from "./Menu";
 import { IconButton } from "./Menu";
 
@@ -58,6 +59,19 @@ export function TopBar() {
     st.showToast("HTML exportado");
   };
 
+  const exportPngAt = (scale: number) => {
+    const st = useStore.getState();
+    void exportPngFile(st.doc, scale).then(() => st.showToast(`PNG ${scale}x exportado`));
+  };
+
+  const exportBundleFile = () => {
+    const st = useStore.getState();
+    void exportBundle(st.doc).then((blob) => {
+      downloadBlob(blob, `${projectFileName(st.doc)}-web.zip`);
+      st.showToast("Paquete HTML + PNG exportado");
+    });
+  };
+
   const act = () => useStore.getState();
 
   return (
@@ -79,6 +93,11 @@ export function TopBar() {
           { label: "Guardar proyecto (.canvas)", shortcut: "⌘S", onClick: saveProject },
           { divider: true },
           { label: "Exportar HTML/CSS", onClick: exportHtmlFile },
+          { label: "Exportar PNG 1x", onClick: () => exportPngAt(1) },
+          { label: "Exportar PNG 2x", onClick: () => exportPngAt(2) },
+          { label: "Exportar PNG 3x", onClick: () => exportPngAt(3) },
+          { divider: true },
+          { label: "Exportar paquete (HTML + PNG 1x/2x/3x)", onClick: exportBundleFile },
           { divider: true },
           { label: "Editor 100% offline · sin cuenta", disabled: true, onClick: () => {} },
         ]}
@@ -95,6 +114,16 @@ export function TopBar() {
           { divider: true },
           { label: "Copiar estilo", shortcut: "⇧⌘C", onClick: () => act().copyStyle(), disabled: !hasSelection },
           { label: "Pegar estilo", shortcut: "⇧⌘V", onClick: () => act().pasteStyle(), disabled: !hasSelection },
+          { divider: true },
+          { label: "Alinear izquierda", shortcut: "⌥A", onClick: () => act().alignSelection("left"), disabled: !hasSelection },
+          { label: "Alinear centro H", shortcut: "⌥C", onClick: () => act().alignSelection("centerH"), disabled: !hasSelection },
+          { label: "Alinear derecha", shortcut: "⌥D", onClick: () => act().alignSelection("right"), disabled: !hasSelection },
+          { label: "Alinear arriba", shortcut: "⌥W", onClick: () => act().alignSelection("top"), disabled: !hasSelection },
+          { label: "Alinear centro V", shortcut: "⌥M", onClick: () => act().alignSelection("centerV"), disabled: !hasSelection },
+          { label: "Alinear abajo", shortcut: "⌥S", onClick: () => act().alignSelection("bottom"), disabled: !hasSelection },
+          { divider: true },
+          { label: "Distribuir horizontal", shortcut: "⌥⇧H", onClick: () => act().distributeSelection("h"), disabled: !hasSelection },
+          { label: "Distribuir vertical", shortcut: "⌥⇧V", onClick: () => act().distributeSelection("v"), disabled: !hasSelection },
           { divider: true },
           { label: "Eliminar", shortcut: "Supr", danger: true, onClick: () => act().deleteSelection(), disabled: !hasSelection },
         ]}

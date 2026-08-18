@@ -8,7 +8,7 @@
  */
 import { create } from "zustand";
 import { applyPatches, produceWithPatches, type Patch } from "immer";
-import type { CanvasDoc, Node, Rect, Style, Vec } from "../core/ir";
+import type { CanvasDoc, Node, Rect, Style, Tokens, Vec } from "../core/ir";
 import { findNode, findParent, cloneNode, bbox, nodeRect, rectsIntersect, uid } from "../core/tree";
 import { topLevelNodes } from "../core/tree";
 
@@ -23,6 +23,23 @@ export type Tool =
   | "zoom";
 
 export type Handle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
+
+/** Alineación de la selección (respecto a la caja envolvente, como Figma). */
+export type AlignKind = "left" | "centerH" | "right" | "top" | "centerV" | "bottom";
+
+/**
+ * Pista de medición (spacing hints) durante un drag de movimiento.
+ * axis "h" → línea horizontal de (from, at) a (to, at); "v" → vertical.
+ */
+export interface SpacingHint {
+  axis: "h" | "v";
+  from: number;
+  to: number;
+  /** Coordenada del eje perpendicular (la "y" de una línea horizontal). */
+  at: number;
+  /** Distancia en px del proyecto. */
+  value: number;
+}
 
 export interface Viewport {
   /** Desplazamiento en px de pantalla: screen = world * zoom + pan. */
@@ -42,7 +59,7 @@ export interface SnapLine {
 }
 
 export type DragSession =
-  | { kind: "move"; ids: string[]; start: Vec; current: Vec; dx: number; dy: number; lockedAxis: "x" | "y" | null; lines: SnapLine[] }
+  | { kind: "move"; ids: string[]; start: Vec; current: Vec; dx: number; dy: number; lockedAxis: "x" | "y" | null; lines: SnapLine[]; hints: SpacingHint[] }
   | { kind: "resize"; id: string; handle: Handle; start: Vec; startRect: Rect; rect: Rect; lines: SnapLine[] }
   | { kind: "marquee"; start: Vec; current: Vec; additive: boolean }
   | { kind: "create"; shape: "frame" | "rect" | "ellipse" | "line"; start: Vec; current: Vec }
@@ -68,6 +85,8 @@ interface EditorState {
   selection: string[];
   hoverId: string | null;
   tool: Tool;
+  /** Pestaña activa del panel derecho (Inspector | Diseño). */
+  rightTab: "inspector" | "design";
   spaceDown: boolean;
   viewport: Viewport;
   cursor: Vec | null;
@@ -85,6 +104,7 @@ interface EditorState {
   // ---- acciones de UI ----
   select: (ids: string[], additive?: boolean) => void;
   setTool: (t: Tool) => void;
+  setRightTab: (tab: "inspector" | "design") => void;
   setHover: (id: string | null) => void;
   setSpaceDown: (v: boolean) => void;
   setViewport: (p: Partial<Viewport>) => void;
@@ -104,11 +124,22 @@ interface EditorState {
   nudgeSelection: (dx: number, dy: number) => void;
   groupSelection: (name: string) => void;
   ungroupSelection: () => void;
+  alignSelection: (kind: AlignKind) => void;
+  distributeSelection: (kind: "h" | "v") => void;
   setNodeName: (id: string, name: string) => void;
   toggleHidden: (id: string) => void;
   setText: (id: string, text: string, width: number, height: number) => void;
   copyStyle: () => void;
   pasteStyle: () => void;
+
+  // ---- design tokens (Fase 2) ----
+  updateTokens: (fn: (tokens: Tokens) => void) => void;
+  saveColorAsToken: (color: string, field?: "backgroundColor" | "color") => void;
+
+  // ---- componentes (Fase 2) ----
+  createComponent: (name: string) => void;
+  insertComponent: (componentId: string) => void;
+
   fitTo: (rect: Rect) => void;
   zoomBy: (factor: number, center: Vec) => void;
   zoomTo: (zoom: number, center: Vec) => void;
@@ -132,6 +163,7 @@ export const useStore = create<EditorState>()((set, get) => ({
   selection: [],
   hoverId: null,
   tool: "select",
+  rightTab: "inspector",
   spaceDown: false,
   viewport: { pan: { x: 0, y: 0 }, zoom: 1, size: { x: 800, y: 600 } },
   cursor: null,
@@ -189,6 +221,7 @@ export const useStore = create<EditorState>()((set, get) => ({
     })),
 
   setTool: (tool) => set({ tool }),
+  setRightTab: (rightTab) => set({ rightTab }),
   setHover: (hoverId) => set({ hoverId }),
   setSpaceDown: (spaceDown) => set({ spaceDown }),
   setViewport: (p) => set((s) => ({ viewport: { ...s.viewport, ...p } })),
@@ -318,6 +351,140 @@ export const useStore = create<EditorState>()((set, get) => ({
         p.parent.children.splice(p.index, 1, ...kids);
       }
     });
+  },
+
+  alignSelection: (kind) => {
+    const ids = get().selection;
+    if (ids.length === 0) return;
+    get().apply((d) => {
+      const nodes = ids
+        .map((id) => findNode(d.root, id))
+        .filter((n): n is Node => Boolean(n));
+      if (nodes.length === 0) return;
+      const box = bbox(nodes.map(nodeRect));
+      if (!box) return;
+      for (const n of nodes) {
+        const r = nodeRect(n);
+        switch (kind) {
+          case "left": n.style.x = Math.round(box.x); break;
+          case "centerH": n.style.x = Math.round(box.x + box.width / 2 - r.width / 2); break;
+          case "right": n.style.x = Math.round(box.x + box.width - r.width); break;
+          case "top": n.style.y = Math.round(box.y); break;
+          case "centerV": n.style.y = Math.round(box.y + box.height / 2 - r.height / 2); break;
+          case "bottom": n.style.y = Math.round(box.y + box.height - r.height); break;
+        }
+      }
+    });
+  },
+
+  distributeSelection: (kind) => {
+    const ids = get().selection;
+    if (ids.length < 3) {
+      get().showToast("Selecciona al menos 3 elementos para distribuir");
+      return;
+    }
+    get().apply((d) => {
+      const nodes = ids
+        .map((id) => findNode(d.root, id))
+        .filter((n): n is Node => Boolean(n));
+      if (nodes.length < 3) return;
+      const sorted = [...nodes].sort((a, b) =>
+        kind === "h" ? a.style.x - b.style.x : a.style.y - b.style.y,
+      );
+      const [first, last] = [sorted[0], sorted[sorted.length - 1]];
+      const inner = sorted.slice(1, -1);
+      if (kind === "h") {
+        const span = last.style.x + last.style.width - first.style.x;
+        const free = span - inner.reduce((sum, n) => sum + n.style.width, 0);
+        const gap = free / (sorted.length - 1);
+        let pos = first.style.x + first.style.width;
+        for (const n of inner) {
+          n.style.x = Math.round(pos + gap);
+          pos = n.style.x + n.style.width;
+        }
+      } else {
+        const span = last.style.y + last.style.height - first.style.y;
+        const free = span - inner.reduce((sum, n) => sum + n.style.height, 0);
+        const gap = free / (sorted.length - 1);
+        let pos = first.style.y + first.style.height;
+        for (const n of inner) {
+          n.style.y = Math.round(pos + gap);
+          pos = n.style.y + n.style.height;
+        }
+      }
+    });
+  },
+
+  updateTokens: (fn) => get().apply((d) => fn(d.tokens)),
+
+  saveColorAsToken: (color, field = "backgroundColor") => {
+    if (!color) return;
+    get().apply((d) => {
+      const colors = d.tokens.colors;
+      let i = 1;
+      let name = `color${i}`;
+      while (colors[name] !== undefined) {
+        i += 1;
+        name = `color${i}`;
+      }
+      colors[name] = color;
+      const ids = get().selection;
+      for (const id of ids) {
+        const n = findNode(d.root, id);
+        if (n) n.style[field] = `$${name}`;
+      }
+    });
+    get().showToast("Color guardado como token y aplicado");
+  },
+
+  createComponent: (name) => {
+    const ids = get().selection;
+    if (ids.length === 0) return;
+    if (ids.length > 1) {
+      get().groupSelection("Componente");
+      const sel = useStore.getState().selection;
+      if (sel.length !== 1) return;
+      get().createComponent(name);
+      return;
+    }
+    get().apply((d) => {
+      const n = findNode(d.root, ids[0]);
+      if (!n) return;
+      const libId = uid();
+      const template = cloneNode(n);
+      remapIds(template);
+      // Normaliza el template a (0,0): los hijos son relativos a la caja del
+      // padre, así que el componente queda independiente de dónde se creó
+      // (previews limpios en la librería y colocación al insertar).
+      template.style.x = 0;
+      template.style.y = 0;
+      d.library.components[libId] = {
+        id: libId,
+        name: name || n.name,
+        type: n.type,
+        root: template,
+      };
+      n.ref = `comp:${libId}`;
+    });
+    get().showToast("Componente creado en tu librería");
+  },
+
+  insertComponent: (componentId) => {
+    const comp = get().doc.library.components[componentId];
+    if (!comp) return;
+    const clone = cloneNode(comp.root);
+    remapIds(clone);
+    clone.ref = `comp:${componentId}`;
+    const vp = get().viewport;
+    const cx = (vp.size.x / 2 - vp.pan.x) / vp.zoom;
+    const cy = (vp.size.y / 2 - vp.pan.y) / vp.zoom;
+    clone.style.x = Math.round(cx - clone.style.width / 2);
+    clone.style.y = Math.round(cy - clone.style.height / 2);
+    get().apply((d) => {
+      d.root.children.push(clone);
+    });
+    get().select([clone.id]);
+    get().showToast(`Instancia de “${comp.name}” insertada`);
   },
 
   setNodeName: (id, name) =>

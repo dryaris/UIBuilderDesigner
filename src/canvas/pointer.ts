@@ -14,8 +14,8 @@
  *  - Doble clic en texto = editar inline; doble clic en nodo = color picker
  */
 import type React from "react";
-import { useStore, type Handle } from "../state/store";
-import type { Node, Rect, Vec } from "../core/ir";
+import { useStore, type Handle, type SpacingHint } from "../state/store";
+import type { CanvasDoc, Node, Rect, Vec } from "../core/ir";
 import { findNode, hitTest, nodeRect, bbox, rectsIntersect } from "../core/tree";
 import { frameNode, shapeNode, textNode } from "../core/defaults";
 import { toWorld } from "./transform";
@@ -136,6 +136,7 @@ export function useCanvasPointer() {
         dy: 0,
         lockedAxis: null,
         lines: [],
+        hints: [],
       });
       return;
     }
@@ -190,12 +191,14 @@ export function useCanvasPointer() {
           .map(nodeRect);
         const box = bbox(rects);
         if (!box) return;
-        const snapped = snapMove(
-          { x: box.x + rawDx, y: box.y + rawDy, width: box.width, height: box.height },
-          s.doc,
-          drag.ids,
-          6 / s.viewport.zoom,
-        );
+        const rawBox = { x: box.x + rawDx, y: box.y + rawDy, width: box.width, height: box.height };
+        const snapped = snapMove(rawBox, s.doc, drag.ids, 6 / s.viewport.zoom);
+        const movedBox = {
+          x: rawBox.x + snapped.dx,
+          y: rawBox.y + snapped.dy,
+          width: rawBox.width,
+          height: rawBox.height,
+        };
         s.setDrag({
           ...drag,
           current: wp,
@@ -203,6 +206,7 @@ export function useCanvasPointer() {
           dx: Math.round(rawDx + snapped.dx),
           dy: Math.round(rawDy + snapped.dy),
           lines: snapped.lines,
+          hints: computeSpacingHints(movedBox, s.doc, drag.ids, 180),
         });
         break;
       }
@@ -274,6 +278,19 @@ export function useCanvasPointer() {
       case "marquee": {
         const rect = normRect(drag.start, drag.current);
         const s2 = useStore.getState();
+        if (rect.width < 4 && rect.height < 4) {
+          // Click en vacío: dentro del artboard → selecciona el frame raíz
+          // (para editar su cuadrícula, guías o áreas seguras); fuera → deselecciona.
+          const root = s2.doc.root;
+          const r = nodeRect(root);
+          const inside =
+            drag.start.x >= r.x &&
+            drag.start.x <= r.x + r.width &&
+            drag.start.y >= r.y &&
+            drag.start.y <= r.y + r.height;
+          s2.select(inside ? [root.id] : []);
+          return;
+        }
         const ids = s2.doc.root.children
           .filter((n) => !n.hidden && rectsIntersect(nodeRect(n), rect))
           .map((n) => n.id);
@@ -531,4 +548,77 @@ export function hitAtClient(clientX: number, clientY: number): Node | null {
   const s = useStore.getState();
   const wp = worldOf(clientX, clientY);
   return hitTest(s.doc.root, wp.x, wp.y);
+}
+
+// ---------------------------------------------------------------------------
+// Spacing hints — medición de distancias al mover (Fase 2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Calcula las pistas de medición del rect en movimiento contra el frame raíz
+ * y sus hermanos (los mismos targets del snapping). Muestra SOLO los huecos
+ * más cercanos por dirección (izquierda/derecha/arriba/abajo) dentro del umbral,
+ * para no ensuciar el lienzo.
+ */
+function computeSpacingHints(
+  box: Rect,
+  doc: CanvasDoc,
+  excludeIds: string[],
+  threshold: number,
+): SpacingHint[] {
+  const targets: Rect[] = [nodeRect(doc.root)];
+  for (const c of doc.root.children) {
+    if (c.hidden || excludeIds.includes(c.id)) continue;
+    targets.push(nodeRect(c));
+  }
+
+  const cx = box.y + box.height / 2;
+  const cy = box.x + box.width / 2;
+
+  type Best = { gap: number; from: number; to: number; at: number };
+  let left: Best | null = null;
+  let right: Best | null = null;
+  let top: Best | null = null;
+  let bottom: Best | null = null;
+
+  for (const t of targets) {
+    const overlapY = box.y < t.y + t.height && box.y + box.height > t.y;
+    if (overlapY) {
+      if (t.x >= box.x + box.width) {
+        const gap = t.x - (box.x + box.width);
+        if (gap <= threshold && (!right || gap < right.gap)) {
+          right = { gap, from: box.x + box.width, to: t.x, at: cx };
+        }
+      } else if (t.x + t.width <= box.x) {
+        const gap = box.x - (t.x + t.width);
+        if (gap <= threshold && (!left || gap < left.gap)) {
+          left = { gap, from: t.x + t.width, to: box.x, at: cx };
+        }
+      }
+    }
+    const overlapX = box.x < t.x + t.width && box.x + box.width > t.x;
+    if (overlapX) {
+      if (t.y >= box.y + box.height) {
+        const gap = t.y - (box.y + box.height);
+        if (gap <= threshold && (!bottom || gap < bottom.gap)) {
+          bottom = { gap, from: box.y + box.height, to: t.y, at: cy };
+        }
+      } else if (t.y + t.height <= box.y) {
+        const gap = box.y - (t.y + t.height);
+        if (gap <= threshold && (!top || gap < top.gap)) {
+          top = { gap, from: t.y + t.height, to: box.y, at: cy };
+        }
+      }
+    }
+  }
+
+  const out: SpacingHint[] = [];
+  const push = (b: Best | null, axis: "h" | "v") => {
+    if (b) out.push({ axis, from: b.from, to: b.to, at: b.at, value: Math.round(b.gap) });
+  };
+  push(left, "h");
+  push(right, "h");
+  push(top, "v");
+  push(bottom, "v");
+  return out;
 }

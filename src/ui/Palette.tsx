@@ -3,6 +3,7 @@ import { useStore } from "../state/store";
 import { nodeRect } from "../core/tree";
 import { saveProjectFile, openProjectFile } from "../export/project";
 import { exportHtml } from "../export/html";
+import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
 
 interface Action {
   id: string;
@@ -25,6 +26,10 @@ export function Palette() {
       { id: "open", label: "Abrir proyecto (.canvas)…", keywords: "abrir open abrir archivo", run: () => void openAndReplace() },
       { id: "save", label: "Guardar proyecto (.canvas)", keywords: "guardar save exportar zip", run: () => { void saveProjectFile(st().doc); st().showToast("Proyecto .canvas guardado"); } },
       { id: "html", label: "Exportar HTML/CSS", keywords: "exportar html css web código", run: () => exportHtmlAndToast() },
+      { id: "png1", label: "Exportar PNG 1x", keywords: "exportar png imagen asset 1x", run: () => exportPngAt(1) },
+      { id: "png2", label: "Exportar PNG 2x", keywords: "exportar png imagen asset 2x retina", run: () => exportPngAt(2) },
+      { id: "png3", label: "Exportar PNG 3x", keywords: "exportar png imagen asset 3x", run: () => exportPngAt(3) },
+      { id: "bundle", label: "Exportar paquete (HTML + PNG 1x/2x/3x)", keywords: "exportar paquete bundle zip web html png", run: () => exportBundleAndToast() },
       { id: "fit", label: "Ajustar a pantalla", keywords: "zoom ajustar fit encuadrar", run: () => st().fitTo(nodeRect(st().doc.root)) },
       { id: "zoom100", label: "Zoom 100%", keywords: "zoom tamaño real", run: () => st().zoomTo(1, center()) },
       { id: "undo", label: "Deshacer", keywords: "deshacer undo atras", run: () => st().undo() },
@@ -32,6 +37,16 @@ export function Palette() {
       { id: "dup", label: "Duplicar selección", keywords: "duplicar copy clonar", run: () => st().duplicateSelection() },
       { id: "group", label: "Agrupar selección", keywords: "agrupar group", run: () => st().groupSelection("Grupo") },
       { id: "ungroup", label: "Desagrupar", keywords: "desagrupar ungroup", run: () => st().ungroupSelection() },
+      { id: "comp", label: "Crear componente desde selección", keywords: "componente component reutilizar librería", run: () => { st().createComponent("Componente"); } },
+      { id: "design", label: "Abrir sistema de diseño (tokens y componentes)", keywords: "tokens colores radios tipografía sombras easing diseño componentes librería", run: () => st().setRightTab("design") },
+      { id: "alignL", label: "Alinear izquierda", keywords: "alinear left izquierda", run: () => st().alignSelection("left") },
+      { id: "alignC", label: "Alinear centro horizontal", keywords: "alinear center centrar h", run: () => st().alignSelection("centerH") },
+      { id: "alignR", label: "Alinear derecha", keywords: "alinear right derecha", run: () => st().alignSelection("right") },
+      { id: "alignT", label: "Alinear arriba", keywords: "alinear top arriba", run: () => st().alignSelection("top") },
+      { id: "alignM", label: "Alinear centro vertical", keywords: "alinear center centrar v middle", run: () => st().alignSelection("centerV") },
+      { id: "alignB", label: "Alinear abajo", keywords: "alinear bottom abajo", run: () => st().alignSelection("bottom") },
+      { id: "distH", label: "Distribuir horizontalmente", keywords: "distribuir horizontal espaciar", run: () => st().distributeSelection("h") },
+      { id: "distV", label: "Distribuir verticalmente", keywords: "distribuir vertical espaciar", run: () => st().distributeSelection("v") },
       { id: "del", label: "Eliminar selección", keywords: "eliminar borrar delete", run: () => st().deleteSelection() },
       { id: "rulers", label: "Alternar reglas", keywords: "reglas rulers", run: () => st().toggle("showRulers") },
       { id: "guides", label: "Alternar guías", keywords: "guías guides", run: () => st().toggle("showGuides") },
@@ -135,6 +150,19 @@ function exportHtmlAndToast(): void {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   st.showToast("HTML exportado");
+}
+
+function exportPngAt(scale: number): void {
+  const st = useStore.getState();
+  void exportPngFile(st.doc, scale).then(() => st.showToast(`PNG ${scale}x exportado`));
+}
+
+function exportBundleAndToast(): void {
+  const st = useStore.getState();
+  void exportBundle(st.doc).then((blob) => {
+    downloadBlob(blob, `${projectFileName(st.doc)}-web.zip`);
+    st.showToast("Paquete HTML + PNG exportado");
+  });
 }
 
 function toggleTheme(): void {
