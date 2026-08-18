@@ -9,7 +9,7 @@
  *  - GUIA.txt: instrucciones paso a paso para un diseñador técnico.
  */
 import JSZip from "jszip";
-import type { CanvasDoc, Node, Timeline } from "../core/ir";
+import type { CanvasDoc, Constraints, Node, Timeline } from "../core/ir";
 import { resolveColor } from "../core/tokens";
 import { downloadBlob, projectFileName } from "./png";
 
@@ -18,6 +18,12 @@ interface UmgSlot {
   y: number;
   width: number;
   height: number;
+  /**
+   * Anchors de UMG (0..1): los constraints del editor mapean directo
+   * (min → ancla al borde inicio, max → borde fin, stretch → 0..1,
+   * center → 0.5, scale → tamaño en fracción).
+   */
+  anchors?: { minX: number; minY: number; maxX: number; maxY: number };
 }
 
 interface UmgNode {
@@ -105,6 +111,28 @@ function toUmgNode(node: Node, doc: CanvasDoc): UmgNode | null {
     height: node.style.height,
   };
   const base: UmgNode = { name: node.name, widget: "Border", slot };
+
+  // Constraints → Anchors de UMG (responsive del editor = responsive del motor).
+  const c = node.constraints;
+  if (c) {
+    const a = (v: Constraints["horizontal"] | Constraints["vertical"]) =>
+      v === "min" ? 0 : v === "max" ? 1 : v === "center" ? 0.5 : v === "stretch" ? 1 : 0;
+    slot.anchors = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+    // stretch: min=0 y max=1; el resto: ambos bordes al mismo valor.
+    if (c.horizontal === "stretch") {
+      slot.anchors.maxX = 1;
+    } else {
+      slot.anchors.minX = slot.anchors.maxX = a(c.horizontal);
+    }
+    if (c.vertical === "stretch") {
+      slot.anchors.maxY = 1;
+    } else {
+      slot.anchors.minY = slot.anchors.maxY = a(c.vertical);
+    }
+    base.note =
+      "Responsive: Anchors del slot ya mapeados desde los constraints del editor " +
+      `(h:${c.horizontal}, v:${c.vertical}); en escala, ajusta el tamaño como fracción del panel.`;
+  }
 
   if (node.type === "text") {
     const color = resolveColor(doc.tokens, node.style.color) ?? "#ffffff";

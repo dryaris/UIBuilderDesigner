@@ -20,13 +20,16 @@ import {
   AlignCenterVertical,
   AlignEndVertical,
   StretchVertical,
+  StretchHorizontal,
+  MoveDiagonal,
 } from "lucide-react";
 import { useStore } from "../state/store";
 import { findNode } from "../core/tree";
 import { FRAME_PRESETS } from "../core/defaults";
 import { resolveColor } from "../core/tokens";
 import { isFlexChild } from "../core/layout";
-import type { LayoutGrid, Node, StateKey, Style, Typography } from "../core/ir";
+import { DEFAULT_CONSTRAINTS } from "../core/constraints";
+import type { Constraints, LayoutGrid, Node, StateKey, Style, Typography } from "../core/ir";
 import { parseColor, contrastRatio, wcagRating } from "../core/contrast";
 
 export function Inspector() {
@@ -69,6 +72,7 @@ const FONT_FAMILIES = [
 const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
 
 function NodeInspector({ node }: { node: Node }) {
+  const rootId = useStore((s) => s.doc.root.id);
   const focusColorPicker = useStore((s) => s.focusColorPicker);
   const setFocusColorPicker = useStore((s) => s.setFocusColorPicker);
   const colorRef = useRef<HTMLInputElement>(null);
@@ -126,6 +130,8 @@ function NodeInspector({ node }: { node: Node }) {
       </Section>
 
       {node.type !== "text" && <AutoLayoutSection node={node} />}
+
+      {node.id !== rootId && <ConstraintsSection node={node} inFlex={inFlex} />}
 
       <Section title="Apariencia">
         <ColorField
@@ -263,7 +269,14 @@ function NodeInspector({ node }: { node: Node }) {
               onChange={(e) => {
                 const preset = FRAME_PRESETS.find((p) => p.id === e.target.value);
                 if (!preset) return;
-                setStyle({ width: preset.width, height: preset.height });
+                // Redimensionar con constraints: los hijos responden al cambio.
+                const st = useStore.getState();
+                st.resizeFrame(node.id, {
+                  x: node.style.x,
+                  y: node.style.y,
+                  width: preset.width,
+                  height: preset.height,
+                });
               }}
             >
               <option value="" disabled>
@@ -505,6 +518,115 @@ function AutoLayoutSection({ node }: { node: Node }) {
               </div>
             </div>
           </div>
+        </>
+      )}
+    </Section>
+  );
+}
+
+/**
+ * Constraints/responsive (Fase 3): cómo reacciona el nodo al cambiar el
+ * tamaño de su pantalla — sin jerga técnica, solo iconos de pin/estirar.
+ * Se ignora en hijos de auto-layout (los coloca el apilado).
+ */
+function ConstraintsSection({ node, inFlex }: { node: Node; inFlex: boolean }) {
+  const c = node.constraints ?? DEFAULT_CONSTRAINTS;
+  const set = (partial: Partial<Constraints>) =>
+    useStore.getState().setConstraints(node.id, { ...c, ...partial });
+
+  const btn = (
+    active: boolean,
+    title: string,
+    onClick: () => void,
+    icon: ReactNode,
+    disabled?: boolean,
+  ) => (
+    <button
+      key={title}
+      className={active ? "is-active" : ""}
+      title={title}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {icon}
+    </button>
+  );
+
+  return (
+    <Section title="Responsive">
+      {inFlex ? (
+        <div className="dim safe-hint">
+          Lo posiciona el apilado automático: para fijarlo, desactiva el auto-layout de su contenedor.
+        </div>
+      ) : (
+        <>
+          <div className="field-label">Al cambiar el ancho</div>
+          <div className="icon-seg">
+            {btn(
+              c.horizontal === "min",
+              "Fijo a la izquierda",
+              () => set({ horizontal: "min" }),
+              <AlignStartHorizontal size={14} />,
+            )}
+            {btn(
+              c.horizontal === "center",
+              "Centrado horizontal",
+              () => set({ horizontal: "center" }),
+              <AlignCenterHorizontal size={14} />,
+            )}
+            {btn(
+              c.horizontal === "max",
+              "Fijo a la derecha",
+              () => set({ horizontal: "max" }),
+              <AlignEndHorizontal size={14} />,
+            )}
+            {btn(
+              c.horizontal === "stretch",
+              "Estirar con el ancho",
+              () => set({ horizontal: "stretch" }),
+              <StretchHorizontal size={14} />,
+            )}
+            {btn(
+              c.horizontal === "scale",
+              "Escalar con la pantalla",
+              () => set({ horizontal: "scale" }),
+              <MoveDiagonal size={14} />,
+            )}
+          </div>
+          <div className="field-label">Al cambiar la altura</div>
+          <div className="icon-seg">
+            {btn(
+              c.vertical === "min",
+              "Fijo arriba",
+              () => set({ vertical: "min" }),
+              <AlignStartVertical size={14} />,
+            )}
+            {btn(
+              c.vertical === "center",
+              "Centrado vertical",
+              () => set({ vertical: "center" }),
+              <AlignCenterVertical size={14} />,
+            )}
+            {btn(
+              c.vertical === "max",
+              "Fijo abajo",
+              () => set({ vertical: "max" }),
+              <AlignEndVertical size={14} />,
+            )}
+            {btn(
+              c.vertical === "stretch",
+              "Estirar con la altura",
+              () => set({ vertical: "stretch" }),
+              <StretchVertical size={14} />,
+            )}
+            {btn(
+              c.vertical === "scale",
+              "Escalar con la pantalla",
+              () => set({ vertical: "scale" }),
+              <MoveDiagonal size={14} />,
+            )}
+          </div>
+          <div className="dim safe-hint">Prueba el cambio con “Redimensionar a” en la sección Pantalla del frame.</div>
         </>
       )}
     </Section>

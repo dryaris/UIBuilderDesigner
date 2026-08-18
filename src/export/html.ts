@@ -13,6 +13,7 @@
 import type { CanvasDoc, Node, Style, Tokens } from "../core/ir";
 import { resolveColor, resolveRadius } from "../core/tokens";
 import { vectorSvg } from "../core/vector";
+import { constraintCss } from "../core/constraints";
 
 export function exportHtml(doc: CanvasDoc): string {
   const screens = [doc.root, ...(doc.screens ?? [])];
@@ -31,7 +32,7 @@ export function exportHtml(doc: CanvasDoc): string {
 
   const body = screens
     .map((screen, i) => {
-      const inner = renderNode(screen, doc.tokens, `sc${i}`, css, conns);
+      const inner = renderNode(screen, doc.tokens, `sc${i}`, css, conns, false, 0, 0);
       return `<div class="screen" id="screen-${i}" style="width:${screen.style.width}px;height:${screen.style.height}px">${inner}</div>`;
     })
     .join("\n");
@@ -89,6 +90,8 @@ function renderNode(
   css: string[],
   conns?: Map<string, { to: number; dur: number }>,
   inFlex = false,
+  parentW = 0,
+  parentH = 0,
 ): string {
   const sel = `.${cls}`;
   // Los vectores pintan dentro del path (SVG), no en la caja.
@@ -96,7 +99,26 @@ function renderNode(
     node.type === "vector"
       ? { ...node.style, backgroundColor: undefined, gradient: undefined }
       : node.style;
-  css.push(`${sel} { ${styleToCss(boxStyle, tokens, inFlex)} }`);
+  // Constraints → CSS responsive (solo hijos posicionados de un contenedor
+  // de tamaño conocido y fuera de auto-layout).
+  let cssRules = styleToCss(boxStyle, tokens, inFlex);
+  if (!inFlex && node.constraints && parentW > 0 && parentH > 0) {
+    const resp = constraintCss(boxStyle, node.constraints, parentW, parentH);
+    if (resp) {
+      // Reemplaza la caja estática (left/top + width/height) por la responsive.
+      const staticBox = new Set(["left", "top", "right", "bottom", "width", "height", "margin-left", "margin-top"]);
+      cssRules = cssRules
+        .split(";")
+        .map((r) => r.trim())
+        .filter((r) => {
+          const prop = r.split(":")[0].trim();
+          return r.length > 0 && !staticBox.has(prop);
+        })
+        .concat(resp)
+        .join("; ");
+    }
+  }
+  css.push(`${sel} { ${cssRules} }`);
 
   // Estados interactivos → pseudo-clases (Fase 3 ya emite estas reglas).
   const states = node.states ?? {};
@@ -107,7 +129,16 @@ function renderNode(
 
   const children = node.children
     .map((c) =>
-      renderNode(c, tokens, `${cls}-${hash(c.id)}`, css, conns, Boolean(node.style.flexDirection)),
+      renderNode(
+        c,
+        tokens,
+        `${cls}-${hash(c.id)}`,
+        css,
+        conns,
+        Boolean(node.style.flexDirection),
+        node.style.width ?? 0,
+        node.style.height ?? 0,
+      ),
     )
     .join("");
   const inner =

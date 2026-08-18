@@ -316,22 +316,9 @@ export function useCanvasPointer() {
       }
 
       case "resize": {
-        s.apply((d) => {
-          const n = findNode(d.root, drag.id);
-          if (!n) return;
-          n.style.x = Math.round(drag.rect.x);
-          n.style.y = Math.round(drag.rect.y);
-          n.style.width = Math.round(drag.rect.width);
-          n.style.height = Math.round(drag.rect.height);
-          // Redimensionar a mano desactiva el "hug" en los ejes tocados
-          // (si no, el layout volvería a calcular el tamaño y nada cambiaría).
-          if (n.style.sizing) {
-            const sizing = { ...n.style.sizing };
-            if (sizing.x === "hug") sizing.x = "fixed";
-            if (sizing.y === "hug") sizing.y = "fixed";
-            n.style.sizing = sizing;
-          }
-        });
+        // Un solo commit (una entrada de undo): tamaño nuevo + constraints de
+        // los hijos directos (responsive, Fase 3).
+        s.resizeFrame(drag.id, drag.rect, drag.startRect);
         break;
       }
 

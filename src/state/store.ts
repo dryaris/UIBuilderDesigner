@@ -11,10 +11,11 @@ import { enablePatches, applyPatches, produceWithPatches, type Patch } from "imm
 
 // produceWithPatches/applyPatches requieren el plugin de patches de Immer.
 enablePatches();
-import type { Annotation, CanvasDoc, Node, PrototypeConnection, Rect, StateKey, Style, Timeline, Tokens, Vec } from "../core/ir";
+import type { Annotation, CanvasDoc, Constraints, Node, PrototypeConnection, Rect, StateKey, Style, Timeline, Tokens, Vec } from "../core/ir";
 import { findNode, findParent, cloneNode, bbox, nodeRect, rectsIntersect, uid } from "../core/tree";
 import { topLevelNodes } from "../core/tree";
 import { isFlexChild } from "../core/layout";
+import { applyConstraintsOnResize } from "../core/constraints";
 import { parseSvg } from "../import/svg";
 import { frameNode } from "../core/defaults";
 
@@ -178,6 +179,13 @@ interface EditorState {
   nudgeSelection: (dx: number, dy: number) => void;
   /** Mueve un nodo un paso en el orden de hermanos (auto-layout: reordenar). */
   reorderNode: (id: string, dir: -1 | 1) => void;
+  /**
+   * Redimensiona un frame y reposiciona a sus hijos según sus constraints
+   * (responsive, Fase 3). oldRect opcional: si falta, usa el rect actual.
+   */
+  resizeFrame: (id: string, rect: Rect, oldRect?: Rect) => void;
+  /** Cambia el comportamiento responsive de un nodo (constraints). */
+  setConstraints: (id: string, constraints: Constraints) => void;
   /** Importa un SVG como frame con vectores en la posición dada. Devuelve error o null. */
   importSvg: (text: string, at: Vec, name?: string) => string | null;
   /** Crea un tema nuevo con los colores actuales. */
@@ -551,6 +559,36 @@ export const useStore = create<EditorState>()((set, get) => ({
       const kids = parent.parent.children;
       const [moved] = kids.splice(i, 1);
       kids.splice(j, 0, moved);
+    });
+  },
+
+  resizeFrame: (id, rect, oldRect) => {
+    get().apply((d) => {
+      const node = findNode(d.root, id);
+      if (!node) return;
+      const from = oldRect ?? { x: node.style.x, y: node.style.y, width: node.style.width, height: node.style.height };
+      const to = rect;
+      node.style.x = Math.round(to.x);
+      node.style.y = Math.round(to.y);
+      node.style.width = Math.max(1, Math.round(to.width));
+      node.style.height = Math.max(1, Math.round(to.height));
+      // Redimensionar a mano desactiva el "hug" en los ejes tocados.
+      if (node.style.sizing) {
+        const sizing = { ...node.style.sizing };
+        if (sizing.x === "hug") sizing.x = "fixed";
+        if (sizing.y === "hug") sizing.y = "fixed";
+        node.style.sizing = sizing;
+      }
+      // Los hijos directos reaccionan con sus constraints (responsive).
+      applyConstraintsOnResize(node, node.children, from, to);
+    });
+  },
+
+  setConstraints: (id, constraints) => {
+    get().apply((d) => {
+      const n = findNode(d.root, id);
+      if (!n) return;
+      n.constraints = { ...constraints };
     });
   },
 
