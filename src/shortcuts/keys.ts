@@ -110,7 +110,10 @@ export function useKeyboard(): void {
 
       if (e.key === "Escape") {
         st.setDrag(null);
-        if (st.paletteOpen) st.setPaletteOpen(false);
+        if (st.previewMode) {
+          st.setPreviewMode(false);
+          st.setPlaying(false);
+        } else if (st.paletteOpen) st.setPaletteOpen(false);
         else if (st.editingTextId) st.setEditingText(null);
         else st.select([]);
         return;

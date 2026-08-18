@@ -7,6 +7,8 @@ export function StatusBar() {
   const viewport = useStore((s) => s.viewport);
   const selection = useStore((s) => s.selection);
   const tool = useStore((s) => s.tool);
+  const previewMode = useStore((s) => s.previewMode);
+  const playing = useStore((s) => s.playing);
   const doc = useStore((s) => s.doc);
 
   let world = null;
@@ -18,7 +20,11 @@ export function StatusBar() {
   return (
     <footer className="statusbar">
       <span className="status-hint">
-        {tool === "select" && "Selecciona, arrastra y suelta · doble clic edita texto"}
+        {previewMode
+          ? playing
+            ? "Reproduciendo animación · pasea el cursor para probar estados · Esc para salir"
+            : "Modo preview · pasea el cursor para probar estados · Esc para salir"
+          : tool === "select" && "Selecciona, arrastra y suelta · doble clic edita texto"}
         {tool === "frame" && "Arrastra para crear una pantalla · click para un frame 120×120"}
         {tool === "text" && "Haz clic para escribir · Esc termina"}
         {tool === "hand" && "Arrastra para panear el lienzo"}

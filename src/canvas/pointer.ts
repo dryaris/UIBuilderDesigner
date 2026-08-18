@@ -56,10 +56,19 @@ export function useCanvasPointer() {
     // Clic sobre una línea de guía: el drag lo gestiona la propia guía.
     if (target.closest?.(".guide-line")) return;
 
-    // Pan: espacio mantenido o herramienta Mano.
+    // Pan: espacio mantenido o herramienta Mano (también en preview).
     if (s.spaceDown || s.tool === "hand") {
       s.setDrag({ kind: "pan", start: { x: e.clientX, y: e.clientY }, startPan: s.viewport.pan });
       s.setHover(null);
+      return;
+    }
+
+    // Modo Preview (Fase 4): sin selección ni edición; hover/press en vivo.
+    if (s.previewMode) {
+      const wp = worldOf(e.clientX, e.clientY);
+      const hit = hitTest(s.doc.root, wp.x, wp.y);
+      s.setPreviewHoverId(hit?.id ?? null);
+      s.setPreviewPressId(hit?.id ?? null);
       return;
     }
 
@@ -149,6 +158,14 @@ export function useCanvasPointer() {
   function onPointerMove(e: React.PointerEvent) {
     const s = useStore.getState();
     s.setCursor({ x: e.clientX, y: e.clientY });
+
+    // En preview, hover en vivo (salvo mientras se panea).
+    if (s.previewMode && !s.drag) {
+      const wp = worldOf(e.clientX, e.clientY);
+      const hit = hitTest(s.doc.root, wp.x, wp.y);
+      s.setPreviewHoverId(hit?.id ?? null);
+      return;
+    }
 
     const drag = s.drag;
     if (!drag) {
@@ -243,6 +260,11 @@ export function useCanvasPointer() {
   // ---------------------------------------------------------------- pointerup
   function onPointerUp() {
     const s = useStore.getState();
+    // En preview solo se suelta el "press"; el pan se gestiona abajo.
+    if (s.previewMode && !s.drag) {
+      s.setPreviewPressId(null);
+      return;
+    }
     const drag = s.drag;
     if (!drag) return;
     s.setDrag(null);

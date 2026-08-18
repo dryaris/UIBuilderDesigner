@@ -19,6 +19,7 @@ export function Canvas({
   const viewport = useStore((s) => s.viewport);
   const tool = useStore((s) => s.tool);
   const spaceDown = useStore((s) => s.spaceDown);
+  const previewMode = useStore((s) => s.previewMode);
   const drag = useStore((s) => s.drag);
   const root = useStore((s) => s.doc.root);
   const { onPointerDown, onPointerMove, onPointerUp, onWheel, onDoubleClick } = useCanvasPointer();
@@ -37,10 +38,12 @@ export function Canvas({
     return () => ro.disconnect();
   }, []);
 
-  const cursor = drag?.kind === "pan"
-    ? "grabbing"
-    : spaceDown
-      ? "grab"
+  const cursor = previewMode
+    ? "default"
+    : drag?.kind === "pan"
+      ? "grabbing"
+      : spaceDown
+        ? "grab"
       : tool === "hand"
         ? "grab"
         : tool === "select"

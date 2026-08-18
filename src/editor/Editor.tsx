@@ -13,6 +13,8 @@ import { TopBar } from "../ui/TopBar";
 import { StatusBar } from "../ui/StatusBar";
 import { Inspector } from "../ui/Inspector";
 import { DesignPanel } from "../ui/DesignPanel";
+import { TimelinePanel } from "../ui/TimelinePanel";
+import { useTimelinePlayer } from "../preview/player";
 import { Layers } from "../ui/Layers";
 import { Palette } from "../ui/Palette";
 import { NewProjectModal } from "../ui/NewProjectModal";
@@ -26,6 +28,7 @@ export function Editor() {
   const setRightTab = useStore((s) => s.setRightTab);
 
   useKeyboard();
+  useTimelinePlayer();
 
   // Boot: tema guardado, autosave y primer arranque.
   useEffect(() => {
@@ -70,8 +73,20 @@ export function Editor() {
             >
               Diseño
             </button>
+            <button
+              className={`right-tab${rightTab === "animate" ? " is-active" : ""}`}
+              onClick={() => setRightTab("animate")}
+            >
+              Animar
+            </button>
           </div>
-          {rightTab === "inspector" ? <Inspector /> : <DesignPanel />}
+          {rightTab === "inspector" ? (
+            <Inspector />
+          ) : rightTab === "design" ? (
+            <DesignPanel />
+          ) : (
+            <TimelinePanel />
+          )}
         </div>
       </div>
       <StatusBar />

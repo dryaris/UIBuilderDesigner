@@ -8,7 +8,7 @@
  */
 import { create } from "zustand";
 import { applyPatches, produceWithPatches, type Patch } from "immer";
-import type { CanvasDoc, Node, Rect, StateKey, Style, Tokens, Vec } from "../core/ir";
+import type { CanvasDoc, Node, Rect, StateKey, Style, Timeline, Tokens, Vec } from "../core/ir";
 import { findNode, findParent, cloneNode, bbox, nodeRect, rectsIntersect, uid } from "../core/tree";
 import { topLevelNodes } from "../core/tree";
 
@@ -85,10 +85,18 @@ interface EditorState {
   selection: string[];
   hoverId: string | null;
   tool: Tool;
-  /** Pestaña activa del panel derecho (Inspector | Diseño). */
-  rightTab: "inspector" | "design";
+  /** Pestaña activa del panel derecho (Inspector | Diseño | Animar). */
+  rightTab: "inspector" | "design" | "animate";
   /** Estado que se previsualiza en el lienzo (Fase 3): nodo + estado. */
   previewState: { nodeId: string; state: StateKey } | null;
+
+  // ---- modo preview y máquina de estados (Fase 4) ----
+  previewMode: boolean;
+  previewHoverId: string | null;
+  previewPressId: string | null;
+  /** Reproducción de la línea de tiempo activa (WAAPI). */
+  playing: boolean;
+  activeTimelineId: string | null;
   spaceDown: boolean;
   viewport: Viewport;
   cursor: Vec | null;
@@ -106,8 +114,13 @@ interface EditorState {
   // ---- acciones de UI ----
   select: (ids: string[], additive?: boolean) => void;
   setTool: (t: Tool) => void;
-  setRightTab: (tab: "inspector" | "design") => void;
+  setRightTab: (tab: "inspector" | "design" | "animate") => void;
   setPreviewState: (p: { nodeId: string; state: StateKey } | null) => void;
+  setPreviewMode: (v: boolean) => void;
+  setPreviewHoverId: (id: string | null) => void;
+  setPreviewPressId: (id: string | null) => void;
+  setPlaying: (v: boolean) => void;
+  setActiveTimelineId: (id: string | null) => void;
   setHover: (id: string | null) => void;
   setSpaceDown: (v: boolean) => void;
   setViewport: (p: Partial<Viewport>) => void;
@@ -144,6 +157,15 @@ interface EditorState {
   setStateTransition: (nodeId: string, state: StateKey, transition: { durationMs: number; easing: string }) => void;
   removeState: (nodeId: string, state: StateKey) => void;
 
+  // ---- timelines y keyframes (Fase 4) ----
+  addTimeline: (name: string) => void;
+  removeTimeline: (id: string) => void;
+  updateTimeline: (id: string, partial: Partial<Pick<Timeline, "durationMs" | "loop" | "name">>) => void;
+  /** Captura un keyframe de la selección actual en el instante t (0..1). */
+  captureKeyframe: (timelineId: string, t: number) => void;
+  removeKeyframe: (timelineId: string, index: number) => void;
+  setKeyframeEasing: (timelineId: string, index: number, easing: string | undefined) => void;
+
   // ---- componentes (Fase 2) ----
   createComponent: (name: string) => void;
   insertComponent: (componentId: string) => void;
@@ -173,6 +195,11 @@ export const useStore = create<EditorState>()((set, get) => ({
   tool: "select",
   rightTab: "inspector",
   previewState: null,
+  previewMode: false,
+  previewHoverId: null,
+  previewPressId: null,
+  playing: false,
+  activeTimelineId: null,
   spaceDown: false,
   viewport: { pan: { x: 0, y: 0 }, zoom: 1, size: { x: 800, y: 600 } },
   cursor: null,
@@ -204,6 +231,11 @@ export const useStore = create<EditorState>()((set, get) => ({
       history: { past: [], future: [] },
       drag: null,
       editingTextId: null,
+      previewMode: false,
+      playing: false,
+      previewHoverId: null,
+      previewPressId: null,
+      activeTimelineId: null,
     }),
 
   undo: () => {
@@ -232,6 +264,12 @@ export const useStore = create<EditorState>()((set, get) => ({
   setTool: (tool) => set({ tool }),
   setRightTab: (rightTab) => set({ rightTab }),
   setPreviewState: (previewState) => set({ previewState }),
+  setPreviewMode: (previewMode) =>
+    set((s) => ({ previewMode, playing: previewMode ? s.playing : false, previewHoverId: null, previewPressId: null })),
+  setPreviewHoverId: (previewHoverId) => set({ previewHoverId }),
+  setPreviewPressId: (previewPressId) => set({ previewPressId }),
+  setPlaying: (playing) => set({ playing }),
+  setActiveTimelineId: (activeTimelineId) => set({ activeTimelineId }),
   setHover: (hoverId) => set({ hoverId }),
   setSpaceDown: (spaceDown) => set({ spaceDown }),
   setViewport: (p) => set((s) => ({ viewport: { ...s.viewport, ...p } })),
@@ -452,6 +490,69 @@ export const useStore = create<EditorState>()((set, get) => ({
       delete n.states[state];
     }),
 
+  addTimeline: (name) => {
+    const tl: Timeline = {
+      id: uid(),
+      name: name || "Línea de tiempo",
+      durationMs: 1000,
+      loop: true,
+      playMode: "forward",
+      keyframes: [],
+    };
+    get().apply((d) => {
+      d.timelines.push(tl);
+    });
+    get().setActiveTimelineId(tl.id);
+    get().setRightTab("animate");
+  },
+
+  removeTimeline: (id) => {
+    get().apply((d) => {
+      d.timelines = d.timelines.filter((t) => t.id !== id);
+    });
+    if (get().activeTimelineId === id) {
+      set({ activeTimelineId: null, playing: false });
+    }
+  },
+
+  updateTimeline: (id, partial) =>
+    get().apply((d) => {
+      const tl = d.timelines.find((t) => t.id === id);
+      if (tl) Object.assign(tl, partial);
+    }),
+
+  captureKeyframe: (timelineId, t) =>
+    get().apply((d) => {
+      const tl = d.timelines.find((x) => x.id === timelineId);
+      if (!tl) return;
+      const ids = get().selection;
+      if (ids.length === 0) return;
+      const tClamped = Math.min(1, Math.max(0, t));
+      for (const id of ids) {
+        const n = findNode(d.root, id);
+        if (!n) continue;
+        const props = pickAnimatedProps(n.style);
+        const existing = tl.keyframes.find(
+          (k) => k.nodeId === id && Math.abs(k.t - tClamped) < 0.0001,
+        );
+        if (existing) existing.properties = props;
+        else tl.keyframes.push({ t: tClamped, nodeId: id, properties: props });
+      }
+    }),
+
+  removeKeyframe: (timelineId, index) =>
+    get().apply((d) => {
+      const tl = d.timelines.find((t) => t.id === timelineId);
+      if (tl) tl.keyframes.splice(index, 1);
+    }),
+
+  setKeyframeEasing: (timelineId, index, easing) =>
+    get().apply((d) => {
+      const tl = d.timelines.find((t) => t.id === timelineId);
+      const kf = tl?.keyframes[index];
+      if (kf) kf.easing = easing;
+    }),
+
   saveColorAsToken: (color, field = "backgroundColor") => {
     if (!color) return;
     get().apply((d) => {
@@ -643,6 +744,24 @@ export const useStore = create<EditorState>()((set, get) => ({
 function remapIds(node: Node): void {
   node.id = uid();
   for (const child of node.children) remapIds(child);
+}
+
+/** Propiedades animables de un estilo (las que entiende WAAPI). */
+function pickAnimatedProps(s: Style): Partial<Style> {
+  const out: Partial<Style> = {};
+  if (s.x !== undefined) out.x = s.x;
+  if (s.y !== undefined) out.y = s.y;
+  if (s.width !== undefined) out.width = s.width;
+  if (s.height !== undefined) out.height = s.height;
+  if (s.opacity !== undefined) out.opacity = s.opacity;
+  if (s.scale !== undefined) out.scale = s.scale;
+  if (s.translate) out.translate = { ...s.translate };
+  if (s.backgroundColor) out.backgroundColor = s.backgroundColor;
+  if (s.color) out.color = s.color;
+  if (s.fontSize !== undefined) out.fontSize = s.fontSize;
+  if (s.letterSpacing !== undefined) out.letterSpacing = s.letterSpacing;
+  if (s.filters?.blur !== undefined) out.filters = { blur: s.filters.blur };
+  return out;
 }
 
 /** Nodos de primer nivel (hijos del root) para selección con Cmd+A. */

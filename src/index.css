@@ -1477,6 +1477,139 @@ input[type="range"] {
   font-weight: 700;
 }
 
+/* ------------------------------------------------------------------ Animar (Fase 4) */
+
+.tl-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tl-select {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tl-select:hover {
+  border-color: var(--accent);
+}
+
+.tl-select.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.tl-play,
+.tl-del {
+  width: 24px;
+  height: 24px;
+}
+
+.tl-del:hover {
+  color: #ff5c7a;
+}
+
+.tl-controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.tl-loop {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.tl-loop input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.tl-capture {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tl-capture-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tl-capture-row input {
+  width: 70px;
+  flex: none;
+}
+
+.tl-keyframes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kf-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kf-time {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  width: 44px;
+  flex: none;
+}
+
+.kf-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kf-easing {
+  width: 74px;
+  flex: none;
+  font-size: 10.5px;
+  padding: 3px 4px;
+}
+
+.preview-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.preview-toggle.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.design-hint {
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
 /* Librería de componentes */
 
 .library-grid {

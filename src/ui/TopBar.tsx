@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ZoomIn, ZoomOut, Maximize, Download } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize, Download, Play, Square } from "lucide-react";
 import { useStore } from "../state/store";
 import { nodeRect } from "../core/tree";
 import { saveProjectFile, openProjectFile } from "../export/project";
@@ -18,6 +18,7 @@ export function TopBar() {
   const showGuides = useStore((s) => s.showGuides);
   const showSafeAreas = useStore((s) => s.showSafeAreas);
   const showGrid = useStore((s) => s.showGrid);
+  const previewMode = useStore((s) => s.previewMode);
   const [name, setName] = useState(rootName);
 
   // Sincroniza el nombre local cuando cambia el proyecto (apertura, nuevo, …).
@@ -159,6 +160,17 @@ export function TopBar() {
       <div className="topbar-spacer" />
 
       <div className="zoom-controls">
+        <IconButton
+          title={previewMode ? "Salir del preview (Esc)" : "Probar la pantalla (preview)"}
+          active={previewMode}
+          onClick={() => {
+            const st2 = useStore.getState();
+            st2.setPreviewMode(!previewMode);
+            if (previewMode) st2.setPlaying(false);
+          }}
+        >
+          {previewMode ? <Square size={15} /> : <Play size={15} />}
+        </IconButton>
         <IconButton title="Alejar" onClick={() => act().zoomBy(1 / 1.25, zoomCenter())}>
           <ZoomOut size={15} />
         </IconButton>

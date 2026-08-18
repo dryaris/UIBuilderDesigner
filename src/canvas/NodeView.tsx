@@ -86,6 +86,13 @@ export function NodeView({ node }: { node: Node }) {
   const drag = useStore((s) => s.drag);
   const editingTextId = useStore((s) => s.editingTextId);
   const previewState = useStore((s) => s.previewState);
+  const previewMode = useStore((s) => s.previewMode);
+  // Señal de re-render por nodo: cambia al entrar/salir de hover o press.
+  const previewActive = useStore((s) =>
+    s.previewMode
+      ? `${s.previewPressId === node.id ? "1" : "0"}${s.previewHoverId === node.id ? "1" : "0"}`
+      : "",
+  );
   const tokens = useStore((s) => s.doc.tokens);
 
   if (node.hidden) return null;
@@ -103,10 +110,35 @@ export function NodeView({ node }: { node: Node }) {
     previewState?.nodeId === node.id ? node.states?.[previewState.state] : undefined;
   if (stateEntry) s = { ...s, ...stateEntry.style };
 
+  // Máquina de estados en modo Preview (Fase 4): hover/pulsado en vivo.
+  let transitionCss: string | undefined;
+  if (previewMode) {
+    const previewHoverId = useStore.getState().previewHoverId;
+    const previewPressId = useStore.getState().previewPressId;
+    const active =
+      previewPressId === node.id
+        ? node.states?.pressed
+        : previewHoverId === node.id
+          ? node.states?.hover
+          : undefined;
+    if (active) s = { ...s, ...active.style };
+    const tr = active?.transition ?? firstStateTransition(node);
+    if (tr) {
+      const easing = tr.easing.startsWith("$")
+        ? tokens.easings[tr.easing.slice(1)] ?? "ease"
+        : tr.easing;
+      transitionCss = `background-color ${tr.durationMs}ms ${easing}, color ${tr.durationMs}ms ${easing}, opacity ${tr.durationMs}ms ${easing}, transform ${tr.durationMs}ms ${easing}, box-shadow ${tr.durationMs}ms ${easing}, filter ${tr.durationMs}ms ${easing}, width ${tr.durationMs}ms ${easing}, height ${tr.durationMs}ms ${easing}, left ${tr.durationMs}ms ${easing}, top ${tr.durationMs}ms ${easing}`;
+    }
+  }
+
   const editing = editingTextId === node.id;
 
   return (
-    <div className={`cn cn-${node.type}`} style={boxCss(node, s, tokens)} data-id={node.id}>
+    <div
+      className={`cn cn-${node.type}${previewActive ? " is-preview-active" : ""}`}
+      style={{ ...boxCss(node, s, tokens), transition: transitionCss }}
+      data-id={node.id}
+    >
       {node.type === "text" ? (
         <EditableText node={node} editing={editing} />
       ) : (
@@ -114,6 +146,15 @@ export function NodeView({ node }: { node: Node }) {
       )}
     </div>
   );
+}
+
+/** Primera transición definida en los estados del nodo (para salir suave). */
+function firstStateTransition(node: Node) {
+  for (const key of ["pressed", "hover", "focused", "disabled"] as const) {
+    const tr = node.states?.[key]?.transition;
+    if (tr) return tr;
+  }
+  return undefined;
 }
 
 /** Texto editable inline (doble clic o herramienta Text). Al blur se mide y commitea. */

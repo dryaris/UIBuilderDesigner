@@ -29,6 +29,7 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
   const hoverId = useStore((s) => s.hoverId);
   const doc = useStore((s) => s.doc);
   const drag = useStore((s) => s.drag);
+  const previewMode = useStore((s) => s.previewMode);
   const vp = useStore((s) => s.viewport);
   const showGuides = useStore((s) => s.showGuides);
   const showSafeAreas = useStore((s) => s.showSafeAreas);
@@ -125,13 +126,13 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
       {/* Cuadrícula de layout del frame */}
       {layoutGridNode && <LayoutGridOverlay frame={layoutGridNode} toS={toS} />}
 
-      {/* Hover */}
-      {hoverId && !selection.includes(hoverId) && (
+      {/* Hover y selección se ocultan en modo Preview (Fase 4). */}
+      {!previewMode && hoverId && !selection.includes(hoverId) && (
         <HoverOutline id={hoverId} drag={drag} toS={toS} />
       )}
 
       {/* Selección */}
-      {selection.map((id) => {
+      {!previewMode && selection.map((id) => {
         const node = findNode(doc.root, id);
         if (!node) return null;
         const r = effectiveRect(node, drag);

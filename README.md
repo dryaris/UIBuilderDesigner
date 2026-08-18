@@ -4,7 +4,7 @@ Un editor de diseño de interfaces **100% offline, sin cuenta y sin backend**, t
 
 > "Un Figma más agnóstico": el diseñador no necesita saber nada de motores ni de código; un diseñador técnico llega al detalle fino.
 
-## Estado actual — Fases 1 y 2 completas, Fase 3 en curso ✅
+## Estado actual — Fases 1–3 completas, Fase 4 en curso ✅
 
 Lo que ya funciona:
 
@@ -25,6 +25,8 @@ Lo que ya funciona:
 - **Export de assets PNG 1x/2x/3x** y **paquete web** (HTML + PNGs en un `.zip`), renderizado offscreen con el mismo motor que el editor (WYSIWYG exacto).
 - **Estados interactivos** (Fase 3): edita overrides de Hover / Pulsado / Desactivado / Foco por nodo (relleno, color, opacidad, escala, sombra), con **transición** (duración + curva de los tokens de easing) y **vista previa en el lienzo**.
 - **Comprobador de contraste WCAG** para texto: ratio en vivo con calificación AA/AAA.
+- **Modo Preview (máquina de estados)**: botón ▶ en la barra superior (o pestaña Animar) → el lienzo deja de editar y el cursor activa los estados hover/pulsado de cada nodo con sus transiciones (duración + curva desde los tokens de easing).
+- **Líneas de tiempo con keyframes**: pestaña Animar → crea una línea, selecciona elementos y **captura keyframes** en distintos instantes; reproduce en el preview con **Web Animations API** (loop opcional, easing por tramo con tokens).
 - **Panel de capas, inspector sin jerga técnica** (sliders, pickers, iconos), tema claro/oscuro, palette `⌘K`, starter kits (menú de juego 1080p, HUD móvil).
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
@@ -125,14 +127,14 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 | `Cmd/Ctrl + S` / `Shift+O` | Guardar / Abrir `.canvas` |
 | `V F T R O L H Z` | Select / Frame / Text / Rect / Elipse / Línea / Mano / Zoom |
 | `Shift+1` / `Shift+0` | Ajustar a pantalla / 100% |
-| `Supr` | Eliminar · `Esc` deseleccionar |
+| `Supr` | Eliminar · `Esc` deseleccionar / salir del preview |
 
 ## Roadmap de fases
 
 1. **Fase 1** — Fundamentos tipo Figma: drag & drop con snap, atajos sagrados, presets + safe areas, reglas/guías, menú contextual, undo/redo, autosave. ✅
 2. **Fase 2** — Alineación/distribución, grids, spacing hints, **tokens y componentes ANTES de animar**, exportador HTML/CSS completo y export de assets PNG 1x/2x/3x. ✅
-3. **Fase 3 (actual)** — Auto-layout visual (flexbox tras iconos), constraints/responsive, **estados interactivos ✅, contraste WCAG ✅**.
-4. **Fase 4** — Máquina de estados + preview local, timelines/keyframes, editor de easing. Aquí el diseñador anima componentes reales con tokens.
+3. **Fase 3** — Auto-layout visual (flexbox tras iconos), constraints/responsive, **estados interactivos ✅, contraste WCAG ✅**.
+4. **Fase 4 (actual)** — **Máquina de estados + preview local ✅, timelines/keyframes ✅** (WAAPI, loop, easing por tramo). Pendiente: editor de easing visual y prototipado entre pantallas.
 5. **Fase 5** — Exportador Unity UI Toolkit (UXML/USS).
 6. **Fase 6** — Exportador Unreal UMG.
 7. **Fase 7** — Sistema de diseño completo (variantes, instancias con overrides, starter kits, prototipado, anotaciones, accesibilidad, modo Dev/spec sheets).
