@@ -15,6 +15,7 @@ import { useStore } from "../state/store";
 import type { Node, Tokens, Typography } from "../core/ir";
 import { resolveColor, resolveRadius } from "../core/tokens";
 import { findNode } from "../core/tree";
+import { EasingEditor } from "./EasingEditor";
 
 export function DesignPanel() {
   return (
@@ -209,7 +210,7 @@ function TokensSection() {
 
       <Section title="Easing" onAdd={() => add("easings", "cubic-bezier(0.4, 0, 0.2, 1)")}>
         {Object.entries(tokens.easings).map(([name, value]) => (
-          <StringTokenRow key={name} name={name} value={value} kind="easings" />
+          <EasingTokenRow key={name} name={name} value={value} />
         ))}
         {Object.keys(tokens.easings).length === 0 && <Empty label="Sin easing todavía" />}
       </Section>
@@ -438,6 +439,34 @@ function StringTokenRow({
         onKeyDown={(e) => {
           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
         }}
+      />
+    </div>
+  );
+}
+
+function EasingTokenRow({ name, value }: { name: string; value: string }) {
+  return (
+    <div className="token-row token-row-stack">
+      <div className="token-row-inline">
+        <span className="token-name" title={`$${name}`}>
+          {name}
+        </span>
+        <DeleteButton
+          onDelete={() =>
+            useStore.getState().updateTokens((t) => {
+              delete (t.easings as Record<string, string>)[name];
+            })
+          }
+        />
+      </div>
+      <EasingEditor
+        name={name}
+        value={value}
+        onCommit={(v) =>
+          useStore.getState().updateTokens((t) => {
+            t.easings[name] = v;
+          })
+        }
       />
     </div>
   );

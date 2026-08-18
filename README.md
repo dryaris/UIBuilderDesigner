@@ -44,6 +44,7 @@ Lo que ya funciona:
 - **Design tokens → estándares (Fase 8)**: Archivo → Exportar tokens genera un ZIP con `tokens.json` **W3C DTCG** ($type/$value), `tokens.css` con custom properties listas y un proyecto **Style Dictionary** (tokens.json + config.json) compilable con `npx style-dictionary build`.
 - **Temas múltiples (Fase 8)**: en la pestaña **Diseño**, crea variantes de color del proyecto (light/dark/…): cada tema guarda su propia paleta, el token editor edita siempre el tema activo y el export de tokens incluye un DTCG + CSS por tema. Con undo/redo incluido.
 - **Export PDF de revisión (Fase 8)**: Archivo → “Exportar PDF de revisión” (o en la pestaña Prototipo, junto a las anotaciones) abre el documento de revisión con cabecera del proyecto, estado de la revisión (pendientes vs. resueltas), lista de anotaciones con pin/pantalla/nota/posición y una ficha de especificaciones por pantalla (root + todas las del prototipo). El diálogo de impresión guarda el PDF; si el popup está bloqueado se descarga el mismo documento como `.html` autocontenido.
+- **Editor de easing visual (Fase 4/8)**: los tokens de easing ya no se escriben a mano — en la pestaña **Diseño** cada curva es una gráfica con dos puntos de control **arrastrables** (estilo After Effects), presets de un clic (Lineal, Entrada, Salida, Entrada y salida, **Resorte** con sobre-paso, Brusco) y un botón **Probar** que anima una bolita sobre la curva para sentir el ritmo. El valor sigue siendo `cubic-bezier(x1, y1, x2, y2)`: el mismo contrato que usan canvas, preview, HTML y Lottie, así que todo lo animado se beneficia al instante.
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 
@@ -156,7 +157,7 @@ Los binarios se compilan en GitHub Actions (los binarios nativos requieren su pr
 1. **Fase 1** — Fundamentos tipo Figma: drag & drop con snap, atajos sagrados, presets + safe areas, reglas/guías, menú contextual, undo/redo, autosave. ✅
 2. **Fase 2** — Alineación/distribución, grids, spacing hints, **tokens y componentes ANTES de animar**, exportador HTML/CSS completo y export de assets PNG 1x/2x/3x. ✅
 3. **Fase 3** — **Auto-layout visual ✅ (flexbox tras iconos: dirección, espaciado, padding, alineaciones, wrap, tamaño Fijo/Contenido; reordenar desde Capas), estados interactivos ✅, contraste WCAG ✅**. Pendiente: constraints/responsive.
-4. **Fase 4** — **Máquina de estados + preview local ✅, timelines/keyframes ✅** (WAAPI, loop, easing por tramo). Pendiente: editor de easing visual.
+4. **Fase 4** — **Máquina de estados + preview local ✅, timelines/keyframes ✅, editor de easing visual ✅** (WAAPI, loop, easing por tramo; curva arrastrable con presets y demo).
 5. **Fase 5** — Exportador Unity UI Toolkit (UXML/USS). ✅
 6. **Fase 6** — Exportador Unreal UMG (manifest JSON + guía Blueprint). ✅
 7. **Fase 7** — **Variantes ✅, instancias con overrides ✅, modo Dev/spec sheets ✅, prototipado entre pantallas ✅, anotaciones ✅** (multi-pantalla + conexiones con transición, reproducibles en preview y exportadas al HTML; pins de review con resolución).

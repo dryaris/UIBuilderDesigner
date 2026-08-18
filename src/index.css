@@ -2454,3 +2454,119 @@ input[type="range"] {
 .theme-add {
   margin-top: 2px;
 }
+
+/* ---------------------------------------------------------------------------
+ * Editor visual de easing (Fase 8) — curva arrastrable con presets y demo
+ * ------------------------------------------------------------------------- */
+.easing-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.easing-graph {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border, #232738);
+  border-radius: 8px;
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.easing-grid {
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 0.5;
+}
+
+.easing-guide {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 0.6;
+  stroke-dasharray: 2 2;
+}
+
+.easing-diag {
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 0.8;
+  stroke-dasharray: 4 4;
+}
+
+.easing-control {
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.easing-curve {
+  fill: none;
+  stroke: var(--accent, #7c5cff);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(124, 92, 255, 0.45));
+}
+
+.easing-handle {
+  fill: #1b1e2b;
+  stroke: var(--accent, #7c5cff);
+  stroke-width: 2.2;
+  cursor: grab;
+  transition: stroke-width 0.12s ease;
+}
+
+.easing-handle:active {
+  cursor: grabbing;
+  stroke-width: 3;
+}
+
+.easing-dot {
+  fill: #ff6b9d;
+  stroke: #fff;
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 5px rgba(255, 107, 157, 0.7));
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.easing-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.easing-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  color: var(--text-dim, #9aa1b5);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border, #232738);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.easing-chip:hover {
+  color: #e8eaf2;
+  border-color: rgba(124, 92, 255, 0.5);
+}
+
+.easing-chip.is-active {
+  color: #fff;
+  background: rgba(124, 92, 255, 0.18);
+  border-color: var(--accent, #7c5cff);
+}
+
+.easing-chip.demo {
+  margin-left: auto;
+}
+
+.easing-value {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
