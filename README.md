@@ -37,6 +37,7 @@ Lo que ya funciona:
 - **Onboarding y ayuda** (Fase 8): tour de primera vez guiado por las zonas del editor (reabrible desde el menú Ayuda) y modal de **atajos de teclado** con `⌘/` — la memoria muscular de Figma siempre a mano.
 - **Rendimiento** (Fase 8): `NodeView` memoizado con selectores finos por nodo (`useShallow` + clave de hover/press) — arrastrar y navegar en preview solo re-renderiza los nodos afectados, no la escena completa.
 - **Micro-interacciones** (Fase 8): barra de estado contextual según el momento (selección → atajos rápidos; preview con prototipo → "pulsa un nodo conectado para navegar"; modo anotar → instrucciones), además del toast animado y los hover states existentes.
+- **Hotfix coordenadas**: `toScreen` devolvía coordenadas de viewport (`rect.left + …`) cuando el SVG de gizmos vive en el espacio del canvas (`inset:0`). Todo el overlay (caja de selección, handles, marquee, snap lines, spacing hints, safe areas, cuadrícula de layout y guías) se dibujaba desplazado a la derecha por la posición del canvas en la ventana; ahora `toScreen` devuelve coords relativas al canvas, alineado con `toWorld`, los rulers y el hit-testing.
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 
