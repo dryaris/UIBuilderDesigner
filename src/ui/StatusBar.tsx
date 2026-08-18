@@ -9,7 +9,9 @@ export function StatusBar() {
   const tool = useStore((s) => s.tool);
   const previewMode = useStore((s) => s.previewMode);
   const playing = useStore((s) => s.playing);
+  const annotateMode = useStore((s) => s.annotateMode);
   const doc = useStore((s) => s.doc);
+  const hasConnections = (doc.connections ?? []).length > 0;
 
   let world = null;
   const canvas = canvasElement.current;
@@ -20,11 +22,17 @@ export function StatusBar() {
   return (
     <footer className="statusbar">
       <span className="status-hint">
-        {previewMode
-          ? playing
-            ? "Reproduciendo animación · pasea el cursor para probar estados · Esc para salir"
-            : "Modo preview · pasea el cursor para probar estados · Esc para salir"
-          : tool === "select" && "Selecciona, arrastra y suelta · doble clic edita texto"}
+        {annotateMode
+          ? "Haz clic en la pantalla para colocar un pin de anotación · Esc cancela"
+          : previewMode
+            ? playing
+              ? "Reproduciendo animación · pasea el cursor para probar estados · Esc para salir"
+              : hasConnections
+                ? "Pulsa un nodo conectado para navegar entre pantallas · Esc para salir"
+                : "Modo preview · pasea el cursor para probar estados · Esc para salir"
+            : tool === "select" && selection.length > 0
+              ? "⌘D duplicar · ⌥A/D/W/S alinear · ⇧⌘C copiar estilo · Supr eliminar"
+              : tool === "select" && "Selecciona, arrastra y suelta · doble clic edita texto"}
         {tool === "frame" && "Arrastra para crear una pantalla · click para un frame 120×120"}
         {tool === "text" && "Haz clic para escribir · Esc termina"}
         {tool === "hand" && "Arrastra para panear el lienzo"}

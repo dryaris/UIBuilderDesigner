@@ -36,6 +36,7 @@ Lo que ya funciona:
 - **Panel de capas, inspector sin jerga técnica** (sliders, pickers, iconos), tema claro/oscuro, palette `⌘K`, starter kits (menú de juego 1080p, HUD móvil).
 - **Onboarding y ayuda** (Fase 8): tour de primera vez guiado por las zonas del editor (reabrible desde el menú Ayuda) y modal de **atajos de teclado** con `⌘/` — la memoria muscular de Figma siempre a mano.
 - **Rendimiento** (Fase 8): `NodeView` memoizado con selectores finos por nodo (`useShallow` + clave de hover/press) — arrastrar y navegar en preview solo re-renderiza los nodos afectados, no la escena completa.
+- **Micro-interacciones** (Fase 8): barra de estado contextual según el momento (selección → atajos rápidos; preview con prototipo → "pulsa un nodo conectado para navegar"; modo anotar → instrucciones), además del toast animado y los hover states existentes.
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 
@@ -146,7 +147,7 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 5. **Fase 5** — Exportador Unity UI Toolkit (UXML/USS). ✅
 6. **Fase 6** — Exportador Unreal UMG (manifest JSON + guía Blueprint). ✅
 7. **Fase 7** — **Variantes ✅, instancias con overrides ✅, modo Dev/spec sheets ✅, prototipado entre pantallas ✅, anotaciones ✅** (multi-pantalla + conexiones con transición, reproducibles en preview y exportadas al HTML; pins de review con resolución).
-8. **Fase 8 (actual)** — **Onboarding ✅ (tour de primera vez + modal de atajos ⌘/), rendimiento ✅ (memo + selectores finos en NodeView)**. Pendiente: micro-interacciones y pruebas con diseñadores.
+8. **Fase 8 (actual)** — **Onboarding ✅ (tour de primera vez + modal de atajos ⌘/), rendimiento ✅ (memo + selectores finos en NodeView), micro-interacciones ✅ (barra de estado contextual)**. Pendiente: pruebas con diseñadores.
 
 ## Decisiones de ingeniería relevantes
 
