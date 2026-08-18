@@ -7,6 +7,7 @@ import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../e
 import { exportUnityFile } from "../export/unity";
 import { exportUmgFile } from "../export/umg";
 import { exportSpecSheetFile } from "../export/spec";
+import { exportLottieFile } from "../export/lottie";
 
 interface Action {
   id: string;
@@ -47,6 +48,11 @@ export function Palette() {
         const s = useStore.getState();
         exportSpecSheetFile(s.doc);
         s.showToast("Spec sheet exportado");
+      } },
+      { id: "lottie", label: "Exportar Lottie (.json)", keywords: "lottie animación json bodymovin after effects motion", run: () => {
+        const s = useStore.getState();
+        const ok = exportLottieFile(s.doc, s.activeTimelineId ?? undefined);
+        s.showToast(ok ? "Lottie exportado" : "Crea una línea de tiempo con keyframes primero");
       } },
       { id: "fit", label: "Ajustar a pantalla", keywords: "zoom ajustar fit encuadrar", run: () => st().fitTo(nodeRect(st().doc.root)) },
       { id: "zoom100", label: "Zoom 100%", keywords: "zoom tamaño real", run: () => st().zoomTo(1, center()) },

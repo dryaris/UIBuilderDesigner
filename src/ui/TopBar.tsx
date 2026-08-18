@@ -10,6 +10,7 @@ import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../e
 import { exportUnityFile } from "../export/unity";
 import { exportUmgFile } from "../export/umg";
 import { exportSpecSheetFile } from "../export/spec";
+import { exportLottieFile } from "../export/lottie";
 import { Menu } from "./Menu";
 import { IconButton } from "./Menu";
 
@@ -139,6 +140,14 @@ export function TopBar() {
           { label: "Exportar PNG 1x", onClick: () => exportPngAt(1) },
           { label: "Exportar PNG 2x", onClick: () => exportPngAt(2) },
           { label: "Exportar PNG 3x", onClick: () => exportPngAt(3) },
+          {
+            label: "Exportar Lottie (.json)",
+            onClick: () => {
+              const s = useStore.getState();
+              const ok = exportLottieFile(s.doc, s.activeTimelineId ?? undefined);
+              s.showToast(ok ? "Lottie exportado" : "Crea una línea de tiempo con keyframes primero");
+            },
+          },
           { divider: true },
           { label: "Exportar paquete (HTML + PNG 1x/2x/3x)", onClick: exportBundleFile },
           { divider: true },
