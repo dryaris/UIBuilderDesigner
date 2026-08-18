@@ -4,7 +4,7 @@ Un editor de diseño de interfaces **100% offline, sin cuenta y sin backend**, t
 
 > "Un Figma más agnóstico": el diseñador no necesita saber nada de motores ni de código; un diseñador técnico llega al detalle fino.
 
-## Estado actual — Fases 1–6 completas, Fase 7 en curso ✅
+## Estado actual — Fases 1–8 completas ✅
 
 Lo que ya funciona:
 
@@ -40,6 +40,9 @@ Lo que ya funciona:
 - **Importador SVG (Fase 8)** — arrastra un `.svg` al lienzo o Archivo → Importar SVG: rect/circle/ellipse/line/polygon/path (incluidos arcos) se convierten en nodos **vector** editables, con transformaciones aplastadas (translate/scale/rotate/skew/matrix), gradientes lineales/radiales mapeados al sistema de estilos y texto básico. Cada forma importada es un nodo con su caja y su path; se edita como cualquier otro (color en Inspector, drag, export a HTML/PNG incluido).
 - **Micro-interacciones** (Fase 8): barra de estado contextual según el momento (selección → atajos rápidos; preview con prototipo → "pulsa un nodo conectado para navegar"; modo anotar → instrucciones), además del toast animado y los hover states existentes.
 - **Hotfix coordenadas**: `toScreen` devolvía coordenadas de viewport (`rect.left + …`) cuando el SVG de gizmos vive en el espacio del canvas (`inset:0`). Todo el overlay (caja de selección, handles, marquee, snap lines, spacing hints, safe areas, cuadrícula de layout y guías) se dibujaba desplazado a la derecha por la posición del canvas en la ventana; ahora `toScreen` devuelve coords relativas al canvas, alineado con `toWorld`, los rulers y el hit-testing.
+- **Exportador Lottie (Fase 8)**: las líneas de tiempo del editor → JSON **Bodymovin** (`.lottie`/`.json`) con keyframes de posición, opacidad, escala, color, tamaño y rotación, easing por tramo desde los tokens y texto. La animación se reproduce igual en After Effects, web (lottie-web) o móvil (lottie-ios/android).
+- **Design tokens → estándares (Fase 8)**: Archivo → Exportar tokens genera un ZIP con `tokens.json` **W3C DTCG** ($type/$value), `tokens.css` con custom properties listas y un proyecto **Style Dictionary** (tokens.json + config.json) compilable con `npx style-dictionary build`.
+- **Temas múltiples (Fase 8)**: en la pestaña **Diseño**, crea variantes de color del proyecto (light/dark/…): cada tema guarda su propia paleta, el token editor edita siempre el tema activo y el export de tokens incluye un DTCG + CSS por tema. Con undo/redo incluido.
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 

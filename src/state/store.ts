@@ -7,7 +7,10 @@
  * genera una única entrada de historial. Así el undo no se llena de micro-estados.
  */
 import { create } from "zustand";
-import { applyPatches, produceWithPatches, type Patch } from "immer";
+import { enablePatches, applyPatches, produceWithPatches, type Patch } from "immer";
+
+// produceWithPatches/applyPatches requieren el plugin de patches de Immer.
+enablePatches();
 import type { Annotation, CanvasDoc, Node, PrototypeConnection, Rect, StateKey, Style, Timeline, Tokens, Vec } from "../core/ir";
 import { findNode, findParent, cloneNode, bbox, nodeRect, rectsIntersect, uid } from "../core/tree";
 import { topLevelNodes } from "../core/tree";
@@ -177,6 +180,14 @@ interface EditorState {
   reorderNode: (id: string, dir: -1 | 1) => void;
   /** Importa un SVG como frame con vectores en la posición dada. Devuelve error o null. */
   importSvg: (text: string, at: Vec, name?: string) => string | null;
+  /** Crea un tema nuevo con los colores actuales. */
+  addTheme: (name: string) => void;
+  /** Activa un tema ("base" = el por defecto); tokens.colors pasa a ser el suyo. */
+  activateTheme: (id: string) => void;
+  /** Renombra un tema. */
+  renameTheme: (id: string, name: string) => void;
+  /** Elimina un tema (el activo vuelve al base). */
+  deleteTheme: (id: string) => void;
   groupSelection: (name: string) => void;
   ungroupSelection: () => void;
   alignSelection: (kind: AlignKind) => void;
@@ -559,6 +570,53 @@ export const useStore = create<EditorState>()((set, get) => ({
     } catch (err) {
       return err instanceof Error ? err.message : "No se pudo importar el SVG";
     }
+  },
+
+  addTheme: (name) =>
+    get().apply((d) => {
+      ensureBaseTheme(d);
+      d.themes = [...(d.themes ?? []), { id: uid(), name, colors: { ...d.tokens.colors } }];
+      get().showToast("Tema creado");
+    }),
+
+  activateTheme: (id) =>
+    get().apply((d) => {
+      ensureBaseTheme(d);
+      // Guarda los colores actuales en el tema que estaba activo.
+      const currentId = d.activeThemeId ?? "base";
+      const current = (d.themes ?? []).find((t) => t.id === currentId);
+      if (current) current.colors = { ...d.tokens.colors };
+      if (id === "base") {
+        d.activeThemeId = undefined;
+        const base = (d.themes ?? []).find((t) => t.id === "base");
+        if (base) d.tokens.colors = { ...base.colors };
+        get().showToast("Tema base activado");
+        return;
+      }
+      const target = (d.themes ?? []).find((t) => t.id === id);
+      if (!target) return;
+      d.tokens.colors = { ...target.colors };
+      d.activeThemeId = id;
+      get().showToast(`Tema «${target.name}» activado`);
+    }),
+
+  renameTheme: (id, name) =>
+    get().apply((d) => {
+      const t = (d.themes ?? []).find((x) => x.id === id);
+      if (t) t.name = name.trim() || t.name;
+    }),
+
+  deleteTheme: (id) => {
+    if (id === "base") return;
+    get().apply((d) => {
+      d.themes = (d.themes ?? []).filter((t) => t.id !== id);
+      if (d.activeThemeId === id) {
+        d.activeThemeId = undefined;
+        const base = (d.themes ?? []).find((t) => t.id === "base");
+        if (base) d.tokens.colors = { ...base.colors };
+      }
+    });
+    get().showToast("Tema eliminado");
   },
 
   groupSelection: (name) => {
@@ -1004,6 +1062,14 @@ export const useStore = create<EditorState>()((set, get) => ({
 function remapIds(node: Node): void {
   node.id = uid();
   for (const child of node.children) remapIds(child);
+}
+
+/** Garantiza que exista el tema "base" (los colores por defecto del doc). */
+function ensureBaseTheme(d: CanvasDoc): void {
+  if (!d.themes) d.themes = [];
+  if (!d.themes.some((t) => t.id === "base")) {
+    d.themes.unshift({ id: "base", name: "Tema base", colors: { ...d.tokens.colors } });
+  }
 }
 
 /** Propiedades animables de un estilo (las que entiende WAAPI). */

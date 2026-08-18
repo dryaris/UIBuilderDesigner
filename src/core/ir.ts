@@ -308,6 +308,13 @@ export interface CanvasDoc {
   connections?: PrototypeConnection[];
   /** Anotaciones de review sobre las pantallas (Fase 7). */
   annotations?: Annotation[];
+  /**
+   * Temas de color (Fase 8): el primero con id "base" es el tema por defecto;
+   * `tokens.colors` SIEMPRE contiene los colores del tema activo.
+   */
+  themes?: { id: string; name: string; colors: Record<string, string> }[];
+  /** Id del tema activo (undefined = tema base). */
+  activeThemeId?: string;
 }
 
 // ---------------------------------------------------------------------------

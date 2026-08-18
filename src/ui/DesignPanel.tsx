@@ -21,10 +21,112 @@ export function DesignPanel() {
     <aside className="panel inspector design-panel">
       <div className="panel-title">Diseño</div>
       <div className="panel-body">
+        <ThemesSection />
         <TokensSection />
         <LibrarySection />
       </div>
     </aside>
+  );
+}
+
+/**
+ * Temas de color (Fase 8): el token editor edita SIEMPRE el tema activo.
+ * Tema base = el de siempre; los demás son variantes (light/dark/…).
+ */
+function ThemesSection() {
+  const themes = useStore((s) => s.doc.themes ?? []);
+  const activeId = useStore((s) => s.doc.activeThemeId);
+  const tokens = useStore((s) => s.doc.tokens);
+  const st = () => useStore.getState();
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [nameDraft, setNameDraft] = useState("");
+
+  const list = themes.length === 0 ? [{ id: "base", name: "Tema base", colors: tokens.colors }] : themes;
+
+  return (
+    <Section title="Temas">
+      <div className="theme-list">
+        {list.map((t) => {
+          const active = t.id === (activeId ?? "base");
+          return (
+            <div key={t.id} className={`theme-row${active ? " is-active" : ""}`}>
+              <button
+                className="theme-main"
+                title={active ? "Tema activo" : "Activar tema"}
+                onClick={() => st().activateTheme(t.id)}
+              >
+                <span className="theme-swatches">
+                  {Object.entries(t.colors)
+                    .slice(0, 5)
+                    .map(([name, value]) => (
+                      <i key={name} title={name} style={{ background: value }} />
+                    ))}
+                </span>
+                {renaming === t.id ? (
+                  <input
+                    className="theme-rename"
+                    autoFocus
+                    value={nameDraft}
+                    spellCheck={false}
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    onBlur={() => {
+                      st().renameTheme(t.id, nameDraft);
+                      setRenaming(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === "Escape") (e.target as HTMLInputElement).blur();
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span className="theme-name">{t.name}</span>
+                )}
+                {active && <span className="theme-check">✓</span>}
+              </button>
+              {t.id !== "base" && (
+                <>
+                  <button
+                    className="icon-btn"
+                    title="Renombrar"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRenaming(t.id);
+                      setNameDraft(t.name);
+                    }}
+                  >
+                    <Copy size={11} />
+                  </button>
+                  <button
+                    className="icon-btn theme-del"
+                    title="Eliminar tema"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      st().deleteTheme(t.id);
+                    }}
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </>
+              )}
+            </div>
+          );
+        })}
+        <button
+          className="mini-btn theme-add"
+          onClick={() => {
+            const n = `Tema ${(themes.length).toString()}`;
+            st().addTheme(n);
+          }}
+        >
+          <Plus size={12} /> Nuevo tema (colores actuales)
+        </button>
+      </div>
+      {activeId && (
+        <p className="design-hint dim">
+          Editando tema «{(themes.find((t) => t.id === activeId)?.name ?? "")}»: los colores de arriba se guardan en él. Exporta tokens para llevarte todos los temas.
+        </p>
+      )}
+    </Section>
   );
 }
 

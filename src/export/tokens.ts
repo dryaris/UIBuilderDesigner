@@ -179,9 +179,22 @@ export async function exportTokensBundle(doc: CanvasDoc): Promise<Blob> {
   zip.file("style-dictionary/tokens.json", styleDictionaryTokensJson(doc.tokens));
   zip.file("style-dictionary/config.json", SD_CONFIG);
   zip.file("style-dictionary/README.md", SD_README);
+
+  // Un DTCG por tema (el activo ya va como tokens.json).
+  const themes = doc.themes ?? [];
+  const themeReadme: string[] = [];
+  for (const t of themes) {
+    if (t.id === "base") continue;
+    const themeTokens: Tokens = { ...doc.tokens, colors: { ...t.colors } };
+    const safe = t.name.replace(/[^\w\- ]+/g, "").trim() || t.id;
+    zip.file(`themes/${safe}.json`, dtcTokensJson(themeTokens));
+    zip.file(`themes/${safe}.css`, tokensCss(themeTokens));
+    themeReadme.push(`- themes/${safe}.json — tema «${escapeHtml(t.name)}» (DTCG) + .css.`);
+  }
+
   zip.file(
     "README.md",
-    `# Design tokens — ${escapeHtml(doc.root.name)}\n\n- tokens.json: formato W3C DTCG (design-tokens.github.io/community-group).\n- style-dictionary/: formato Style Dictionary listo para compilar.\n- tokens.css: custom properties para usar directamente.\n\nExportado por Canvas — editor visual offline.\n`,
+    `# Design tokens — ${escapeHtml(doc.root.name)}\n\n- tokens.json: formato W3C DTCG (design-tokens.github.io/community-group) — tema activo${doc.activeThemeId ? ` («${escapeHtml(themes.find((t) => t.id === doc.activeThemeId)?.name ?? "")}»)` : ""}.\n- style-dictionary/: formato Style Dictionary listo para compilar.\n- tokens.css: custom properties para usar directamente.\n${themeReadme.join("\n")}\n\nExportado por Canvas — editor visual offline.\n`,
   );
   return zip.generateAsync({ type: "blob" });
 }
