@@ -34,6 +34,7 @@ Lo que ya funciona:
 - **Prototipado entre pantallas** (Fase 7): pestaña **Prototipo** → duplica o crea pantallas (cada una se edita en el lienzo con su propio undo), y conecta cualquier nodo a otra pantalla con transición (duración + curva de los tokens de easing). En modo Preview, pulsar un nodo conectado navega con fundido; el **exportador HTML reproduce el mismo flujo** con todas las pantallas y sus conexiones.
 - **Anotaciones de review** (Fase 7): modo anotar → clic en la pantalla coloca un pin numerado (también disponible en la palette `⌘K`); escribe la nota en la pestaña Prototipo, márcala como resuelta ✓ o bórrala. Los pins se guardan en el proyecto y se seleccionan desde el lienzo o la lista.
 - **Panel de capas, inspector sin jerga técnica** (sliders, pickers, iconos), tema claro/oscuro, palette `⌘K`, starter kits (menú de juego 1080p, HUD móvil).
+- **Onboarding y ayuda** (Fase 8): tour de primera vez guiado por las zonas del editor (reabrible desde el menú Ayuda) y modal de **atajos de teclado** con `⌘/` — la memoria muscular de Figma siempre a mano.
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 
@@ -144,7 +145,7 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 5. **Fase 5** — Exportador Unity UI Toolkit (UXML/USS). ✅
 6. **Fase 6** — Exportador Unreal UMG (manifest JSON + guía Blueprint). ✅
 7. **Fase 7** — **Variantes ✅, instancias con overrides ✅, modo Dev/spec sheets ✅, prototipado entre pantallas ✅, anotaciones ✅** (multi-pantalla + conexiones con transición, reproducibles en preview y exportadas al HTML; pins de review con resolución).
-8. **Fase 8** — Pulido UX: micro-interacciones, onboarding, rendimiento, pruebas con diseñadores.
+8. **Fase 8 (actual)** — **Onboarding ✅ (tour de primera vez + modal de atajos ⌘/)**. Pendiente: micro-interacciones, rendimiento y pruebas con diseñadores.
 
 ## Decisiones de ingeniería relevantes
 

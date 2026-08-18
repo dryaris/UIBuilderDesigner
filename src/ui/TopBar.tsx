@@ -167,6 +167,13 @@ export function TopBar() {
           { label: "Zoom 100%", shortcut: "⇧0", onClick: () => act().zoomTo(1, zoomCenter()) },
         ]}
       />
+      <Menu
+        label="Ayuda"
+        items={[
+          { label: "Atajos de teclado", shortcut: "⌘/", onClick: () => act().setShortcutsOpen(true) },
+          { label: "Tour de inicio", onClick: () => act().setTourOpen(true) },
+        ]}
+      />
 
       <input
         className="project-name"

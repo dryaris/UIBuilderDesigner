@@ -13,6 +13,7 @@ import { useStore as useStoreRef } from "../state/store";
 const AUTOSAVE_KEY = "canvas.project.autosave";
 const FIRST_RUN_KEY = "canvas.ui.seen";
 const THEME_KEY = "canvas.ui.theme";
+const TOUR_KEY = "canvas.ui.tour.seen";
 
 // ---------------------------------------------------------------------------
 // Autosave
@@ -70,6 +71,18 @@ export function loadTheme(): "dark" | "light" {
 
 export function saveTheme(theme: "dark" | "light"): void {
   localStorage.setItem(THEME_KEY, theme);
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding — tour de primera vez
+// ---------------------------------------------------------------------------
+
+export function hasSeenTour(): boolean {
+  return localStorage.getItem(TOUR_KEY) === "1";
+}
+
+export function markTourSeen(): void {
+  localStorage.setItem(TOUR_KEY, "1");
 }
 
 // ---------------------------------------------------------------------------

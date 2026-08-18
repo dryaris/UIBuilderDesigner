@@ -160,6 +160,11 @@ interface EditorState {
   setCursor: (c: Vec | null) => void;
   toggle: (k: "showRulers" | "showGuides" | "showSafeAreas" | "showGrid") => void;
   showToast: (msg: string) => void;
+  // ---- Fase 8: ayuda y onboarding ----
+  tourOpen: boolean;
+  shortcutsOpen: boolean;
+  setTourOpen: (v: boolean) => void;
+  setShortcutsOpen: (v: boolean) => void;
 
   // ---- acciones de documento reutilizables (menús, atajos, palette) ----
   addNode: (node: Node, parentId?: string) => void;
@@ -251,6 +256,8 @@ export const useStore = create<EditorState>()((set, get) => ({
   toast: null,
   annotateMode: false,
   selectedAnnotationId: null,
+  tourOpen: false,
+  shortcutsOpen: false,
 
   apply: (recipe) => {
     const [next, patches, inverse] = produceWithPatches(get().doc, recipe);
@@ -451,6 +458,9 @@ export const useStore = create<EditorState>()((set, get) => ({
   setNewProjectOpen: (newProjectOpen) => set({ newProjectOpen }),
   setCursor: (cursor) => set({ cursor }),
   toggle: (k) => set((s) => ({ [k]: !s[k] }) as Partial<EditorState>),
+
+  setTourOpen: (tourOpen) => set({ tourOpen }),
+  setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
 
   showToast: (msg) => {
     if (toastTimer) clearTimeout(toastTimer);

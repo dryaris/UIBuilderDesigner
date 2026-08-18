@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { useStore } from "../state/store";
-import { subscribeAutosave, loadAutosave, hasSeenWelcome, markWelcomeSeen, loadTheme } from "../persistence/persistence";
+import { subscribeAutosave, loadAutosave, hasSeenWelcome, markWelcomeSeen, hasSeenTour, loadTheme } from "../persistence/persistence";
 import { useKeyboard } from "../shortcuts/keys";
 import { Canvas } from "../canvas/Canvas";
 import { Rulers } from "../canvas/Rulers";
@@ -19,6 +19,8 @@ import { useTimelinePlayer } from "../preview/player";
 import { Layers } from "../ui/Layers";
 import { Palette } from "../ui/Palette";
 import { NewProjectModal } from "../ui/NewProjectModal";
+import { ShortcutsModal } from "../ui/ShortcutsModal";
+import { Tour } from "../ui/Tour";
 import { ContextMenu, type ContextMenuState } from "../ui/ContextMenu";
 
 export function Editor() {
@@ -42,6 +44,10 @@ export function Editor() {
       useStore.getState().setNewProjectOpen(true);
     }
     markWelcomeSeen();
+    // Onboarding: el tour se muestra la primera vez (reabrible desde Ayuda).
+    if (!hasSeenTour()) {
+      useStore.getState().setTourOpen(true);
+    }
     setBooted(true);
   }, []);
 
@@ -101,6 +107,8 @@ export function Editor() {
       <StatusBar />
       <Palette />
       <NewProjectModal />
+      <ShortcutsModal />
+      <Tour />
       <ContextMenu menu={ctxMenu} onClose={() => setCtxMenu(null)} />
       {toast && <div className="toast">{toast}</div>}
     </div>

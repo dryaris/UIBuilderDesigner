@@ -45,6 +45,12 @@ export function useKeyboard(): void {
         st.setPaletteOpen(!st.paletteOpen);
         return;
       }
+      // Cmd/Ctrl+/ = atajos (ayuda).
+      if (mod && key === "/") {
+        e.preventDefault();
+        st.setShortcutsOpen(!st.shortcutsOpen);
+        return;
+      }
       if (typing) {
         if (e.key === "Escape") (target as HTMLElement).blur();
         return;
