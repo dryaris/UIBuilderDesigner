@@ -56,8 +56,16 @@ function renderUxml(doc: CanvasDoc, node: Node, cls: string, uss: string[], dept
   const pad = "  ".repeat(depth + 1);
   const sel = `.${cls}`;
   // Auto-layout: los hijos de un contenedor flex no usan posición absoluta.
-  const ussCtx = ussStyle(node.style, doc.tokens, Boolean(node.style.flexDirection));
+  // Los vectores pintan dentro del path (SVG), no en la caja.
+  const boxStyle =
+    node.type === "vector"
+      ? { ...node.style, backgroundColor: undefined, gradient: undefined }
+      : node.style;
+  const ussCtx = ussStyle(boxStyle, doc.tokens, Boolean(node.style.flexDirection));
   uss.push(`${sel} {\n${ussCtx}\n}`);
+  if (node.type === "vector") {
+    uss.push(`/* ${sel}: vector SVG → exportar como sprite/imagen (no soportado en USS) */`);
+  }
 
   // Estados interactivos → pseudo-clases USS.
   const states = node.states ?? {};

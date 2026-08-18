@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useStore } from "../state/store";
+import { toWorld } from "./transform";
 import { NodeView } from "./NodeView";
 import { Gizmos } from "./Gizmos";
 import { useCanvasPointer, canvasElement, handleCursor, hitAtClient } from "./pointer";
@@ -81,6 +82,32 @@ export function Canvas({
       onPointerLeave={() => useStore.getState().setHover(null)}
       onWheel={onWheel}
       onDoubleClick={onDoubleClick}
+      onDragOver={(e) => {
+        if (previewMode) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        if (previewMode) return;
+        const file = e.dataTransfer.files?.[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+          useStore.getState().showToast("El SVG es demasiado grande (máx 2 MB)");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const text = String(reader.result ?? "");
+          const st = useStore.getState();
+          const canvas = canvasElement.current;
+          if (!canvas) return;
+          const wp = toWorld(canvas, e.clientX, e.clientY, st.viewport);
+          const err = st.importSvg(text, wp, file.name.replace(/\.svg$/i, ""));
+          if (err) st.showToast(err);
+        };
+        reader.readAsText(file);
+      }}
       onContextMenu={(e: MouseEvent) => {
         e.preventDefault();
         if (previewMode) return;

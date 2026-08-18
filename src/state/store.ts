@@ -12,6 +12,7 @@ import type { Annotation, CanvasDoc, Node, PrototypeConnection, Rect, StateKey, 
 import { findNode, findParent, cloneNode, bbox, nodeRect, rectsIntersect, uid } from "../core/tree";
 import { topLevelNodes } from "../core/tree";
 import { isFlexChild } from "../core/layout";
+import { parseSvg } from "../import/svg";
 import { frameNode } from "../core/defaults";
 
 export type Tool =
@@ -174,6 +175,8 @@ interface EditorState {
   nudgeSelection: (dx: number, dy: number) => void;
   /** Mueve un nodo un paso en el orden de hermanos (auto-layout: reordenar). */
   reorderNode: (id: string, dir: -1 | 1) => void;
+  /** Importa un SVG como frame con vectores en la posición dada. Devuelve error o null. */
+  importSvg: (text: string, at: Vec, name?: string) => string | null;
   groupSelection: (name: string) => void;
   ungroupSelection: () => void;
   alignSelection: (kind: AlignKind) => void;
@@ -538,6 +541,24 @@ export const useStore = create<EditorState>()((set, get) => ({
       const [moved] = kids.splice(i, 1);
       kids.splice(j, 0, moved);
     });
+  },
+
+  importSvg: (text, at, name) => {
+    try {
+      const { node, warnings } = parseSvg(text, name?.trim() || "SVG importado");
+      node.style.x = Math.round(at.x);
+      node.style.y = Math.round(at.y);
+      get().apply((d) => {
+        d.root.children.push(node);
+      });
+      get().select([node.id]);
+      get().showToast(
+        warnings.length > 0 ? `SVG importado (${warnings.length} avisos)` : "SVG importado",
+      );
+      return null;
+    } catch (err) {
+      return err instanceof Error ? err.message : "No se pudo importar el SVG";
+    }
   },
 
   groupSelection: (name) => {

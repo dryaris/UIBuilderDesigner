@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ZoomIn, ZoomOut, Maximize, Download, Play, Square } from "lucide-react";
 import { useStore } from "../state/store";
-import { nodeRect } from "../core/tree";
+import { nodeRect, findNode } from "../core/tree";
+import { toWorld } from "../canvas/transform";
+import { canvasElement } from "../canvas/pointer";
 import { saveProjectFile, openProjectFile } from "../export/project";
 import { exportHtml } from "../export/html";
 import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
@@ -23,6 +25,8 @@ export function TopBar() {
   const showGrid = useStore((s) => s.showGrid);
   const previewMode = useStore((s) => s.previewMode);
   const [name, setName] = useState(rootName);
+  const svgInputRef = useRef<HTMLInputElement>(null);
+  const svgAtRef = useRef({ x: 0, y: 0 });
 
   // Sincroniza el nombre local cuando cambia el proyecto (apertura, nuevo, …).
   useEffect(() => setName(rootName), [rootName]);
@@ -78,6 +82,40 @@ export function TopBar() {
 
   const act = () => useStore.getState();
 
+  const importSvgViaMenu = () => {
+    const st = act();
+    const canvas = canvasElement.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    svgAtRef.current = toWorld(
+      canvas,
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2,
+      st.viewport,
+    );
+    svgInputRef.current?.click();
+  };
+
+  const readSvgFile = (file: File) => {
+    if (file.size > 2 * 1024 * 1024) {
+      act().showToast("El SVG es demasiado grande (máx 2 MB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const st = act();
+      const err = st.importSvg(String(reader.result ?? ""), svgAtRef.current, file.name.replace(/\.svg$/i, ""));
+      if (err) {
+        st.showToast(err);
+        return;
+      }
+      const id = st.selection[0];
+      const imported = id ? findNode(st.doc.root, id) : null;
+      if (imported) st.fitTo(nodeRect(imported));
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <header className="topbar">
       <div className="topbar-brand" title="Canvas — editor visual offline">
@@ -94,6 +132,7 @@ export function TopBar() {
         items={[
           { label: "Nuevo proyecto…", onClick: () => act().setNewProjectOpen(true) },
           { label: "Abrir proyecto…", shortcut: "⌘O", onClick: () => void openProject() },
+          { label: "Importar SVG…", onClick: importSvgViaMenu },
           { label: "Guardar proyecto (.canvas)", shortcut: "⌘S", onClick: saveProject },
           { divider: true },
           { label: "Exportar HTML/CSS", onClick: exportHtmlFile },
@@ -187,6 +226,18 @@ export function TopBar() {
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+      />
+
+      <input
+        ref={svgInputRef}
+        type="file"
+        accept=".svg,image/svg+xml"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) readSvgFile(file);
+          e.target.value = "";
         }}
       />
 

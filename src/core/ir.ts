@@ -279,6 +279,10 @@ export interface Node {
   layoutGrid?: LayoutGrid;
   /** Para nodos type === "shape". */
   shape?: ShapeKind;
+  /** Para nodos type === "vector": datos del path en coords locales del nodo. */
+  path?: string;
+  /** Regla de relleno del path (SVG fill-rule). */
+  fillRule?: "nonzero" | "evenodd";
   /** Para nodos type === "text". */
   text?: string;
   /** Oculto del render y del export (ojo en layers). */

@@ -152,6 +152,10 @@ function toUmgNode(node: Node, doc: CanvasDoc): UmgNode | null {
     props.stroke = `${node.style.stroke.width}px ${node.style.stroke.color}`;
     base.note = "Trazo: usar BorderBrush con Draw As = Border o una imagen.";
   }
+  if (node.type === "vector") {
+    base.widget = "Image";
+    base.note = "Vector SVG: exportar como sprite/imagen (Image + Brush) — UMG no renderiza paths.";
+  }
   if (node.shape === "ellipse") {
     base.widget = "Image";
     props.shape = "circle";

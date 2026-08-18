@@ -12,6 +12,7 @@
  */
 import type { CanvasDoc, Node, Style, Tokens } from "../core/ir";
 import { resolveColor, resolveRadius } from "../core/tokens";
+import { vectorSvg } from "../core/vector";
 
 export function exportHtml(doc: CanvasDoc): string {
   const screens = [doc.root, ...(doc.screens ?? [])];
@@ -90,7 +91,12 @@ function renderNode(
   inFlex = false,
 ): string {
   const sel = `.${cls}`;
-  css.push(`${sel} { ${styleToCss(node.style, tokens, inFlex)} }`);
+  // Los vectores pintan dentro del path (SVG), no en la caja.
+  const boxStyle =
+    node.type === "vector"
+      ? { ...node.style, backgroundColor: undefined, gradient: undefined }
+      : node.style;
+  css.push(`${sel} { ${styleToCss(boxStyle, tokens, inFlex)} }`);
 
   // Estados interactivos → pseudo-clases (Fase 3 ya emite estas reglas).
   const states = node.states ?? {};
@@ -104,7 +110,8 @@ function renderNode(
       renderNode(c, tokens, `${cls}-${hash(c.id)}`, css, conns, Boolean(node.style.flexDirection)),
     )
     .join("");
-  const inner = node.type === "text" ? escapeHtml(node.text ?? "") : children;
+  const inner =
+    node.type === "text" ? escapeHtml(node.text ?? "") : node.type === "vector" ? vectorSvg(node, tokens) : children;
   const disabled = states.disabled ? " is-disabled" : "";
   const conn = conns?.get(node.id);
   const connAttrs = conn ? ` data-conn="${conn.to}" data-dur="${conn.dur}" style="cursor:pointer"` : "";

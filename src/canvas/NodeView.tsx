@@ -12,6 +12,7 @@ import type { CSSProperties } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { Node, Rect, Style, Tokens } from "../core/ir";
 import { resolveColor, resolveRadius } from "../core/tokens";
+import { vectorSvg } from "../core/vector";
 import { useStore, type DragSession } from "../state/store";
 
 function gradientCss(g: NonNullable<Style["gradient"]>, tokens: Tokens): string {
@@ -53,8 +54,11 @@ function boxCss(node: Node, s: Style, tokens: Tokens, inFlex = false): CSSProper
     }
     if (s.wrap) css.flexWrap = "wrap";
   }
-  if (s.backgroundColor) css.backgroundColor = resolveColor(tokens, s.backgroundColor);
-  if (s.gradient) css.backgroundImage = gradientCss(s.gradient, tokens);
+  // Los vectores pintan DENTRO del path (fill/gradiente del SVG), no en la caja.
+  if (node.type !== "vector") {
+    if (s.backgroundColor) css.backgroundColor = resolveColor(tokens, s.backgroundColor);
+    if (s.gradient) css.backgroundImage = gradientCss(s.gradient, tokens);
+  }
   if (s.borderRadius !== undefined) css.borderRadius = resolveRadius(tokens, s.borderRadius);
   if (s.boxShadow) css.boxShadow = shadowCss(s.boxShadow, tokens);
   if (s.opacity !== undefined) css.opacity = s.opacity;
@@ -185,7 +189,9 @@ export const NodeView = memo(function NodeView({ node, inFlex = false }: { node:
       style={{ ...boxCss(node, s, tokens, inFlex), transition: transitionCss }}
       data-id={node.id}
     >
-      {node.type === "text" ? (
+      {node.type === "vector" ? (
+        <span className="cn-vector" dangerouslySetInnerHTML={{ __html: vectorSvg(node, tokens) }} />
+      ) : node.type === "text" ? (
         <EditableText node={node} editing={editing} />
       ) : (
         node.children.map((child) => (

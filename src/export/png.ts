@@ -9,6 +9,7 @@
 import JSZip from "jszip";
 import type { CanvasDoc, Node, Tokens } from "../core/ir";
 import { exportHtml, styleToCss, escapeHtml } from "./html";
+import { vectorSvg } from "../core/vector";
 
 /**
  * Renderiza la pantalla (frame raíz) como PNG al `scale` indicado.
@@ -43,11 +44,17 @@ export async function exportPng(doc: CanvasDoc, scale: number): Promise<Blob> {
 
 function nodeHtml(node: Node, tokens: Tokens): string {
   if (node.hidden) return "";
-  const css = styleToCss(node.style, tokens);
+  const boxStyle =
+    node.type === "vector"
+      ? { ...node.style, backgroundColor: undefined, gradient: undefined }
+      : node.style;
+  const css = styleToCss(boxStyle, tokens);
   const inner =
     node.type === "text"
       ? escapeHtml(node.text ?? "")
-      : node.children.map((c) => nodeHtml(c, tokens)).join("");
+      : node.type === "vector"
+        ? vectorSvg(node, tokens)
+        : node.children.map((c) => nodeHtml(c, tokens)).join("");
   return `<div style="${css}">${inner}</div>`;
 }
 
