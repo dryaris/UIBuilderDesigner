@@ -14,25 +14,52 @@ import type { CanvasDoc, Node, Style, Tokens } from "../core/ir";
 import { resolveColor, resolveRadius } from "../core/tokens";
 
 export function exportHtml(doc: CanvasDoc): string {
-  const root = doc.root;
+  const screens = [doc.root, ...(doc.screens ?? [])];
   const css: string[] = [];
   const vars = cssVars(doc.tokens);
   if (vars) css.push(`:root {\n${vars}\n}`);
 
-  const body = renderNode(root, doc.tokens, "screen", css);
+  // Conexiones de prototipo: nodo → índice de pantalla destino + duración.
+  const conns = new Map<string, { to: number; dur: number }>();
+  for (const c of doc.connections ?? []) {
+    const to = screens.findIndex((s) => s.id === c.toScreenId);
+    if (to >= 0) {
+      conns.set(c.fromNodeId, { to, dur: c.transition?.durationMs ?? 200 });
+    }
+  }
 
-  const script = `(function(){var el=document.getElementById("screen");var k=Math.min(window.innerWidth/el.offsetWidth,window.innerHeight/el.offsetHeight);el.style.transform="scale("+k+")";el.style.transformOrigin="0 0";})();`;
+  const body = screens
+    .map((screen, i) => {
+      const inner = renderNode(screen, doc.tokens, `sc${i}`, css, conns);
+      return `<div class="screen" id="screen-${i}" style="width:${screen.style.width}px;height:${screen.style.height}px">${inner}</div>`;
+    })
+    .join("\n");
+
+  const script = `(function(){
+var screens=[].slice.call(document.querySelectorAll(".screen"));
+var cur=0;
+function scale(){var el=screens[cur];if(!el)return;var k=Math.min(window.innerWidth/el.offsetWidth,window.innerHeight/el.offsetHeight);el.style.transform="scale("+k+")";el.style.transformOrigin="0 0";}
+document.addEventListener("click",function(e){
+var t=e.target.closest?e.target.closest("[data-conn]"):null;if(!t)return;
+var to=parseInt(t.getAttribute("data-conn"),10);var dur=parseInt(t.getAttribute("data-dur")||"200",10);
+if(to===cur)return;var old=screens[cur];
+old.style.transition="opacity "+dur+"ms";old.style.opacity="0";
+setTimeout(function(){old.style.display="none";cur=to;var el=screens[cur];el.style.display="block";el.style.transition="opacity "+dur+"ms";el.style.opacity="1";scale();},dur);
+});
+window.addEventListener("resize",scale);scale();
+})();`;
 
   return `<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${escapeHtml(root.name || "Export Canvas")}</title>
+<title>${escapeHtml(doc.root.name || "Export Canvas")}</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; background: #0b0e1a; overflow: hidden; }
-#screen { position: absolute; left: 0; top: 0; }
+.screen { position: absolute; left: 0; top: 0; opacity: 1; }
+.screen:not(:first-child) { display: none; }
 ${css.join("\n")}
 </style>
 </head>
@@ -54,7 +81,13 @@ function hash(id: string): string {
   return id.replace(/[^a-zA-Z0-9]/g, "");
 }
 
-function renderNode(node: Node, tokens: Tokens, cls: string, css: string[]): string {
+function renderNode(
+  node: Node,
+  tokens: Tokens,
+  cls: string,
+  css: string[],
+  conns?: Map<string, { to: number; dur: number }>,
+): string {
   const sel = `.${cls}`;
   css.push(`${sel} { ${styleToCss(node.style, tokens)} }`);
 
@@ -65,10 +98,14 @@ function renderNode(node: Node, tokens: Tokens, cls: string, css: string[]): str
   if (states.focused) css.push(`${sel}:focus-visible { ${partialCss(states.focused.style, tokens)} }`);
   if (states.disabled) css.push(`${sel}.is-disabled { ${partialCss(states.disabled.style, tokens)} }`);
 
-  const children = node.children.map((c) => renderNode(c, tokens, `${cls}-${hash(c.id)}`, css)).join("");
+  const children = node.children
+    .map((c) => renderNode(c, tokens, `${cls}-${hash(c.id)}`, css, conns))
+    .join("");
   const inner = node.type === "text" ? escapeHtml(node.text ?? "") : children;
   const disabled = states.disabled ? " is-disabled" : "";
-  return `<div class="${cls}${disabled}">${inner}</div>`;
+  const conn = conns?.get(node.id);
+  const connAttrs = conn ? ` data-conn="${conn.to}" data-dur="${conn.dur}" style="cursor:pointer"` : "";
+  return `<div class="${cls}${disabled}"${connAttrs}>${inner}</div>`;
 }
 
 export function styleToCss(s: Style, tokens: Tokens): string {

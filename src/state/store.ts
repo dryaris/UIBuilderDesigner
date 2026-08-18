@@ -8,9 +8,10 @@
  */
 import { create } from "zustand";
 import { applyPatches, produceWithPatches, type Patch } from "immer";
-import type { CanvasDoc, Node, Rect, StateKey, Style, Timeline, Tokens, Vec } from "../core/ir";
+import type { CanvasDoc, Node, PrototypeConnection, Rect, StateKey, Style, Timeline, Tokens, Vec } from "../core/ir";
 import { findNode, findParent, cloneNode, bbox, nodeRect, rectsIntersect, uid } from "../core/tree";
 import { topLevelNodes } from "../core/tree";
+import { frameNode } from "../core/defaults";
 
 export type Tool =
   | "select"
@@ -85,8 +86,8 @@ interface EditorState {
   selection: string[];
   hoverId: string | null;
   tool: Tool;
-  /** Pestaña activa del panel derecho (Inspector | Diseño | Animar). */
-  rightTab: "inspector" | "design" | "animate";
+  /** Pestaña activa del panel derecho (Inspector | Diseño | Animar | Prototipo). */
+  rightTab: "inspector" | "design" | "animate" | "prototype";
   /** Estado que se previsualiza en el lienzo (Fase 3): nodo + estado. */
   previewState: { nodeId: string; state: StateKey } | null;
 
@@ -97,6 +98,14 @@ interface EditorState {
   /** Reproducción de la línea de tiempo activa (WAAPI). */
   playing: boolean;
   activeTimelineId: string | null;
+  /** Pantalla activa en el preview (navegación del prototipo, Fase 7). */
+  previewScreen: Node | null;
+  /** Duración (ms) de la transición de la última navegación del prototipo. */
+  previewTransitionMs: number | null;
+
+  // ---- prototipado entre pantallas (Fase 7) ----
+  screens: Node[];
+  connections: PrototypeConnection[];
   spaceDown: boolean;
   viewport: Viewport;
   cursor: Vec | null;
@@ -114,13 +123,24 @@ interface EditorState {
   // ---- acciones de UI ----
   select: (ids: string[], additive?: boolean) => void;
   setTool: (t: Tool) => void;
-  setRightTab: (tab: "inspector" | "design" | "animate") => void;
+  setRightTab: (tab: "inspector" | "design" | "animate" | "prototype") => void;
   setPreviewState: (p: { nodeId: string; state: StateKey } | null) => void;
   setPreviewMode: (v: boolean) => void;
   setPreviewHoverId: (id: string | null) => void;
   setPreviewPressId: (id: string | null) => void;
   setPlaying: (v: boolean) => void;
   setActiveTimelineId: (id: string | null) => void;
+  setPreviewScreen: (n: Node | null) => void;
+  previewNavigate: (toScreenId: string, durationMs?: number | null) => void;
+
+  // ---- prototipado (Fase 7) ----
+  addScreen: () => void;
+  duplicateScreen: () => void;
+  switchScreen: (screenId: string) => void;
+  deleteScreen: (screenId: string) => void;
+  addConnection: (fromNodeId: string, toScreenId: string, transition?: PrototypeConnection["transition"]) => void;
+  removeConnection: (id: string) => void;
+  updateConnection: (id: string, partial: Partial<PrototypeConnection>) => void;
   setHover: (id: string | null) => void;
   setSpaceDown: (v: boolean) => void;
   setViewport: (p: Partial<Viewport>) => void;
@@ -192,7 +212,9 @@ function clampZoom(z: number): number {
 }
 
 export const useStore = create<EditorState>()((set, get) => ({
-  doc: { version: "", tokens: { colors: {}, radii: {}, spacing: {}, typography: {}, shadows: {}, easings: {} }, library: { components: {}, variants: {} }, timelines: [], assets: [], root: { id: "", type: "frame", name: "", style: { x: 0, y: 0, width: 0, height: 0 }, children: [] } },
+  doc: { version: "", tokens: { colors: {}, radii: {}, spacing: {}, typography: {}, shadows: {}, easings: {} }, library: { components: {}, variants: {} }, timelines: [], assets: [], screens: [], connections: [], root: { id: "", type: "frame", name: "", style: { x: 0, y: 0, width: 0, height: 0 }, children: [] } },
+  screens: [],
+  connections: [],
   history: { past: [], future: [] },
   selection: [],
   hoverId: null,
@@ -204,6 +226,8 @@ export const useStore = create<EditorState>()((set, get) => ({
   previewPressId: null,
   playing: false,
   activeTimelineId: null,
+  previewScreen: null,
+  previewTransitionMs: null,
   spaceDown: false,
   viewport: { pan: { x: 0, y: 0 }, zoom: 1, size: { x: 800, y: 600 } },
   cursor: null,
@@ -230,7 +254,9 @@ export const useStore = create<EditorState>()((set, get) => ({
 
   replaceDoc: (doc) =>
     set({
-      doc,
+      doc: { ...doc, screens: doc.screens ?? [], connections: doc.connections ?? [] },
+      screens: doc.screens ?? [],
+      connections: doc.connections ?? [],
       selection: [],
       history: { past: [], future: [] },
       drag: null,
@@ -240,6 +266,8 @@ export const useStore = create<EditorState>()((set, get) => ({
       previewHoverId: null,
       previewPressId: null,
       activeTimelineId: null,
+      previewScreen: null,
+      previewTransitionMs: null,
     }),
 
   undo: () => {
@@ -269,11 +297,101 @@ export const useStore = create<EditorState>()((set, get) => ({
   setRightTab: (rightTab) => set({ rightTab }),
   setPreviewState: (previewState) => set({ previewState }),
   setPreviewMode: (previewMode) =>
-    set((s) => ({ previewMode, playing: previewMode ? s.playing : false, previewHoverId: null, previewPressId: null })),
+    set((s) => ({
+      previewMode,
+      playing: previewMode ? s.playing : false,
+      previewHoverId: null,
+      previewPressId: null,
+      previewScreen: previewMode ? s.previewScreen : null,
+      previewTransitionMs: previewMode ? s.previewTransitionMs : null,
+    })),
   setPreviewHoverId: (previewHoverId) => set({ previewHoverId }),
   setPreviewPressId: (previewPressId) => set({ previewPressId }),
   setPlaying: (playing) => set({ playing }),
   setActiveTimelineId: (activeTimelineId) => set({ activeTimelineId }),
+  setPreviewScreen: (previewScreen) => set({ previewScreen }),
+
+  previewNavigate: (toScreenId, durationMs = null) => {
+    const s = get();
+    if (!s.previewMode) return;
+    if (toScreenId === s.doc.root.id) {
+      set({ previewScreen: null, previewTransitionMs: durationMs });
+      return;
+    }
+    const target = s.screens.find((sc) => sc.id === toScreenId);
+    if (!target) return;
+    set({ previewScreen: target, previewTransitionMs: durationMs });
+  },
+
+  addScreen: () => {
+    const st = get();
+    const w = st.doc.root.style.width;
+    const h = st.doc.root.style.height;
+    const blank = frameNode("Pantalla nueva", { x: 0, y: 0, width: w, height: h }, {
+      style: { x: 0, y: 0, width: w, height: h, backgroundColor: "#10131F" },
+    });
+    get().apply((d) => {
+      d.screens = [...(d.screens ?? []), blank];
+    });
+    get().switchScreen(blank.id);
+    get().showToast("Pantalla nueva creada");
+  },
+
+  duplicateScreen: () => {
+    const clone = cloneNode(get().doc.root);
+    remapIds(clone);
+    clone.name = `${clone.name} copia`;
+    get().apply((d) => {
+      d.screens = [...(d.screens ?? []), clone];
+    });
+    get().switchScreen(clone.id);
+    get().showToast("Pantalla duplicada");
+  },
+
+  switchScreen: (screenId) => {
+    const s = get();
+    if (screenId === s.doc.root.id) return;
+    const idx = s.screens.findIndex((sc) => sc.id === screenId);
+    if (idx < 0) return;
+    const target = s.screens[idx];
+    get().apply((d) => {
+      d.screens = [...(d.screens ?? [])];
+      d.screens[idx] = d.root;
+      d.root = target;
+    });
+    set({ selection: [] });
+    get().fitTo(nodeRect(get().doc.root));
+  },
+
+  deleteScreen: (screenId) => {
+    get().apply((d) => {
+      d.screens = (d.screens ?? []).filter((sc) => sc.id !== screenId);
+      d.connections = (d.connections ?? []).filter((c) => c.toScreenId !== screenId);
+    });
+  },
+
+  addConnection: (fromNodeId, toScreenId, transition) =>
+    get().apply((d) => {
+      const conn: PrototypeConnection = {
+        id: uid(),
+        fromNodeId,
+        toScreenId,
+        transition,
+      };
+      d.connections = [...(d.connections ?? []), conn];
+    }),
+
+  removeConnection: (id) =>
+    get().apply((d) => {
+      d.connections = (d.connections ?? []).filter((c) => c.id !== id);
+    }),
+
+  updateConnection: (id, partial) =>
+    get().apply((d) => {
+      d.connections = (d.connections ?? []).map((c) =>
+        c.id === id ? { ...c, ...partial } : c,
+      );
+    }),
   setHover: (hoverId) => set({ hoverId }),
   setSpaceDown: (spaceDown) => set({ spaceDown }),
   setViewport: (p) => set((s) => ({ viewport: { ...s.viewport, ...p } })),

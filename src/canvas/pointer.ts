@@ -24,6 +24,11 @@ import { normRect, resizeRect, snapMove, snapResize } from "./snapping";
 /** Referencia mutable al elemento canvas (registrada por Canvas.tsx). */
 export const canvasElement: { current: HTMLDivElement | null } = { current: null };
 
+/** Raíz activa: la pantalla navegada en preview, o la del editor. */
+export function activeRoot(s = useStore.getState()): Node {
+  return s.previewScreen ?? s.doc.root;
+}
+
 function getCanvas(): HTMLDivElement {
   return canvasElement.current as HTMLDivElement;
 }
@@ -66,7 +71,7 @@ export function useCanvasPointer() {
     // Modo Preview (Fase 4): sin selección ni edición; hover/press en vivo.
     if (s.previewMode) {
       const wp = worldOf(e.clientX, e.clientY);
-      const hit = hitTest(s.doc.root, wp.x, wp.y);
+      const hit = hitTest(activeRoot(s), wp.x, wp.y);
       s.setPreviewHoverId(hit?.id ?? null);
       s.setPreviewPressId(hit?.id ?? null);
       return;
@@ -162,7 +167,7 @@ export function useCanvasPointer() {
     // En preview, hover en vivo (salvo mientras se panea).
     if (s.previewMode && !s.drag) {
       const wp = worldOf(e.clientX, e.clientY);
-      const hit = hitTest(s.doc.root, wp.x, wp.y);
+      const hit = hitTest(activeRoot(s), wp.x, wp.y);
       s.setPreviewHoverId(hit?.id ?? null);
       return;
     }
@@ -260,9 +265,17 @@ export function useCanvasPointer() {
   // ---------------------------------------------------------------- pointerup
   function onPointerUp() {
     const s = useStore.getState();
-    // En preview solo se suelta el "press"; el pan se gestiona abajo.
+    // En preview solo se suelta el "press"; si el nodo pulsado tiene una
+    // conexión de prototipo, navega a su pantalla (Fase 7).
     if (s.previewMode && !s.drag) {
+      const pressId = s.previewPressId;
       s.setPreviewPressId(null);
+      if (pressId) {
+        const conn = (s.doc.connections ?? []).find((c) => c.fromNodeId === pressId);
+        if (conn) {
+          s.previewNavigate(conn.toScreenId, conn.transition?.durationMs ?? null);
+        }
+      }
       return;
     }
     const drag = s.drag;

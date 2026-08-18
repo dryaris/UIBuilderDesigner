@@ -176,6 +176,17 @@ export interface NodeState {
 /** Disparadores de animación (Fase 4). */
 export type AnimTriggerKind = "onLoad" | "onHover" | "onPress" | "onEvent";
 
+/** Conexión de prototipo: navegar de un nodo a otra pantalla (Fase 7). */
+export interface PrototypeConnection {
+  id: string;
+  /** Nodo que dispara la navegación (pertenece a la pantalla actual del editor). */
+  fromNodeId: string;
+  /** Pantalla destino (doc.root.id = pantalla inicial, o id de doc.screens). */
+  toScreenId: string;
+  /** Transición de la navegación (duración + curva desde tokens de easing). */
+  transition?: { durationMs: number; easing: string };
+}
+
 export interface AnimationTrigger {
   trigger: AnimTriggerKind;
   timelineId: string;
@@ -266,6 +277,10 @@ export interface CanvasDoc {
   assets: Asset[];
   /** El frame raíz ES la pantalla/artboard del proyecto. */
   root: Node;
+  /** Pantallas adicionales del prototipo (Fase 7). La actual siempre es `root`. */
+  screens?: Node[];
+  /** Conexiones de prototipo entre nodos y pantallas (Fase 7). */
+  connections?: PrototypeConnection[];
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +313,8 @@ export const MIGRATIONS: Migration[] = [
       library: doc.library ?? { components: {}, variants: {} },
       timelines: doc.timelines ?? [],
       assets: doc.assets ?? [],
+      screens: doc.screens ?? [],
+      connections: doc.connections ?? [],
     }),
   },
 ];

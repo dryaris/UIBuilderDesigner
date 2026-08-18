@@ -14,6 +14,7 @@ import { StatusBar } from "../ui/StatusBar";
 import { Inspector } from "../ui/Inspector";
 import { DesignPanel } from "../ui/DesignPanel";
 import { TimelinePanel } from "../ui/TimelinePanel";
+import { PrototypePanel } from "../ui/PrototypePanel";
 import { useTimelinePlayer } from "../preview/player";
 import { Layers } from "../ui/Layers";
 import { Palette } from "../ui/Palette";
@@ -79,13 +80,21 @@ export function Editor() {
             >
               Animar
             </button>
+            <button
+              className={`right-tab${rightTab === "prototype" ? " is-active" : ""}`}
+              onClick={() => setRightTab("prototype")}
+            >
+              Prototipo
+            </button>
           </div>
           {rightTab === "inspector" ? (
             <Inspector />
           ) : rightTab === "design" ? (
             <DesignPanel />
-          ) : (
+          ) : rightTab === "animate" ? (
             <TimelinePanel />
+          ) : (
+            <PrototypePanel />
           )}
         </div>
       </div>

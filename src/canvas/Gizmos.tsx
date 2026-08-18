@@ -39,13 +39,14 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
   const toS = (wx: number, wy: number) => toScreen(canvas as HTMLDivElement, wx, wy, vp);
   if (!canvas) return null;
 
+  // En preview no se dibujan guías ni áreas seguras (pertenecen a la pantalla del editor).
   const g = doc.root.guides;
-  const guidesV = showGuides ? g?.vertical ?? [] : [];
-  const guidesH = showGuides ? g?.horizontal ?? [] : [];
+  const guidesV = showGuides && !previewMode ? g?.vertical ?? [] : [];
+  const guidesH = showGuides && !previewMode ? g?.horizontal ?? [] : [];
 
   // Frame "activo" para safe areas: la selección si es un frame con safeArea, si no el root.
   let safeFrame: Node | null = null;
-  if (showSafeAreas) {
+  if (showSafeAreas && !previewMode) {
     const sel = selection.length === 1 ? findNode(doc.root, selection[0]) : null;
     if (sel?.safeArea) safeFrame = sel;
     else if (doc.root.safeArea) safeFrame = doc.root;

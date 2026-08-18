@@ -20,8 +20,11 @@ export function Canvas({
   const tool = useStore((s) => s.tool);
   const spaceDown = useStore((s) => s.spaceDown);
   const previewMode = useStore((s) => s.previewMode);
+  const previewScreen = useStore((s) => s.previewScreen);
+  const previewTransitionMs = useStore((s) => s.previewTransitionMs);
   const drag = useStore((s) => s.drag);
   const root = useStore((s) => s.doc.root);
+  const activeRoot = previewMode && previewScreen ? previewScreen : root;
   const { onPointerDown, onPointerMove, onPointerUp, onWheel, onDoubleClick } = useCanvasPointer();
 
   const ref = useRef<HTMLDivElement>(null);
@@ -77,6 +80,7 @@ export function Canvas({
       onDoubleClick={onDoubleClick}
       onContextMenu={(e: MouseEvent) => {
         e.preventDefault();
+        if (previewMode) return;
         const hit = hitAtClient(e.clientX, e.clientY);
         openContextMenu({ x: e.clientX, y: e.clientY, nodeId: hit ? hit.id : null });
       }}
@@ -87,7 +91,16 @@ export function Canvas({
           transform: `translate(${viewport.pan.x}px, ${viewport.pan.y}px) scale(${viewport.zoom})`,
         }}
       >
-        <NodeView node={root} />
+        <div
+          key={activeRoot.id}
+          className="screen-fade"
+          style={{
+            animationDuration:
+              previewMode && previewTransitionMs ? `${previewTransitionMs}ms` : undefined,
+          }}
+        >
+          <NodeView node={activeRoot} />
+        </div>
       </div>
       {ready && <Gizmos canvasRef={ref} />}
     </div>
