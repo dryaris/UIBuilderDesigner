@@ -8,7 +8,8 @@ import { useStore } from "../state/store";
 import { findNode } from "../core/tree";
 import { FRAME_PRESETS } from "../core/defaults";
 import { resolveColor } from "../core/tokens";
-import type { LayoutGrid, Node, Typography } from "../core/ir";
+import type { LayoutGrid, Node, StateKey, Style, Typography } from "../core/ir";
+import { parseColor, contrastRatio, wcagRating } from "../core/contrast";
 
 export function Inspector() {
   const selection = useStore((s) => s.selection);
@@ -147,6 +148,8 @@ function NodeInspector({ node }: { node: Node }) {
         </div>
       </Section>
 
+      <StatesSection node={node} />
+
       {node.type === "text" && (
         <Section title="Texto">
           <TypographyStyleSelect
@@ -184,6 +187,7 @@ function NodeInspector({ node }: { node: Node }) {
             </select>
           </div>
           <ColorField label="Color" value={s.color} onCommit={(v) => setStyle({ color: v })} field="color" />
+          <ContrastBadge node={node} />
           <div className="field-grid">
             <Num label="Tamaño" value={s.fontSize ?? 16} onCommit={(v) => setStyle({ fontSize: v })} />
             <div className="field">
@@ -492,6 +496,148 @@ function TypographyStyleSelect({ onApply }: { onApply: (t: Typography) => void }
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+const STATE_LABELS: Record<StateKey, string> = {
+  default: "Normal",
+  hover: "Hover",
+  pressed: "Pulsado",
+  disabled: "Desactivado",
+  focused: "Foco",
+};
+
+/**
+ * Estados interactivos (Fase 3): edita overrides por estado y previsualiza
+ * el resultado en el lienzo. Los atajos de easing vienen de los tokens.
+ */
+function StatesSection({ node }: { node: Node }) {
+  const [active, setActive] = useState<StateKey | null>(null);
+  const tokens = useStore((s) => s.doc.tokens);
+  const previewState = useStore((s) => s.previewState);
+  const setPreviewState = useStore((s) => s.setPreviewState);
+
+  // Al cambiar de nodo seleccionado, vuelve al estado por defecto.
+  useEffect(() => setActive(null), [node.id]);
+
+  const entry = active && node.states ? node.states[active] : undefined;
+  const s = entry?.style ?? {};
+  const isPreviewing = previewState?.nodeId === node.id && previewState?.state === active;
+  const st = () => useStore.getState();
+
+  const set = (partial: Partial<Style>) => {
+    if (!active) return;
+    st().setStateOverride(node.id, active, partial);
+  };
+
+  const setTransition = (partial: Partial<{ durationMs: number; easing: string }>) => {
+    if (!active) return;
+    st().setStateTransition(node.id, active, {
+      durationMs: entry?.transition?.durationMs ?? 150,
+      easing: entry?.transition?.easing ?? "$standard",
+      ...partial,
+    });
+  };
+
+  return (
+    <Section title="Estados">
+      <div className="token-chips">
+        {Object.entries(STATE_LABELS).map(([key, label]) => (
+          <button
+            key={key}
+            className={`token-chip${active === key ? " is-active" : ""}`}
+            onClick={() => setActive(key === "default" ? null : (key as StateKey))}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {active && (
+        <div className="state-fields">
+          <div className="shadow-head">
+            <span className="field-label">Vista previa en lienzo</span>
+            <input
+              type="checkbox"
+              checked={isPreviewing}
+              onChange={(e) =>
+                setPreviewState(e.target.checked ? { nodeId: node.id, state: active } : null)
+              }
+            />
+          </div>
+          <ColorField label="Relleno" value={s.backgroundColor} onCommit={(v) => set({ backgroundColor: v })} />
+          {node.type === "text" && (
+            <ColorField label="Color" value={s.color} onCommit={(v) => set({ color: v })} field="color" />
+          )}
+          <SliderField
+            label="Opacidad"
+            value={Math.round((s.opacity ?? 1) * 100)}
+            onCommit={(v) => set({ opacity: v / 100 })}
+          />
+          <div className="field-grid">
+            <Num label="Escala" value={s.scale ?? 1} step={0.05} onCommit={(v) => set({ scale: v })} />
+            <Num
+              label="Duración (ms)"
+              value={entry?.transition?.durationMs ?? 150}
+              onCommit={(v) => setTransition({ durationMs: Math.max(0, Math.round(v)) })}
+            />
+          </div>
+          <div className="field">
+            <span className="field-label">Transición (easing)</span>
+            <select
+              className="text-input"
+              value={entry?.transition?.easing ?? ""}
+              onChange={(e) => setTransition({ easing: e.target.value })}
+            >
+              <option value="">—</option>
+              {Object.entries(tokens.easings).map(([name, val]) => (
+                <option key={name} value={`$${name}`}>
+                  {name} · {val}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            className="mini-btn is-danger"
+            onClick={() => {
+              st().removeState(node.id, active);
+              if (isPreviewing) setPreviewState(null);
+              setActive(null);
+            }}
+          >
+            Quitar estado
+          </button>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+/** Comprobador de contraste WCAG para texto (Fase 3). */
+function ContrastBadge({ node }: { node: Node }) {
+  const tokens = useStore((s) => s.doc.tokens);
+  const rootBg = useStore((s) => s.doc.root.style.backgroundColor);
+  const fgRaw = resolveColor(tokens, node.style.color);
+  const bgRaw =
+    resolveColor(tokens, node.style.backgroundColor) ?? resolveColor(tokens, rootBg);
+  const fg = parseColor(fgRaw ?? "");
+  const bg = parseColor(bgRaw ?? "");
+  if (!fg || !bg) return null;
+  const ratio = contrastRatio(fg, bg);
+  const rating = wcagRating(ratio);
+  const ok = rating !== "fail";
+  return (
+    <div className={`contrast-badge${ok ? " is-ok" : " is-fail"}`}>
+      <span className="contrast-ratio mono">{ratio.toFixed(2)}:1</span>
+      <span className="contrast-label">
+        {rating === "fail"
+          ? "No cumple WCAG"
+          : rating === "AAA"
+            ? "AAA · excelente"
+            : rating === "AA"
+              ? "AA · accesible"
+              : "AA · texto grande"}
+      </span>
     </div>
   );
 }

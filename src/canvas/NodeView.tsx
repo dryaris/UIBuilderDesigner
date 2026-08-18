@@ -85,6 +85,7 @@ function textCss(s: Style, tokens: Tokens): CSSProperties {
 export function NodeView({ node }: { node: Node }) {
   const drag = useStore((s) => s.drag);
   const editingTextId = useStore((s) => s.editingTextId);
+  const previewState = useStore((s) => s.previewState);
   const tokens = useStore((s) => s.doc.tokens);
 
   if (node.hidden) return null;
@@ -96,6 +97,11 @@ export function NodeView({ node }: { node: Node }) {
   } else if (drag?.kind === "resize" && drag.id === node.id) {
     s = { ...s, x: drag.rect.x, y: drag.rect.y, width: drag.rect.width, height: drag.rect.height };
   }
+
+  // Estado interactivo previsualizado desde el Inspector (Fase 3).
+  const stateEntry =
+    previewState?.nodeId === node.id ? node.states?.[previewState.state] : undefined;
+  if (stateEntry) s = { ...s, ...stateEntry.style };
 
   const editing = editingTextId === node.id;
 

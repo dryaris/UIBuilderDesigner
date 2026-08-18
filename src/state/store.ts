@@ -8,7 +8,7 @@
  */
 import { create } from "zustand";
 import { applyPatches, produceWithPatches, type Patch } from "immer";
-import type { CanvasDoc, Node, Rect, Style, Tokens, Vec } from "../core/ir";
+import type { CanvasDoc, Node, Rect, StateKey, Style, Tokens, Vec } from "../core/ir";
 import { findNode, findParent, cloneNode, bbox, nodeRect, rectsIntersect, uid } from "../core/tree";
 import { topLevelNodes } from "../core/tree";
 
@@ -87,6 +87,8 @@ interface EditorState {
   tool: Tool;
   /** Pestaña activa del panel derecho (Inspector | Diseño). */
   rightTab: "inspector" | "design";
+  /** Estado que se previsualiza en el lienzo (Fase 3): nodo + estado. */
+  previewState: { nodeId: string; state: StateKey } | null;
   spaceDown: boolean;
   viewport: Viewport;
   cursor: Vec | null;
@@ -105,6 +107,7 @@ interface EditorState {
   select: (ids: string[], additive?: boolean) => void;
   setTool: (t: Tool) => void;
   setRightTab: (tab: "inspector" | "design") => void;
+  setPreviewState: (p: { nodeId: string; state: StateKey } | null) => void;
   setHover: (id: string | null) => void;
   setSpaceDown: (v: boolean) => void;
   setViewport: (p: Partial<Viewport>) => void;
@@ -136,6 +139,11 @@ interface EditorState {
   updateTokens: (fn: (tokens: Tokens) => void) => void;
   saveColorAsToken: (color: string, field?: "backgroundColor" | "color") => void;
 
+  // ---- estados interactivos (Fase 3) ----
+  setStateOverride: (nodeId: string, state: StateKey, partial: Partial<Style>) => void;
+  setStateTransition: (nodeId: string, state: StateKey, transition: { durationMs: number; easing: string }) => void;
+  removeState: (nodeId: string, state: StateKey) => void;
+
   // ---- componentes (Fase 2) ----
   createComponent: (name: string) => void;
   insertComponent: (componentId: string) => void;
@@ -164,6 +172,7 @@ export const useStore = create<EditorState>()((set, get) => ({
   hoverId: null,
   tool: "select",
   rightTab: "inspector",
+  previewState: null,
   spaceDown: false,
   viewport: { pan: { x: 0, y: 0 }, zoom: 1, size: { x: 800, y: 600 } },
   cursor: null,
@@ -222,6 +231,7 @@ export const useStore = create<EditorState>()((set, get) => ({
 
   setTool: (tool) => set({ tool }),
   setRightTab: (rightTab) => set({ rightTab }),
+  setPreviewState: (previewState) => set({ previewState }),
   setHover: (hoverId) => set({ hoverId }),
   setSpaceDown: (spaceDown) => set({ spaceDown }),
   setViewport: (p) => set((s) => ({ viewport: { ...s.viewport, ...p } })),
@@ -416,6 +426,31 @@ export const useStore = create<EditorState>()((set, get) => ({
   },
 
   updateTokens: (fn) => get().apply((d) => fn(d.tokens)),
+
+  setStateOverride: (nodeId, state, partial) =>
+    get().apply((d) => {
+      const n = findNode(d.root, nodeId);
+      if (!n) return;
+      const states = (n.states ??= {});
+      const entry = (states[state] ??= { style: {} });
+      entry.style = { ...entry.style, ...partial };
+    }),
+
+  setStateTransition: (nodeId, state, transition) =>
+    get().apply((d) => {
+      const n = findNode(d.root, nodeId);
+      if (!n) return;
+      const states = (n.states ??= {});
+      const entry = (states[state] ??= { style: {} });
+      entry.transition = transition;
+    }),
+
+  removeState: (nodeId, state) =>
+    get().apply((d) => {
+      const n = findNode(d.root, nodeId);
+      if (!n || !n.states) return;
+      delete n.states[state];
+    }),
 
   saveColorAsToken: (color, field = "backgroundColor") => {
     if (!color) return;

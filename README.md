@@ -23,6 +23,8 @@ Lo que ya funciona:
 - **Formato `.canvas`** (ZIP con `project.json` versionado + migraciones SemVer + slots para assets/thumb/annotations).
 - **Exportador HTML/CSS completo** que valida el IR: tokens → custom properties, estados → pseudo-clases, y un `.html` autocontenido que escala la pantalla al viewport.
 - **Export de assets PNG 1x/2x/3x** y **paquete web** (HTML + PNGs en un `.zip`), renderizado offscreen con el mismo motor que el editor (WYSIWYG exacto).
+- **Estados interactivos** (Fase 3): edita overrides de Hover / Pulsado / Desactivado / Foco por nodo (relleno, color, opacidad, escala, sombra), con **transición** (duración + curva de los tokens de easing) y **vista previa en el lienzo**.
+- **Comprobador de contraste WCAG** para texto: ratio en vivo con calificación AA/AAA.
 - **Panel de capas, inspector sin jerga técnica** (sliders, pickers, iconos), tema claro/oscuro, palette `⌘K`, starter kits (menú de juego 1080p, HUD móvil).
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
@@ -129,7 +131,7 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 
 1. **Fase 1** — Fundamentos tipo Figma: drag & drop con snap, atajos sagrados, presets + safe areas, reglas/guías, menú contextual, undo/redo, autosave. ✅
 2. **Fase 2** — Alineación/distribución, grids, spacing hints, **tokens y componentes ANTES de animar**, exportador HTML/CSS completo y export de assets PNG 1x/2x/3x. ✅
-3. **Fase 3 (actual)** — Auto-layout visual (flexbox tras iconos), constraints/responsive, estados interactivos, comprobador de contraste WCAG.
+3. **Fase 3 (actual)** — Auto-layout visual (flexbox tras iconos), constraints/responsive, **estados interactivos ✅, contraste WCAG ✅**.
 4. **Fase 4** — Máquina de estados + preview local, timelines/keyframes, editor de easing. Aquí el diseñador anima componentes reales con tokens.
 5. **Fase 5** — Exportador Unity UI Toolkit (UXML/USS).
 6. **Fase 6** — Exportador Unreal UMG.
