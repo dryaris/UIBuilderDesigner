@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Eye, EyeOff, Frame, Type, Square, Circle, Minus, Layers as LayersIcon } from "lucide-react";
+import { Eye, EyeOff, Frame, Type, Square, Circle, Minus, Layers as LayersIcon, ArrowUp, ArrowDown } from "lucide-react";
 import { useStore } from "../state/store";
 import type { Node } from "../core/ir";
 
@@ -115,6 +115,32 @@ function LayerRow({
       )}
       {node.ref?.startsWith("comp:") && (
         <span className="layer-comp-badge" title="Instancia de componente">◆</span>
+      )}
+      {selected && (
+        <span className="layer-reorder">
+          <button
+            className="icon-btn"
+            title="Subir en el orden (auto-layout)"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              useStore.getState().reorderNode(node.id, -1);
+            }}
+          >
+            <ArrowUp size={12} />
+          </button>
+          <button
+            className="icon-btn"
+            title="Bajar en el orden (auto-layout)"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              useStore.getState().reorderNode(node.id, 1);
+            }}
+          >
+            <ArrowDown size={12} />
+          </button>
+        </span>
       )}
     </div>
   );

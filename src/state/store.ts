@@ -11,6 +11,7 @@ import { applyPatches, produceWithPatches, type Patch } from "immer";
 import type { Annotation, CanvasDoc, Node, PrototypeConnection, Rect, StateKey, Style, Timeline, Tokens, Vec } from "../core/ir";
 import { findNode, findParent, cloneNode, bbox, nodeRect, rectsIntersect, uid } from "../core/tree";
 import { topLevelNodes } from "../core/tree";
+import { isFlexChild } from "../core/layout";
 import { frameNode } from "../core/defaults";
 
 export type Tool =
@@ -171,6 +172,8 @@ interface EditorState {
   deleteSelection: () => void;
   duplicateSelection: () => void;
   nudgeSelection: (dx: number, dy: number) => void;
+  /** Mueve un nodo un paso en el orden de hermanos (auto-layout: reordenar). */
+  reorderNode: (id: string, dir: -1 | 1) => void;
   groupSelection: (name: string) => void;
   ungroupSelection: () => void;
   alignSelection: (kind: AlignKind) => void;
@@ -515,11 +518,25 @@ export const useStore = create<EditorState>()((set, get) => ({
     get().apply((d) => {
       for (const id of ids) {
         const n = findNode(d.root, id);
-        if (n) {
+        // Los hijos de auto-layout no se mueven libremente (lo decide el layout).
+        if (n && !isFlexChild(d.root, n)) {
           n.style.x = Math.round(n.style.x + dx);
           n.style.y = Math.round(n.style.y + dy);
         }
       }
+    });
+  },
+
+  reorderNode: (id, dir) => {
+    get().apply((d) => {
+      const parent = findParent(d.root, id);
+      if (!parent) return;
+      const i = parent.index;
+      const j = i + dir;
+      if (j < 0 || j >= parent.parent.children.length) return;
+      const kids = parent.parent.children;
+      const [moved] = kids.splice(i, 1);
+      kids.splice(j, 0, moved);
     });
   },
 

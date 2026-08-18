@@ -3,11 +3,29 @@
  * El usuario ve sliders, pickers e iconos; el flexbox queda detrás.
  */
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { AlignLeft, AlignCenter, AlignRight, Eye, EyeOff } from "lucide-react";
+import {
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Eye,
+  EyeOff,
+  Rows3,
+  Columns3,
+  AlignStartHorizontal,
+  AlignCenterHorizontal,
+  AlignEndHorizontal,
+  AlignHorizontalSpaceBetween,
+  AlignHorizontalSpaceAround,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+  StretchVertical,
+} from "lucide-react";
 import { useStore } from "../state/store";
 import { findNode } from "../core/tree";
 import { FRAME_PRESETS } from "../core/defaults";
 import { resolveColor } from "../core/tokens";
+import { isFlexChild } from "../core/layout";
 import type { LayoutGrid, Node, StateKey, Style, Typography } from "../core/ir";
 import { parseColor, contrastRatio, wcagRating } from "../core/contrast";
 
@@ -77,6 +95,8 @@ function NodeInspector({ node }: { node: Node }) {
     });
 
   const s = node.style;
+  // Hijos de un auto-layout: su posición la decide el layout (Figma).
+  const inFlex = isFlexChild(st().doc.root, node);
 
   return (
     <div className="inspector-node">
@@ -98,12 +118,14 @@ function NodeInspector({ node }: { node: Node }) {
 
       <Section title="Posición y tamaño">
         <div className="field-grid">
-          <Num label="X" value={Math.round(s.x)} onCommit={(v) => setStyle({ x: v })} />
-          <Num label="Y" value={Math.round(s.y)} onCommit={(v) => setStyle({ y: v })} />
+          <Num label="X" value={Math.round(s.x)} disabled={inFlex} onCommit={(v) => setStyle({ x: v })} />
+          <Num label="Y" value={Math.round(s.y)} disabled={inFlex} onCommit={(v) => setStyle({ y: v })} />
           <Num label="W" value={Math.round(s.width)} onCommit={(v) => setStyle({ width: Math.max(1, v) })} />
           <Num label="H" value={Math.round(s.height)} onCommit={(v) => setStyle({ height: Math.max(1, v) })} />
         </div>
       </Section>
+
+      {node.type !== "text" && <AutoLayoutSection node={node} />}
 
       <Section title="Apariencia">
         <ColorField
@@ -280,6 +302,215 @@ function NodeInspector({ node }: { node: Node }) {
   );
 }
 
+/**
+ * Auto-layout (Fase 3): apilar/se distribuir hijos con flexbox real, sin
+ * jerga técnica — el usuario ve dirección, espaciado, alineación y tamaño.
+ */
+function AutoLayoutSection({ node }: { node: Node }) {
+  const st = useStore.getState;
+  const s = node.style;
+  const on = Boolean(s.flexDirection);
+
+  const set = (partial: Partial<Style>) =>
+    st().apply((d) => {
+      const n = findNode(d.root, node.id);
+      if (n) n.style = { ...n.style, ...partial };
+    });
+
+  const toggle = () => {
+    if (on) {
+      set({
+        flexDirection: undefined,
+        justifyContent: undefined,
+        alignItems: undefined,
+        gap: undefined,
+        padding: undefined,
+        wrap: undefined,
+        sizing: undefined,
+      });
+    } else {
+      set({
+        flexDirection: "row",
+        justifyContent: "flex-start",
+        alignItems: "center",
+        gap: 8,
+        padding: { top: 0, right: 0, bottom: 0, left: 0 },
+        sizing: { x: "fixed", y: "fixed" },
+      });
+    }
+  };
+
+  const pad = s.padding ?? { top: 0, right: 0, bottom: 0, left: 0 };
+  const setPad = (k: keyof typeof pad) => (v: number) =>
+    set({ padding: { ...pad, [k]: Math.max(0, v) } });
+
+  return (
+    <Section title="Auto-layout">
+      <button
+        className={`auto-toggle${on ? " is-on" : ""}`}
+        onClick={toggle}
+      >
+        <span className="auto-toggle-track">
+          <span className={`auto-toggle-knob${on ? " is-on" : ""}`} />
+        </span>
+        {on ? "Apilar y distribuir hijos" : "Activar: apila y distribuye los hijos automáticamente"}
+      </button>
+
+      {on && (
+        <>
+          <div className="field-label">Dirección</div>
+          <div className="icon-seg">
+            <button
+              className={s.flexDirection === "row" ? "is-active" : ""}
+              title="Horizontal: los hijos van en fila"
+              onClick={() => set({ flexDirection: "row" })}
+            >
+              <Columns3 size={14} />
+            </button>
+            <button
+              className={s.flexDirection === "column" ? "is-active" : ""}
+              title="Vertical: los hijos van en columna"
+              onClick={() => set({ flexDirection: "column" })}
+            >
+              <Rows3 size={14} />
+            </button>
+          </div>
+
+          <SliderField label="Espaciado" value={s.gap ?? 0} onCommit={(v) => set({ gap: Math.max(0, Math.round(v)) })} />
+
+          <div className="field-label">Alineación principal</div>
+          <div className="icon-seg">
+            <button
+              className={(s.justifyContent ?? "flex-start") === "flex-start" ? "is-active" : ""}
+              title="Al principio"
+              onClick={() => set({ justifyContent: "flex-start" })}
+            >
+              <AlignStartHorizontal size={14} />
+            </button>
+            <button
+              className={s.justifyContent === "center" ? "is-active" : ""}
+              title="Centrado"
+              onClick={() => set({ justifyContent: "center" })}
+            >
+              <AlignCenterHorizontal size={14} />
+            </button>
+            <button
+              className={s.justifyContent === "flex-end" ? "is-active" : ""}
+              title="Al final"
+              onClick={() => set({ justifyContent: "flex-end" })}
+            >
+              <AlignEndHorizontal size={14} />
+            </button>
+            <button
+              className={s.justifyContent === "space-between" ? "is-active" : ""}
+              title="Repartir espacio entre hijos"
+              onClick={() => set({ justifyContent: "space-between" })}
+            >
+              <AlignHorizontalSpaceBetween size={14} />
+            </button>
+            <button
+              className={s.justifyContent === "space-around" ? "is-active" : ""}
+              title="Repartir espacio alrededor"
+              onClick={() => set({ justifyContent: "space-around" })}
+            >
+              <AlignHorizontalSpaceAround size={14} />
+            </button>
+          </div>
+
+          <div className="field-label">Alineación cruzada</div>
+          <div className="icon-seg">
+            <button
+              className={(s.alignItems ?? "flex-start") === "flex-start" ? "is-active" : ""}
+              title="Arriba"
+              onClick={() => set({ alignItems: "flex-start" })}
+            >
+              <AlignStartVertical size={14} />
+            </button>
+            <button
+              className={s.alignItems === "center" ? "is-active" : ""}
+              title="Centrado"
+              onClick={() => set({ alignItems: "center" })}
+            >
+              <AlignCenterVertical size={14} />
+            </button>
+            <button
+              className={s.alignItems === "flex-end" ? "is-active" : ""}
+              title="Abajo"
+              onClick={() => set({ alignItems: "flex-end" })}
+            >
+              <AlignEndVertical size={14} />
+            </button>
+            <button
+              className={s.alignItems === "stretch" ? "is-active" : ""}
+              title="Estirar al contenedor"
+              onClick={() => set({ alignItems: "stretch" })}
+            >
+              <StretchVertical size={14} />
+            </button>
+          </div>
+
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={!!s.wrap}
+              onChange={(e) => set({ wrap: e.target.checked || undefined })}
+            />
+            Envolver al rebosar
+          </label>
+
+          <div className="field-label">Relleno interior</div>
+          <div className="field-grid">
+            <Num label="Sup" value={pad.top} onCommit={setPad("top")} />
+            <Num label="Der" value={pad.right} onCommit={setPad("right")} />
+            <Num label="Inf" value={pad.bottom} onCommit={setPad("bottom")} />
+            <Num label="Izq" value={pad.left} onCommit={setPad("left")} />
+          </div>
+
+          <div className="field-label">Tamaño</div>
+          <div className="sizing-rows">
+            <div className="sizing-row">
+              <span className="sizing-name">Ancho</span>
+              <div className="seg">
+                <button
+                  className={(s.sizing?.x ?? "fixed") === "fixed" ? "is-active" : ""}
+                  onClick={() => set({ sizing: { x: "fixed", y: s.sizing?.y ?? "fixed" } })}
+                >
+                  Fijo
+                </button>
+                <button
+                  className={s.sizing?.x === "hug" ? "is-active" : ""}
+                  title="Se ajusta al contenido"
+                  onClick={() => set({ sizing: { x: "hug", y: s.sizing?.y ?? "fixed" } })}
+                >
+                  Contenido
+                </button>
+              </div>
+            </div>
+            <div className="sizing-row">
+              <span className="sizing-name">Alto</span>
+              <div className="seg">
+                <button
+                  className={(s.sizing?.y ?? "fixed") === "fixed" ? "is-active" : ""}
+                  onClick={() => set({ sizing: { x: s.sizing?.x ?? "fixed", y: "fixed" } })}
+                >
+                  Fijo
+                </button>
+                <button
+                  className={s.sizing?.y === "hug" ? "is-active" : ""}
+                  title="Se ajusta al contenido"
+                  onClick={() => set({ sizing: { x: s.sizing?.x ?? "fixed", y: "hug" } })}
+                >
+                  Contenido
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </Section>
+  );
+}
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="section">
@@ -295,11 +526,13 @@ function Num({
   value,
   onCommit,
   step = 1,
+  disabled = false,
 }: {
   label: string;
   value: number;
   onCommit: (v: number) => void;
   step?: number;
+  disabled?: boolean;
 }) {
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
@@ -316,6 +549,8 @@ function Num({
           className="num-input"
           value={text}
           spellCheck={false}
+          disabled={disabled}
+          title={disabled ? "El auto-layout decide la posición" : undefined}
           onChange={(e) => setText(e.target.value)}
           onBlur={commit}
           onKeyDown={(e) => {

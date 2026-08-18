@@ -27,15 +27,32 @@ function shadowCss(s: NonNullable<Style["boxShadow"]>, tokens: Tokens): string {
   return `${s.inset ? "inset " : ""}${s.x}px ${s.y}px ${s.blur}px ${s.spread ?? 0}px ${color}`;
 }
 
-function boxCss(node: Node, s: Style, tokens: Tokens): CSSProperties {
+function boxCss(node: Node, s: Style, tokens: Tokens, inFlex = false): CSSProperties {
   const css: CSSProperties = {
-    position: "absolute",
-    left: s.x,
-    top: s.y,
-    width: s.width,
-    height: s.height,
+    position: inFlex ? "relative" : "absolute",
     boxSizing: "border-box",
   };
+  if (!inFlex) {
+    css.left = s.x;
+    css.top = s.y;
+  }
+  css.width = s.sizing?.x === "hug" ? "fit-content" : s.width;
+  css.height = s.sizing?.y === "hug" ? "fit-content" : s.height;
+  // Auto-layout: flexbox real (el mismo motor que el exportador HTML).
+  if (s.flexDirection) {
+    css.display = "flex";
+    css.flexDirection = s.flexDirection as CSSProperties["flexDirection"];
+    css.alignItems = s.alignItems as CSSProperties["alignItems"];
+    css.justifyContent = s.justifyContent as CSSProperties["justifyContent"];
+    if (s.gap !== undefined) css.gap = s.gap;
+    if (s.padding) {
+      css.paddingTop = s.padding.top;
+      css.paddingRight = s.padding.right;
+      css.paddingBottom = s.padding.bottom;
+      css.paddingLeft = s.padding.left;
+    }
+    if (s.wrap) css.flexWrap = "wrap";
+  }
   if (s.backgroundColor) css.backgroundColor = resolveColor(tokens, s.backgroundColor);
   if (s.gradient) css.backgroundImage = gradientCss(s.gradient, tokens);
   if (s.borderRadius !== undefined) css.borderRadius = resolveRadius(tokens, s.borderRadius);
@@ -99,7 +116,7 @@ const selectDragPreview = (nodeId: string) => (s: { drag: DragSession | null }):
   return null;
 };
 
-export const NodeView = memo(function NodeView({ node }: { node: Node }) {
+export const NodeView = memo(function NodeView({ node, inFlex = false }: { node: Node; inFlex?: boolean }) {
   const drag = useStore(useShallow(selectDragPreview(node.id)));
   const editingTextId = useStore((s) => s.editingTextId);
   // Solo el nodo previsualizado se re-renderiza cuando cambia previewState.
@@ -122,7 +139,16 @@ export const NodeView = memo(function NodeView({ node }: { node: Node }) {
   if (drag?.kind === "move") {
     s = { ...s, x: s.x + drag.dx, y: s.y + drag.dy };
   } else if (drag?.kind === "resize") {
-    s = { ...s, x: drag.rect.x, y: drag.rect.y, width: drag.rect.width, height: drag.rect.height };
+    // Redimensionar a mano desactiva el hug: si no, el fit-content seguiría
+    // ganando y nada se movería en el preview (el commit también lo fija).
+    s = {
+      ...s,
+      x: drag.rect.x,
+      y: drag.rect.y,
+      width: drag.rect.width,
+      height: drag.rect.height,
+      sizing: { x: "fixed", y: "fixed" },
+    };
   }
 
   // Estado interactivo previsualizado desde el Inspector (Fase 3).
@@ -156,13 +182,15 @@ export const NodeView = memo(function NodeView({ node }: { node: Node }) {
   return (
     <div
       className={`cn cn-${node.type}${previewActive ? " is-preview-active" : ""}`}
-      style={{ ...boxCss(node, s, tokens), transition: transitionCss }}
+      style={{ ...boxCss(node, s, tokens, inFlex), transition: transitionCss }}
       data-id={node.id}
     >
       {node.type === "text" ? (
         <EditableText node={node} editing={editing} />
       ) : (
-        node.children.map((child) => <NodeView key={child.id} node={child} />)
+        node.children.map((child) => (
+          <NodeView key={child.id} node={child} inFlex={Boolean(s.flexDirection)} />
+        ))
       )}
     </div>
   );

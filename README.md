@@ -36,6 +36,7 @@ Lo que ya funciona:
 - **Panel de capas, inspector sin jerga técnica** (sliders, pickers, iconos), tema claro/oscuro, palette `⌘K`, starter kits (menú de juego 1080p, HUD móvil).
 - **Onboarding y ayuda** (Fase 8): tour de primera vez guiado por las zonas del editor (reabrible desde el menú Ayuda) y modal de **atajos de teclado** con `⌘/` — la memoria muscular de Figma siempre a mano.
 - **Rendimiento** (Fase 8): `NodeView` memoizado con selectores finos por nodo (`useShallow` + clave de hover/press) — arrastrar y navegar en preview solo re-renderiza los nodos afectados, no la escena completa.
+- **Auto-layout (Fase 3)** — apilar y distribuir hijos con **flexbox real** tras iconos, sin jerga técnica: dirección (horizontal/vertical), espaciado, relleno interior, alineación principal (inicio/centro/fin/repartir) y cruzada (arriba/centro/abajo/estirar), envolver al rebosar y tamaño **Fijo/Contenido** (hug). El lienzo renderiza con CSS flexbox (WYSIWYG exacto con el exportador HTML, que también lo emite; Unity UI Toolkit usa su flexbox nativo y UMG anota Horizontal/VerticalBox). Los hijos de auto-layout no se arrastran libremente (como Figma): se reordenan con las flechas del panel Capas, y su X/Y quedan deshabilitados en el Inspector.
 - **Micro-interacciones** (Fase 8): barra de estado contextual según el momento (selección → atajos rápidos; preview con prototipo → "pulsa un nodo conectado para navegar"; modo anotar → instrucciones), además del toast animado y los hover states existentes.
 - **Hotfix coordenadas**: `toScreen` devolvía coordenadas de viewport (`rect.left + …`) cuando el SVG de gizmos vive en el espacio del canvas (`inset:0`). Todo el overlay (caja de selección, handles, marquee, snap lines, spacing hints, safe areas, cuadrícula de layout y guías) se dibujaba desplazado a la derecha por la posición del canvas en la ventana; ahora `toScreen` devuelve coords relativas al canvas, alineado con `toWorld`, los rulers y el hit-testing.
 
@@ -149,7 +150,7 @@ Los binarios se compilan en GitHub Actions (los binarios nativos requieren su pr
 
 1. **Fase 1** — Fundamentos tipo Figma: drag & drop con snap, atajos sagrados, presets + safe areas, reglas/guías, menú contextual, undo/redo, autosave. ✅
 2. **Fase 2** — Alineación/distribución, grids, spacing hints, **tokens y componentes ANTES de animar**, exportador HTML/CSS completo y export de assets PNG 1x/2x/3x. ✅
-3. **Fase 3** — Auto-layout visual (flexbox tras iconos), constraints/responsive, **estados interactivos ✅, contraste WCAG ✅**.
+3. **Fase 3** — **Auto-layout visual ✅ (flexbox tras iconos: dirección, espaciado, padding, alineaciones, wrap, tamaño Fijo/Contenido; reordenar desde Capas), estados interactivos ✅, contraste WCAG ✅**. Pendiente: constraints/responsive.
 4. **Fase 4** — **Máquina de estados + preview local ✅, timelines/keyframes ✅** (WAAPI, loop, easing por tramo). Pendiente: editor de easing visual.
 5. **Fase 5** — Exportador Unity UI Toolkit (UXML/USS). ✅
 6. **Fase 6** — Exportador Unreal UMG (manifest JSON + guía Blueprint). ✅

@@ -26,6 +26,8 @@ interface UmgNode {
   slot: UmgSlot;
   hidden?: boolean;
   properties?: Record<string, unknown>;
+  /** Auto-layout del editor: UMG lo reconstruye con Horizontal/VerticalBox. */
+  layout?: { direction: "row" | "column"; gap: number; padding: { top: number; right: number; bottom: number; left: number } };
   note?: string;
   children?: UmgNode[];
 }
@@ -120,6 +122,18 @@ function toUmgNode(node: Node, doc: CanvasDoc): UmgNode | null {
       },
       note: "TextBlock: color en ColorAndOpacity; justificación en Justification.",
     };
+  }
+
+  if (node.style.flexDirection) {
+    const pad = node.style.padding ?? { top: 0, right: 0, bottom: 0, left: 0 };
+    base.layout = {
+      direction: node.style.flexDirection,
+      gap: node.style.gap ?? 0,
+      padding: pad,
+    };
+    base.note =
+      "Auto-layout: reconstruir con HorizontalBox/VerticalBox + Spacer/Slot padding; " +
+      "los slots posicionales no aplican a los hijos.";
   }
 
   const props: Record<string, unknown> = {};

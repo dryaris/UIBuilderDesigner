@@ -7,21 +7,33 @@ import type { ReactNode, RefObject } from "react";
 import type { DragSession, SpacingHint, Viewport } from "../state/store";
 import { useStore } from "../state/store";
 import type { Node, Rect } from "../core/ir";
-import { findNode, nodeRect } from "../core/tree";
+import { findNode } from "../core/tree";
+import { worldRect } from "../core/layout";
 import { toScreen } from "./transform";
 import { beginGuideDrag } from "./pointer";
 
 const SAFE_TITLE = "#4ade80";
 const SAFE_ACTION = "#fbbf24";
 
-/** Rect efectivo de un nodo, incluyendo la vista previa del drag en curso. */
-function effectiveRect(node: Node, drag: DragSession | null): Rect {
-  const r = nodeRect(node);
+/**
+ * Rect de mundo de un nodo (compensa padres y auto-layout) con la vista
+ * previa del drag en curso. El drag de move desplaza el mundo; el de resize
+ * aplica el delta sobre el rect base (los rects del drag son locales).
+ */
+function selectionRect(root: Node, node: Node, drag: DragSession | null): Rect {
+  const w = worldRect(root, node);
   if (drag?.kind === "move" && drag.ids.includes(node.id)) {
-    return { ...r, x: r.x + drag.dx, y: r.y + drag.dy };
+    return { ...w, x: w.x + drag.dx, y: w.y + drag.dy };
   }
-  if (drag?.kind === "resize" && drag.id === node.id) return drag.rect;
-  return r;
+  if (drag?.kind === "resize" && drag.id === node.id) {
+    return {
+      x: w.x + (drag.rect.x - drag.startRect.x),
+      y: w.y + (drag.rect.y - drag.startRect.y),
+      width: drag.rect.width,
+      height: drag.rect.height,
+    };
+  }
+  return w;
 }
 
 export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | null> }) {
@@ -80,7 +92,7 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
       {showGrid && gridSvg(vp)}
 
       {/* Áreas seguras TV/consola */}
-      {safeFrame?.safeArea && <SafeAreas frame={safeFrame} toS={toS} />}
+      {safeFrame?.safeArea && <SafeAreas frame={safeFrame} root={doc.root} toS={toS} />}
 
       {/* Guías */}
       {guidesV.map((v) => (
@@ -127,7 +139,7 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
       ))}
 
       {/* Cuadrícula de layout del frame */}
-      {layoutGridNode && <LayoutGridOverlay frame={layoutGridNode} toS={toS} />}
+      {layoutGridNode && <LayoutGridOverlay frame={layoutGridNode} root={doc.root} toS={toS} />}
 
       {/* Hover y selección se ocultan en modo Preview (Fase 4). */}
       {!previewMode && hoverId && !selection.includes(hoverId) && (
@@ -138,7 +150,7 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
       {!previewMode && selection.map((id) => {
         const node = findNode(doc.root, id);
         if (!node) return null;
-        const r = effectiveRect(node, drag);
+        const r = selectionRect(doc.root, node, drag);
         const a = toS(r.x, r.y);
         const b = toS(r.x + r.width, r.y + r.height);
         const w = b.x - a.x;
@@ -190,7 +202,7 @@ function HoverOutline({ id, drag, toS }: { id: string; drag: DragSession | null;
   const doc = useStore((s) => s.doc);
   const node = findNode(doc.root, id);
   if (!node) return null;
-  const r = effectiveRect(node, drag);
+  const r = selectionRect(doc.root, node, drag);
   const a = toS(r.x, r.y);
   const b = toS(r.x + r.width, r.y + r.height);
   return <rect className="hover-box" x={a.x} y={a.y} width={b.x - a.x} height={b.y - a.y} />;
@@ -216,8 +228,8 @@ function ResizeHandles({ rect, toS }: { rect: Rect; toS: (x: number, y: number) 
   );
 }
 
-function SafeAreas({ frame, toS }: { frame: Node; toS: (x: number, y: number) => { x: number; y: number } }) {
-  const r = nodeRect(frame);
+function SafeAreas({ frame, root, toS }: { frame: Node; root: Node; toS: (x: number, y: number) => { x: number; y: number } }) {
+  const r = worldRect(root, frame);
   const safe = frame.safeArea;
   if (!safe) return null;
   const a = toS(r.x, r.y);
@@ -281,10 +293,10 @@ function SpacingHintView({ hint, toS }: { hint: SpacingHint; toS: (x: number, y:
 }
 
 /** Cuadrícula de layout del frame: columnas/filas con margin y gutter (Fase 2). */
-function LayoutGridOverlay({ frame, toS }: { frame: Node; toS: (x: number, y: number) => { x: number; y: number } }) {
+function LayoutGridOverlay({ frame, root, toS }: { frame: Node; root: Node; toS: (x: number, y: number) => { x: number; y: number } }) {
   const g = frame.layoutGrid;
   if (!g || !g.enabled) return null;
-  const r = nodeRect(frame);
+  const r = worldRect(root, frame);
   const margin = g.margin || 0;
   const gutter = g.gutter || 0;
   const cells: Rect[] = [];

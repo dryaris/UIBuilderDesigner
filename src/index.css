@@ -675,6 +675,11 @@ body {
   border-color: var(--accent);
 }
 
+.num-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .text-area {
   width: 100%;
   padding: 6px 8px;
@@ -2186,4 +2191,162 @@ input[type="range"] {
   background: var(--text-dim);
   border: 3px solid transparent;
   background-clip: content-box;
+}
+
+/* ------------------------------------------------------- Auto-layout (Fase 3) */
+
+.auto-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.auto-toggle.is-on {
+  border-color: var(--accent);
+}
+
+.auto-toggle-track {
+  width: 26px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.auto-toggle-track:has(.auto-toggle-knob.is-on) {
+  background: var(--accent);
+}
+
+.auto-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.auto-toggle-knob.is-on {
+  transform: translateX(12px);
+  background: var(--text);
+}
+
+.icon-seg {
+  display: flex;
+  gap: 2px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.icon-seg button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.icon-seg button:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.icon-seg button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-row input {
+  accent-color: var(--accent);
+}
+
+.sizing-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sizing-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sizing-name {
+  width: 44px;
+  font-size: 11px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.seg {
+  display: flex;
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.seg button {
+  flex: 1;
+  padding: 4px 0;
+  border: none;
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.seg button + button {
+  border-left: 1px solid var(--border);
+}
+
+.seg button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.layer-reorder {
+  display: flex;
+  gap: 1px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.layer-row:hover .layer-reorder,
+.layer-row.is-selected .layer-reorder {
+  opacity: 1;
 }

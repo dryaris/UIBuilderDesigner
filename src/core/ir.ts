@@ -114,6 +114,10 @@ export interface Style {
   alignItems?: AlignY;
   gap?: number;
   padding?: Padding;
+  /** Envolver al rebosar (auto-layout multi-línea). */
+  wrap?: boolean;
+  /** Ajuste al contenido por eje ("hug"): el tamaño se calcula de los hijos. */
+  sizing?: { x?: "fixed" | "hug"; y?: "fixed" | "hug" };
 
   // ---- visual ----
   /** Color sólido, o referencia "$token" (ej. "$primary"). */

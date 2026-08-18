@@ -87,9 +87,10 @@ function renderNode(
   cls: string,
   css: string[],
   conns?: Map<string, { to: number; dur: number }>,
+  inFlex = false,
 ): string {
   const sel = `.${cls}`;
-  css.push(`${sel} { ${styleToCss(node.style, tokens)} }`);
+  css.push(`${sel} { ${styleToCss(node.style, tokens, inFlex)} }`);
 
   // Estados interactivos → pseudo-clases (Fase 3 ya emite estas reglas).
   const states = node.states ?? {};
@@ -99,7 +100,9 @@ function renderNode(
   if (states.disabled) css.push(`${sel}.is-disabled { ${partialCss(states.disabled.style, tokens)} }`);
 
   const children = node.children
-    .map((c) => renderNode(c, tokens, `${cls}-${hash(c.id)}`, css, conns))
+    .map((c) =>
+      renderNode(c, tokens, `${cls}-${hash(c.id)}`, css, conns, Boolean(node.style.flexDirection)),
+    )
     .join("");
   const inner = node.type === "text" ? escapeHtml(node.text ?? "") : children;
   const disabled = states.disabled ? " is-disabled" : "";
@@ -108,9 +111,32 @@ function renderNode(
   return `<div class="${cls}${disabled}"${connAttrs}>${inner}</div>`;
 }
 
-export function styleToCss(s: Style, tokens: Tokens): string {
+export function styleToCss(s: Style, tokens: Tokens, inFlex = false): string {
   const rules: string[] = [];
-  rules.push(`position: absolute; left: ${s.x}px; top: ${s.y}px; width: ${s.width}px; height: ${s.height}px;`);
+  if (inFlex) {
+    rules.push(`position: relative;`);
+  } else {
+    rules.push(`position: absolute;`);
+    // Los campos de caja pueden faltar en overrides parciales (estados).
+    if (s.x !== undefined) rules.push(`left: ${s.x}px;`);
+    if (s.y !== undefined) rules.push(`top: ${s.y}px;`);
+  }
+  if (s.sizing?.x === "hug") rules.push(`width: fit-content;`);
+  else if (s.width !== undefined) rules.push(`width: ${s.width}px;`);
+  if (s.sizing?.y === "hug") rules.push(`height: fit-content;`);
+  else if (s.height !== undefined) rules.push(`height: ${s.height}px;`);
+  if (s.flexDirection) {
+    rules.push(`display: flex; flex-direction: ${s.flexDirection};`);
+    if (s.justifyContent) rules.push(`justify-content: ${s.justifyContent};`);
+    if (s.alignItems) rules.push(`align-items: ${s.alignItems};`);
+    if (s.gap !== undefined) rules.push(`gap: ${s.gap}px;`);
+    if (s.padding) {
+      rules.push(
+        `padding: ${s.padding.top}px ${s.padding.right}px ${s.padding.bottom}px ${s.padding.left}px;`,
+      );
+    }
+    if (s.wrap) rules.push(`flex-wrap: wrap;`);
+  }
   const bg = resolveColor(tokens, s.backgroundColor);
   if (bg) rules.push(`background-color: ${bg};`);
   if (s.gradient) rules.push(`background-image: ${gradientCss(s.gradient, tokens)};`);
@@ -151,9 +177,11 @@ function nodeHasText(s: Style): boolean {
 }
 
 function partialCss(partial: Partial<Style>, tokens: Tokens): string {
-  // Construye un style temporal para reutilizar la misma serialización.
-  const full: Style = { x: 0, y: 0, width: 0, height: 0, ...partial };
-  return styleToCss(full, tokens);
+  // Las reglas de estado son OVERRIDES: solo emiten el delta visual, sin caja
+  // (si no, un :hover re-emitiría position:absolute y width:0 y rompería el
+  // layout — y cualquier contenedor flex al pasar el ratón).
+  const { x, y, width, height, ...rest } = partial;
+  return styleToCss(rest as Style, tokens);
 }
 
 function gradientCss(g: NonNullable<Style["gradient"]>, tokens: Tokens): string {

@@ -55,7 +55,9 @@ export function exportUnityFile(doc: CanvasDoc): void {
 function renderUxml(doc: CanvasDoc, node: Node, cls: string, uss: string[], depth: number): string {
   const pad = "  ".repeat(depth + 1);
   const sel = `.${cls}`;
-  uss.push(`${sel} {\n${ussStyle(node.style, doc.tokens)}\n}`);
+  // Auto-layout: los hijos de un contenedor flex no usan posición absoluta.
+  const ussCtx = ussStyle(node.style, doc.tokens, Boolean(node.style.flexDirection));
+  uss.push(`${sel} {\n${ussCtx}\n}`);
 
   // Estados interactivos → pseudo-clases USS.
   const states = node.states ?? {};
@@ -92,11 +94,33 @@ function renderUxml(doc: CanvasDoc, node: Node, cls: string, uss: string[], dept
   return open;
 }
 
-function ussStyle(s: Style, tokens: Tokens): string {
+function ussStyle(s: Style, tokens: Tokens, inFlex = false): string {
   const rules: string[] = [];
-  rules.push(`position: absolute;`);
-  rules.push(`left: ${s.x}px; top: ${s.y}px;`);
-  rules.push(`width: ${s.width}px; height: ${s.height}px;`);
+  if (inFlex) {
+    rules.push(`position: relative;`);
+  } else {
+    rules.push(`position: absolute;`);
+    // Los campos de caja pueden faltar en overrides parciales (estados).
+    if (s.x !== undefined) rules.push(`left: ${s.x}px;`);
+    if (s.y !== undefined) rules.push(`top: ${s.y}px;`);
+  }
+  if (s.sizing?.x === "hug") rules.push(`width: auto;`);
+  else if (s.width !== undefined) rules.push(`width: ${s.width}px;`);
+  if (s.sizing?.y === "hug") rules.push(`height: auto;`);
+  else if (s.height !== undefined) rules.push(`height: ${s.height}px;`);
+  if (s.flexDirection) {
+    // UI Toolkit usa flexbox real: mismo modelo que el editor.
+    rules.push(`flex-direction: ${s.flexDirection};`);
+    if (s.justifyContent) rules.push(`justify-content: ${s.justifyContent};`);
+    if (s.alignItems) rules.push(`align-items: ${s.alignItems};`);
+    if (s.gap !== undefined) rules.push(`gap: ${s.gap}px;`);
+    if (s.padding) {
+      rules.push(
+        `padding: ${s.padding.top}px ${s.padding.right}px ${s.padding.bottom}px ${s.padding.left}px;`,
+      );
+    }
+    if (s.wrap) rules.push(`flex-wrap: wrap;`);
+  }
 
   const bg = colorValue(tokens, s.backgroundColor);
   if (bg) rules.push(`background-color: ${bg};`);
@@ -137,8 +161,9 @@ function ussStateRule(
   partial: Partial<Style>,
   tokens: Tokens,
 ): string {
-  const full: Style = { x: 0, y: 0, width: 0, height: 0, ...partial };
-  return `${sel}${pseudo} {\n${ussStyle(full, tokens)}\n}`;
+  // Override parcial: solo el delta visual (sin caja), como en el HTML.
+  const { x, y, width, height, ...rest } = partial;
+  return `${sel}${pseudo} {\n${ussStyle(rest as Style, tokens)}\n}`;
 }
 
 /** Color del IR → literal o var(--token). */

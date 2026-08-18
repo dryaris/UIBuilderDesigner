@@ -4,6 +4,7 @@
  * usarse dentro de recipes de Immer).
  */
 import type { Node, Rect } from "./ir";
+import { flexChildRects } from "./layout";
 
 export function uid(): string {
   return crypto.randomUUID();
@@ -78,19 +79,40 @@ export function bbox(rects: Rect[]): Rect | null {
  * Hit-testing estilo Figma: recorre de ARRIBA (último hijo) hacia abajo.
  * Un nodo solo es seleccionable si tiene "pintura" (fondo, gradiente, trazo,
  * texto o imagen); los frames transparentes no capturan el clic.
+ *
+ * Usa rects de MUNDO calculados por layout.ts: compensa el offset de cada
+ * padre y la posición de auto-layout (flexChildRects) cuando aplica.
  */
 export function hitTest(root: Node, x: number, y: number): Node | null {
+  const rects = flexChildRects(root) ?? root.children.map(nodeRect);
   for (let i = root.children.length - 1; i >= 0; i--) {
-    const hit = hitNode(root.children[i], x, y);
+    const r = rects[i];
+    if (!r) continue;
+    const childWorld = {
+      x: root.style.x + r.x,
+      y: root.style.y + r.y,
+      width: r.width,
+      height: r.height,
+    };
+    const hit = hitNode(root.children[i], childWorld, x, y);
     if (hit) return hit;
   }
   return null;
 }
 
-function hitNode(node: Node, x: number, y: number): Node | null {
+function hitNode(node: Node, world: Rect, x: number, y: number): Node | null {
   if (node.hidden) return null;
+  const rects = flexChildRects(node) ?? node.children.map(nodeRect);
   for (let i = node.children.length - 1; i >= 0; i--) {
-    const hit = hitNode(node.children[i], x, y);
+    const r = rects[i];
+    if (!r) continue;
+    const childWorld = {
+      x: world.x + r.x,
+      y: world.y + r.y,
+      width: r.width,
+      height: r.height,
+    };
+    const hit = hitNode(node.children[i], childWorld, x, y);
     if (hit) return hit;
   }
   const s = node.style;
@@ -101,7 +123,7 @@ function hitNode(node: Node, x: number, y: number): Node | null {
     node.type === "text" ||
     node.type === "image" ||
     node.type === "vector";
-  if (paintable && pointInRect(x, y, nodeRect(node))) return node;
+  if (paintable && pointInRect(x, y, world)) return node;
   return null;
 }
 

@@ -16,7 +16,8 @@
 import type React from "react";
 import { useStore, type Handle, type SpacingHint } from "../state/store";
 import type { CanvasDoc, Node, Rect, Vec } from "../core/ir";
-import { findNode, hitTest, nodeRect, bbox, rectsIntersect } from "../core/tree";
+import { findNode, findParent, hitTest, nodeRect, bbox, rectsIntersect } from "../core/tree";
+import { hasAutoLayout, worldRect } from "../core/layout";
 import { frameNode, shapeNode, textNode } from "../core/defaults";
 import { toWorld } from "./transform";
 import { normRect, resizeRect, snapMove, snapResize } from "./snapping";
@@ -119,11 +120,14 @@ export function useCanvasPointer() {
       }
     }
 
-    // ¿Clic sobre un handle de resize (selección única)?
+    // ¿Clic sobre un handle de resize (selección única)? Los hijos de un
+    // auto-layout no se redimensionan a mano (su tamaño lo decide el layout).
     if (s.selection.length === 1) {
-      const handle = hitHandle(e.clientX, e.clientY);
+      const selNode = findNode(s.doc.root, s.selection[0]);
+      const selParent = selNode ? findParent(s.doc.root, selNode.id) : null;
+      const handle = selParent && hasAutoLayout(selParent.parent) ? null : hitHandle(e.clientX, e.clientY);
       if (handle) {
-        const node = findNode(s.doc.root, s.selection[0]);
+        const node = selNode;
         if (node) {
           s.setDrag({
             kind: "resize",
@@ -150,6 +154,10 @@ export function useCanvasPointer() {
           ? [...s.selection, hit.id]
           : [hit.id];
       if (next.length !== s.selection.length || next[0] !== s.selection[0]) s.select(next);
+      // Hijos de auto-layout: su posición la decide el layout (Figma); solo
+      // se seleccionan. Reordenar: flechas en el panel Capas.
+      const parent = findParent(s.doc.root, hit.id);
+      if (parent && hasAutoLayout(parent.parent)) return;
       s.setDrag({
         kind: "move",
         ids: next,
@@ -315,6 +323,14 @@ export function useCanvasPointer() {
           n.style.y = Math.round(drag.rect.y);
           n.style.width = Math.round(drag.rect.width);
           n.style.height = Math.round(drag.rect.height);
+          // Redimensionar a mano desactiva el "hug" en los ejes tocados
+          // (si no, el layout volvería a calcular el tamaño y nada cambiaría).
+          if (n.style.sizing) {
+            const sizing = { ...n.style.sizing };
+            if (sizing.x === "hug") sizing.x = "fixed";
+            if (sizing.y === "hug") sizing.y = "fixed";
+            n.style.sizing = sizing;
+          }
         });
         break;
       }
@@ -337,7 +353,7 @@ export function useCanvasPointer() {
           return;
         }
         const ids = s2.doc.root.children
-          .filter((n) => !n.hidden && rectsIntersect(nodeRect(n), rect))
+          .filter((n) => !n.hidden && rectsIntersect(worldRect(s2.doc.root, n), rect))
           .map((n) => n.id);
         s2.select(drag.additive ? [...s2.selection, ...ids] : ids);
         break;
