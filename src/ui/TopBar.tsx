@@ -6,6 +6,7 @@ import { saveProjectFile, openProjectFile } from "../export/project";
 import { exportHtml } from "../export/html";
 import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
 import { exportUnityFile } from "../export/unity";
+import { exportUmgFile } from "../export/umg";
 import { Menu } from "./Menu";
 import { IconButton } from "./Menu";
 
@@ -106,6 +107,13 @@ export function TopBar() {
             onClick: () => {
               exportUnityFile(useStore.getState().doc);
               useStore.getState().showToast("Unity UI Toolkit exportado");
+            },
+          },
+          {
+            label: "Exportar Unreal UMG (manifest + guía)",
+            onClick: () => {
+              exportUmgFile(useStore.getState().doc);
+              useStore.getState().showToast("Unreal UMG exportado");
             },
           },
           { divider: true },

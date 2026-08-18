@@ -4,7 +4,7 @@ Un editor de diseño de interfaces **100% offline, sin cuenta y sin backend**, t
 
 > "Un Figma más agnóstico": el diseñador no necesita saber nada de motores ni de código; un diseñador técnico llega al detalle fino.
 
-## Estado actual — Fases 1–4 completas, Fase 5 y 6 en curso ✅
+## Estado actual — Fases 1–6 completas, Fase 7 en curso ✅
 
 Lo que ya funciona:
 
@@ -28,6 +28,7 @@ Lo que ya funciona:
 - **Modo Preview (máquina de estados)**: botón ▶ en la barra superior (o pestaña Animar) → el lienzo deja de editar y el cursor activa los estados hover/pulsado de cada nodo con sus transiciones (duración + curva desde los tokens de easing).
 - **Líneas de tiempo con keyframes**: pestaña Animar → crea una línea, selecciona elementos y **captura keyframes** en distintos instantes; reproduce en el preview con **Web Animations API** (loop opcional, easing por tramo con tokens).
 - **Exportador Unity UI Toolkit (UXML + USS)**: style → USS, tokens → custom properties, estados → pseudo-clases con transitions, timelines documentadas como corrutinas/AnimationCurve. Contrato "fiel, no idéntico".
+- **Exportador Unreal UMG**: manifest.json con el árbol de widgets (Canvas Panel / Border / TextBlock / Image), slots, estados → eventos Blueprint, animaciones → tracks de UMG Animation, tokens → paleta; + GUIA.txt paso a paso. Contrato "fiel, no idéntico" (UMG no tiene flexbox nativo).
 - **Panel de capas, inspector sin jerga técnica** (sliders, pickers, iconos), tema claro/oscuro, palette `⌘K`, starter kits (menú de juego 1080p, HUD móvil).
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
@@ -137,8 +138,8 @@ bunx tauri build   # binario de escritorio (requiere iconos: bunx tauri icon log
 3. **Fase 3** — Auto-layout visual (flexbox tras iconos), constraints/responsive, **estados interactivos ✅, contraste WCAG ✅**.
 4. **Fase 4 (actual)** — **Máquina de estados + preview local ✅, timelines/keyframes ✅** (WAAPI, loop, easing por tramo). Pendiente: editor de easing visual y prototipado entre pantallas.
 5. **Fase 5** — Exportador Unity UI Toolkit (UXML/USS). ✅
-6. **Fase 6 (en curso)** — Exportador Unreal UMG.
-7. **Fase 7** — Sistema de diseño completo (variantes, instancias con overrides, starter kits, prototipado, anotaciones, accesibilidad, modo Dev/spec sheets).
+6. **Fase 6** — Exportador Unreal UMG (manifest JSON + guía Blueprint). ✅
+7. **Fase 7 (en curso)** — Sistema de diseño completo (variantes, instancias con overrides, starter kits, prototipado, anotaciones, accesibilidad, modo Dev/spec sheets).
 8. **Fase 8** — Pulido UX: micro-interacciones, onboarding, rendimiento, pruebas con diseñadores.
 
 ## Decisiones de ingeniería relevantes

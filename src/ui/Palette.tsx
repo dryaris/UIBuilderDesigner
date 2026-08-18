@@ -5,6 +5,7 @@ import { saveProjectFile, openProjectFile } from "../export/project";
 import { exportHtml } from "../export/html";
 import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
 import { exportUnityFile } from "../export/unity";
+import { exportUmgFile } from "../export/umg";
 
 interface Action {
   id: string;
@@ -35,6 +36,11 @@ export function Palette() {
         const s = useStore.getState();
         exportUnityFile(s.doc);
         s.showToast("Unity UI Toolkit exportado");
+      } },
+      { id: "umg", label: "Exportar Unreal UMG (manifest + guía)", keywords: "unreal umg ue5 motor juego exportar blueprint", run: () => {
+        const s = useStore.getState();
+        exportUmgFile(s.doc);
+        s.showToast("Unreal UMG exportado");
       } },
       { id: "fit", label: "Ajustar a pantalla", keywords: "zoom ajustar fit encuadrar", run: () => st().fitTo(nodeRect(st().doc.root)) },
       { id: "zoom100", label: "Zoom 100%", keywords: "zoom tamaño real", run: () => st().zoomTo(1, center()) },
