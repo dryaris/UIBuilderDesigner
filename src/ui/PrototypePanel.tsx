@@ -11,6 +11,7 @@ import { Plus, Copy, Trash2, MonitorPlay, Link2, MessageSquareText, FileDown } f
 import { useStore } from "../state/store";
 import { findNode } from "../core/tree";
 import { exportReviewPdf } from "../export/pdf";
+import type { TransitionKind } from "../core/ir";
 
 export function PrototypePanel() {
   const doc = useStore((s) => s.doc);
@@ -25,6 +26,7 @@ export function PrototypePanel() {
   const [targetScreen, setTargetScreen] = useState("");
   const [connDuration, setConnDuration] = useState("200");
   const [connEasing, setConnEasing] = useState("$standard");
+  const [connKind, setConnKind] = useState<TransitionKind>("fade");
 
   const screenName = (id: string) => {
     if (id === doc.root.id) return doc.root.name;
@@ -40,6 +42,7 @@ export function PrototypePanel() {
     }
     const dur = Math.max(0, Number(connDuration) || 0);
     st().addConnection(sel[0], targetScreen || doc.root.id, {
+      kind: connKind,
       durationMs: Math.round(dur),
       easing: connEasing || "$standard",
     });
@@ -124,6 +127,20 @@ export function PrototypePanel() {
                   </option>
                 ))}
               </select>
+              <select
+                className="text-input"
+                value={connKind}
+                onChange={(e) => setConnKind(e.target.value as TransitionKind)}
+                title="Tipo de transición"
+              >
+                <option value="fade">Fundido (fade)</option>
+                <option value="slide-left">Deslizar izquierda</option>
+                <option value="slide-right">Deslizar derecha</option>
+                <option value="slide-up">Deslizar arriba</option>
+                <option value="slide-down">Deslizar abajo</option>
+                <option value="zoom">Zoom</option>
+                <option value="none">Sin transición</option>
+              </select>
               <div className="conn-form-row">
                 <input
                   className="text-input mono conn-dur"
@@ -160,15 +177,47 @@ export function PrototypePanel() {
             )}
             {connections.map((c) => {
               const node = findNode(doc.root, c.fromNodeId);
+              const kind = c.transition?.kind ?? "fade";
+              const kindLabels: Record<string, string> = {
+                fade: "Fade",
+                "slide-left": "←",
+                "slide-right": "→",
+                "slide-up": "↑",
+                "slide-down": "↓",
+                zoom: "Zoom",
+                none: "—",
+              };
               return (
                 <div key={c.id} className="conn-row">
                   <div className="conn-main">
                     <span className="conn-from" title="Nodo que dispara la navegación">
                       {node?.name ?? "—"}
                     </span>
-                    <span className="conn-arrow">→</span>
+                    <span className="conn-arrow">{kindLabels[kind] ?? "→"}</span>
                     <span className="conn-to">{screenName(c.toScreenId)}</span>
                   </div>
+                  <select
+                    className="text-input conn-easing"
+                    value={kind}
+                    title="Tipo de transición"
+                    onChange={(e) =>
+                      st().updateConnection(c.id, {
+                        transition: {
+                          kind: e.target.value as TransitionKind,
+                          durationMs: c.transition?.durationMs ?? 200,
+                          easing: c.transition?.easing ?? "$standard",
+                        },
+                      })
+                    }
+                  >
+                    <option value="fade">Fade</option>
+                    <option value="slide-left">Slide ←</option>
+                    <option value="slide-right">Slide →</option>
+                    <option value="slide-up">Slide ↑</option>
+                    <option value="slide-down">Slide ↓</option>
+                    <option value="zoom">Zoom</option>
+                    <option value="none">None</option>
+                  </select>
                   <input
                     className="text-input mono conn-dur"
                     type="number"
@@ -179,6 +228,7 @@ export function PrototypePanel() {
                       const v = Math.max(0, Number(e.target.value) || 0);
                       st().updateConnection(c.id, {
                         transition: {
+                          kind: c.transition?.kind ?? "fade",
                           durationMs: Math.round(v),
                           easing: c.transition?.easing ?? "$standard",
                         },
@@ -193,6 +243,7 @@ export function PrototypePanel() {
                     onChange={(e) =>
                       st().updateConnection(c.id, {
                         transition: {
+                          kind: c.transition?.kind ?? "fade",
                           durationMs: c.transition?.durationMs ?? 200,
                           easing: e.target.value,
                         },

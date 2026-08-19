@@ -291,7 +291,7 @@ export function useCanvasPointer() {
       if (pressId) {
         const conn = (s.doc.connections ?? []).find((c) => c.fromNodeId === pressId);
         if (conn) {
-          s.previewNavigate(conn.toScreenId, conn.transition?.durationMs ?? null);
+          s.previewNavigate(conn.toScreenId, conn.transition?.durationMs ?? null, conn.transition?.kind ?? null);
         }
       }
       return;

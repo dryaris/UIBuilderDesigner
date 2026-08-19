@@ -56,6 +56,8 @@ Lo que ya funciona:
 - **Zoom a pantalla/selección**: `Cmd+1` ajusta la vista a toda la pantalla, `Cmd+2` hace zoom a los nodos seleccionados (atajos estándar de Figma).
 - **Modo outline (wireframe)**: `Cmd+Y` alterna entre vista normal y modo outline (solo bordes, sin fills) para ver la estructura del diseño.
 - **Tamaño porcentual**: en el Inspector → Tamaño, el botón "%" permite definir el ancho/alto como porcentaje del padre (0–200%), ideal para layouts responsive.
+- **Component properties**: los componentes de la librería pueden definir **props booleanas/string** (desde Diseño → Librería → Props). Las instancias en el lienzo muestran los overrides en el Inspector, permitiendo personalizar cada instancia sin afectar la definición del componente.
+- **Prototype transitions con tipos**: al conectar pantallas, puedes elegir entre **Fade, Slide (←→↑↓), Zoom** o **Sin transición**, además de duración y curva de easing. El preview del editor y el exportador HTML reproducen la animación exacta con CSS transitions.
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 

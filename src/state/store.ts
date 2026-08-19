@@ -111,6 +111,8 @@ interface EditorState {
   previewScreen: Node | null;
   /** Duración (ms) de la transición de la última navegación del prototipo. */
   previewTransitionMs: number | null;
+  /** Tipo de transición de la última navegación del prototipo. */
+  previewTransitionKind: import("../core/ir").TransitionKind | null;
 
   // ---- prototipado entre pantallas (Fase 7) ----
   screens: Node[];
@@ -142,7 +144,7 @@ interface EditorState {
   setPlaying: (v: boolean) => void;
   setActiveTimelineId: (id: string | null) => void;
   setPreviewScreen: (n: Node | null) => void;
-  previewNavigate: (toScreenId: string, durationMs?: number | null) => void;
+  previewNavigate: (toScreenId: string, durationMs?: number | null, kind?: import("../core/ir").TransitionKind | null) => void;
 
   // ---- prototipado (Fase 7) ----
   addScreen: () => void;
@@ -242,6 +244,18 @@ interface EditorState {
   addVariant: (componentId: string, name: string) => void;
   updateComponent: (componentId: string) => void;
 
+  // ---- component props (Fase 8) ----
+  /** Añade una prop al componente. */
+  addComponentProp: (componentId: string, prop: import("../core/ir").ComponentProp) => void;
+  /** Elimina una prop del componente. */
+  removeComponentProp: (componentId: string, propName: string) => void;
+  /** Actualiza una prop del componente. */
+  updateComponentProp: (componentId: string, propName: string, partial: Partial<import("../core/ir").ComponentProp>) => void;
+  /** Override de una prop en una instancia (nodo con ref comp:...). */
+  setPropOverride: (nodeId: string, propName: string, value: string | boolean) => void;
+  /** Quita un override de prop. */
+  removePropOverride: (nodeId: string, propName: string) => void;
+
   fitTo: (rect: Rect) => void;
   zoomBy: (factor: number, center: Vec) => void;
   zoomTo: (zoom: number, center: Vec) => void;
@@ -276,6 +290,7 @@ export const useStore = create<EditorState>()((set, get) => ({
   activeTimelineId: null,
   previewScreen: null,
   previewTransitionMs: null,
+  previewTransitionKind: null,
   spaceDown: false,
   viewport: { pan: { x: 0, y: 0 }, zoom: 1, size: { x: 800, y: 600 } },
   cursor: null,
@@ -360,6 +375,7 @@ export const useStore = create<EditorState>()((set, get) => ({
       previewPressId: null,
       previewScreen: previewMode ? s.previewScreen : null,
       previewTransitionMs: previewMode ? s.previewTransitionMs : null,
+      previewTransitionKind: previewMode ? s.previewTransitionKind : null,
       // El modo anotación es de edición: al entrar en preview se apaga.
       annotateMode: previewMode ? false : s.annotateMode,
     })),
@@ -369,16 +385,16 @@ export const useStore = create<EditorState>()((set, get) => ({
   setActiveTimelineId: (activeTimelineId) => set({ activeTimelineId }),
   setPreviewScreen: (previewScreen) => set({ previewScreen }),
 
-  previewNavigate: (toScreenId, durationMs = null) => {
+  previewNavigate: (toScreenId, durationMs = null, kind = null) => {
     const s = get();
     if (!s.previewMode) return;
     if (toScreenId === s.doc.root.id) {
-      set({ previewScreen: null, previewTransitionMs: durationMs });
+      set({ previewScreen: null, previewTransitionMs: durationMs, previewTransitionKind: kind });
       return;
     }
     const target = s.screens.find((sc) => sc.id === toScreenId);
     if (!target) return;
-    set({ previewScreen: target, previewTransitionMs: durationMs });
+    set({ previewScreen: target, previewTransitionMs: durationMs, previewTransitionKind: kind });
   },
 
   addScreen: () => {
@@ -1022,6 +1038,44 @@ export const useStore = create<EditorState>()((set, get) => ({
     });
     get().showToast("Componente actualizado (futuras instancias heredarán los cambios)");
   },
+
+  addComponentProp: (componentId, prop) =>
+    get().apply((d) => {
+      const c = d.library.components[componentId];
+      if (!c) return;
+      if (!c.props) c.props = [];
+      if (c.props.some((p) => p.name === prop.name)) return;
+      c.props.push(prop);
+    }),
+
+  removeComponentProp: (componentId, propName) =>
+    get().apply((d) => {
+      const c = d.library.components[componentId];
+      if (!c?.props) return;
+      c.props = c.props.filter((p) => p.name !== propName);
+    }),
+
+  updateComponentProp: (componentId, propName, partial) =>
+    get().apply((d) => {
+      const c = d.library.components[componentId];
+      if (!c?.props) return;
+      const prop = c.props.find((p) => p.name === propName);
+      if (prop) Object.assign(prop, partial);
+    }),
+
+  setPropOverride: (nodeId, propName, value) =>
+    get().apply((d) => {
+      const n = findNode(d.root, nodeId);
+      if (!n) return;
+      if (!n.propOverrides) n.propOverrides = {};
+      n.propOverrides[propName] = value;
+    }),
+
+  removePropOverride: (nodeId, propName) =>
+    get().apply((d) => {
+      const n = findNode(d.root, nodeId);
+      if (n?.propOverrides) delete n.propOverrides[propName];
+    }),
 
   setNodeName: (id, name) =>
     get().apply((d) => {

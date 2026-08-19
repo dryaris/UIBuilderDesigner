@@ -179,6 +179,8 @@ function NodeInspector({ node }: { node: Node }) {
 
       <StatesSection node={node} />
 
+      <ComponentPropsSection node={node} />
+
       {node.type === "text" && (
         <Section title="Texto">
           <TypographyStyleSelect
@@ -1045,6 +1047,72 @@ function ContrastBadge({ node }: { node: Node }) {
       </span>
     </div>
   );
+}
+
+/**
+ * Props de componente: permite definir props (boolean/string) en un componente
+ * y overrides por instancia.
+ */
+function ComponentPropsSection({ node }: { node: Node }) {
+  const st = useStore.getState;
+  const library = useStore((s) => s.doc.library);
+  const compId = node.ref?.startsWith("comp:") ? node.ref.slice(5) : null;
+  const comp = compId ? library.components[compId] : null;
+
+  // Si el nodo es una instancia de componente, mostrar overrides.
+  if (comp && comp.props && comp.props.length > 0) {
+    return (
+      <Section title="Props del componente">
+        <div className="dim safe-hint" style={{ marginBottom: 6 }}>
+          Componente: {comp.name}
+        </div>
+        {comp.props.map((prop) => {
+          const val = node.propOverrides?.[prop.name] ?? prop.default;
+          const isOverridden = node.propOverrides?.[prop.name] !== undefined;
+          return (
+            <div key={prop.name} className="field">
+              <span className="field-label">
+                {prop.name} {isOverridden && <span className="dim">(override)</span>}
+              </span>
+              {prop.type === "boolean" ? (
+                <label className="check-row">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(val)}
+                    onChange={(e) => {
+                      if (isOverridden) {
+                        st().setPropOverride(node.id, prop.name, e.target.checked);
+                      } else {
+                        st().setPropOverride(node.id, prop.name, e.target.checked);
+                      }
+                    }}
+                  />
+                  {prop.description ?? prop.name}
+                </label>
+              ) : (
+                <input
+                  className="text-input"
+                  value={String(val)}
+                  onChange={(e) => st().setPropOverride(node.id, prop.name, e.target.value)}
+                />
+              )}
+              {isOverridden && (
+                <button
+                  className="mini-btn is-danger"
+                  onClick={() => st().removePropOverride(node.id, prop.name)}
+                >
+                  Restablecer
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </Section>
+    );
+  }
+
+  // Si el nodo NO es instancia de componente, no mostrar nada.
+  return null;
 }
 
 /** Cuadrícula de layout del frame (columnas/filas con margin y gutter). */

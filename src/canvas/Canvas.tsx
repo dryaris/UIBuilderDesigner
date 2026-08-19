@@ -24,6 +24,7 @@ export function Canvas({
   const annotateMode = useStore((s) => s.annotateMode);
   const previewScreen = useStore((s) => s.previewScreen);
   const previewTransitionMs = useStore((s) => s.previewTransitionMs);
+  const previewTransitionKind = useStore((s) => s.previewTransitionKind);
   const drag = useStore((s) => s.drag);
   const root = useStore((s) => s.doc.root);
   const activeRoot = previewMode && previewScreen ? previewScreen : root;
@@ -123,7 +124,7 @@ export function Canvas({
       >
         <div
           key={activeRoot.id}
-          className="screen-fade"
+          className={`screen-fade${previewMode && previewTransitionKind ? ` screen-transition-${previewTransitionKind}` : ""}`}
           style={{
             animationDuration:
               previewMode && previewTransitionMs ? `${previewTransitionMs}ms` : undefined,

@@ -180,6 +180,9 @@ export interface NodeState {
   transition?: { durationMs: number; easing: string };
 }
 
+/** Tipos de transición de prototipo. */
+export type TransitionKind = "fade" | "slide-left" | "slide-right" | "slide-up" | "slide-down" | "zoom" | "none";
+
 /** Disparadores de animación (Fase 4). */
 export type AnimTriggerKind = "onLoad" | "onHover" | "onPress" | "onEvent";
 
@@ -190,8 +193,8 @@ export interface PrototypeConnection {
   fromNodeId: string;
   /** Pantalla destino (doc.root.id = pantalla inicial, o id de doc.screens). */
   toScreenId: string;
-  /** Transición de la navegación (duración + curva desde tokens de easing). */
-  transition?: { durationMs: number; easing: string };
+  /** Transición de la navegación (tipo + duración + curva desde tokens de easing). */
+  transition?: { kind?: TransitionKind; durationMs: number; easing: string };
 }
 
 /** Anotación de review (Fase 7): pin sobre la pantalla con nota de revisión. */
@@ -247,6 +250,15 @@ export interface Asset {
   mime: string;
 }
 
+export interface ComponentProp {
+  name: string;
+  type: "boolean" | "string";
+  /** Valor por defecto. */
+  default: string | boolean;
+  /** Descripción corta (opcional). */
+  description?: string;
+}
+
 export interface LibraryComponent {
   id: string;
   name: string;
@@ -254,6 +266,8 @@ export interface LibraryComponent {
   root: Node;
   /** Si es una variante de otro componente, id del componente base (Fase 7). */
   variantOf?: string;
+  /** Props editables por el usuario (boolean/string). */
+  props?: ComponentProp[];
 }
 
 export interface Library {
@@ -267,6 +281,8 @@ export interface Node {
   name: string;
   /** "$token" o referencia a componente/variante de la librería. */
   ref?: string;
+  /** Overrides de props del componente (clave → valor). */
+  propOverrides?: Record<string, string | boolean>;
   style: Style;
   /** Overrides parciales por estado interactivo (Fase 3). */
   states?: Partial<Record<StateKey, NodeState>>;

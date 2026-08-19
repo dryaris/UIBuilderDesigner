@@ -627,6 +627,7 @@ function LibrarySection() {
                       />
                     </div>
                   )}
+                  <ComponentPropsEditor compId={comp.id} props={comp.props ?? []} />
                   {compVariants.length > 0 && (
                     <div className="library-variants">
                       {compVariants.map((v) => (
@@ -708,4 +709,79 @@ function miniCss(node: Node, tokens: Tokens, scale: number): CSSProperties {
   if (radius !== undefined) css.borderRadius = radius * scale;
   if (s.opacity !== undefined) css.opacity = s.opacity;
   return css;
+}
+
+/** Editor de props de componente: añade/edita props boolean/string. */
+function ComponentPropsEditor({
+  compId,
+  props: compProps,
+}: {
+  compId: string;
+  props: import("../core/ir").ComponentProp[];
+}) {
+  const st = useStore.getState;
+  const [expanded, setExpanded] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newType, setNewType] = useState<"boolean" | "string">("boolean");
+
+  if (compProps.length === 0 && !expanded) {
+    return (
+      <button
+        className="mini-btn" style={{ marginTop: 4, fontSize: 10.5 }}
+        onClick={() => setExpanded(true)}
+      >
+        + Añadir props
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 4, padding: "4px 0" }}>
+      <button
+        className="mini-btn" style={{ fontSize: 10.5, marginBottom: 4 }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        Props {compProps.length > 0 ? `(${compProps.length})` : ""} {expanded ? "▲" : "▼"}
+      </button>
+      {expanded && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {compProps.map((prop) => (
+            <div key={prop.name} className="token-row" style={{ gap: 4 }}>
+              <span className="token-name" style={{ fontSize: 10.5 }}>{prop.name}</span>
+              <span className="dim" style={{ fontSize: 10 }}>{prop.type}</span>
+              <button
+                className="icon-btn token-del" style={{ width: 18, height: 18 }}
+                title="Eliminar prop"
+                onClick={() => st().removeComponentProp(compId, prop.name)}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <div className="token-row" style={{ gap: 4 }}>
+            <input
+              className="text-input" style={{ flex: 1, fontSize: 10.5, padding: "3px 5px" }}
+              value={newName}
+              placeholder="nombre"
+              onChange={(e) => setNewName(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newName.trim()) {
+                  st().addComponentProp(compId, { name: newName.trim(), type: newType, default: newType === "boolean" ? false : "" });
+                  setNewName("");
+                }
+              }}
+            />
+            <select
+              className="text-input" style={{ width: 56, fontSize: 10.5, padding: "3px 4px" }}
+              value={newType}
+              onChange={(e) => setNewType(e.target.value as "boolean" | "string")}
+            >
+              <option value="boolean">bool</option>
+              <option value="string">string</option>
+            </select>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

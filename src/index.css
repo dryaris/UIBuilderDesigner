@@ -2805,3 +2805,59 @@ input[type="range"] {
   ry: 3;
 }
 
+/* ------------------------------------------------------------------ Prototype transitions */
+
+.screen-fade {
+  animation: screen-fade-in ease-out both;
+}
+
+@keyframes screen-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.screen-transition-slide-left {
+  animation: screen-slide-left ease-out both;
+}
+
+@keyframes screen-slide-left {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.screen-transition-slide-right {
+  animation: screen-slide-right ease-out both;
+}
+
+@keyframes screen-slide-right {
+  from { opacity: 0; transform: translateX(-100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.screen-transition-slide-up {
+  animation: screen-slide-up ease-out both;
+}
+
+@keyframes screen-slide-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.screen-transition-slide-down {
+  animation: screen-slide-down ease-out both;
+}
+
+@keyframes screen-slide-down {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.screen-transition-zoom {
+  animation: screen-zoom ease-out both;
+}
+
+@keyframes screen-zoom {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
