@@ -130,6 +130,10 @@ function renderNode(
     }
   }
   css.push(`${sel} { ${cssRules} }`);
+  // Overflow explícito del nodo (frames con scroll/hidden).
+  if (node.type !== "text" && node.overflow) {
+    css.push(`${sel} { overflow: ${node.overflow}; }`);
+  }
 
   // Estados interactivos → pseudo-clases (Fase 3 ya emite estas reglas).
   const states = node.states ?? {};

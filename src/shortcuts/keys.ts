@@ -78,6 +78,9 @@ export function useKeyboard(): void {
         }
         return;
       }
+      if (e.code === "Alt") {
+        st.setAltDown(true);
+      }
 
       if (mod && key === "z") {
         e.preventDefault();
@@ -259,6 +262,7 @@ export function useKeyboard(): void {
 
     function onKeyUp(e: KeyboardEvent) {
       if (e.code === "Space") useStore.getState().setSpaceDown(false);
+      if (e.code === "Alt") useStore.getState().setAltDown(false);
     }
 
     window.addEventListener("keydown", onKeyDown);

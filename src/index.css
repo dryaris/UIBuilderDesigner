@@ -2971,3 +2971,50 @@ input[type="range"] {
 .presentation-mode .align-toolbar,
 .presentation-mode .search-panel { display: none !important; }
 .presentation-mode .canvas { position: fixed !important; inset: 0 !important; z-index: 9999; background: #000; }
+
+/* ── Mini-map ── */
+.mini-map {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: var(--shadow-pop);
+  z-index: 50;
+}
+
+/* ── Shortcuts search ── */
+.shortcuts-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin: 0 16px 8px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+.shortcuts-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 13px;
+}
+.shortcuts-search input::placeholder { color: var(--text-dim); }
+.shortcuts-search svg { color: var(--text-dim); flex-shrink: 0; }
+
+/* ── Overflow indicator for scroll frames ── */
+.frame-scroll-indicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  opacity: 0.3;
+  pointer-events: none;
+}

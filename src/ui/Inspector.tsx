@@ -331,6 +331,18 @@ function NodeInspector({ node }: { node: Node }) {
           <div className="safe-hint dim">
             {node.guides ? `${node.guides.vertical.length}V · ${node.guides.horizontal.length}H guías` : "Sin guías"}
           </div>
+          <div className="field">
+            <span className="field-label">Overflow</span>
+            <select
+              className="text-input"
+              value={node.overflow ?? "visible"}
+              onChange={(e) => patch((n) => { n.overflow = e.target.value as import("../core/ir").Node["overflow"]; })}
+            >
+              <option value="visible">Visible</option>
+              <option value="hidden">Hidden (recortar)</option>
+              <option value="scroll">Scroll</option>
+            </select>
+          </div>
           <LayoutGridEditor node={node} patch={patch} />
         </Section>
       )}

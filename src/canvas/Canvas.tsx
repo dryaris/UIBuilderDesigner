@@ -12,6 +12,7 @@ import { NodeView } from "./NodeView";
 import { Gizmos } from "./Gizmos";
 import { useCanvasPointer, canvasElement, handleCursor, hitAtClient } from "./pointer";
 import { isFigmaJson } from "../import/figma";
+import { MiniMap } from "../ui/MiniMap";
 
 export function Canvas({
   openContextMenu,
@@ -176,6 +177,7 @@ export function Canvas({
         )}
       </div>
       {ready && <Gizmos canvasRef={ref} />}
+      {!previewMode && <MiniMap />}
     </div>
   );
 }

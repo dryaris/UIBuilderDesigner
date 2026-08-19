@@ -3,7 +3,8 @@
  * Abierto desde el menú Ayuda (o ⌘/). La tabla completa vive en el README;
  * aquí se muestra la memoria muscular esencial, agrupada por área.
  */
-import { Keyboard, X } from "lucide-react";
+import { useState } from "react";
+import { Keyboard, X, Search } from "lucide-react";
 import { useStore } from "../state/store";
 
 const GROUPS: { title: string; rows: [string, string][] }[] = [
@@ -58,7 +59,19 @@ const GROUPS: { title: string; rows: [string, string][] }[] = [
 export function ShortcutsModal() {
   const open = useStore((s) => s.shortcutsOpen);
   const setOpen = useStore((s) => s.setShortcutsOpen);
+  const [filter, setFilter] = useState("");
   if (!open) return null;
+
+  const q = filter.toLowerCase();
+  const filtered = q
+    ? GROUPS.map((g) => ({
+        ...g,
+        rows: g.rows.filter(
+          ([keys, desc]) =>
+            keys.toLowerCase().includes(q) || desc.toLowerCase().includes(q),
+        ),
+      })).filter((g) => g.rows.length > 0)
+    : GROUPS;
 
   return (
     <div className="modal-overlay" onPointerDown={() => setOpen(false)}>
@@ -74,8 +87,17 @@ export function ShortcutsModal() {
             <X size={16} />
           </button>
         </div>
+        <div className="shortcuts-search">
+          <Search size={14} />
+          <input
+            autoFocus
+            placeholder="Buscar atajo..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
+        </div>
         <div className="shortcuts-grid">
-          {GROUPS.map((g) => (
+          {filtered.map((g) => (
             <div key={g.title} className="shortcuts-group">
               <h3>{g.title}</h3>
               {g.rows.map(([keys, desc]) => (

@@ -49,6 +49,7 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
   const selectedAnnotationId = useStore((s) => s.selectedAnnotationId);
   const setSelectedAnnotationId = useStore((s) => s.setSelectedAnnotationId);
   const penPoints = useStore((s) => s.penPoints);
+  const altDown = useStore((s) => s.altDown);
 
   const canvas = canvasRef.current;
   const toS = (wx: number, wy: number) => toScreen(canvas as HTMLDivElement, wx, wy, vp);
@@ -86,6 +87,31 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
 
   // Rectángulos de vista previa (marquee / create / zoom).
   const preview = drag && (drag.kind === "marquee" || drag.kind === "create" || drag.kind === "zoom-marquee") ? previewRect(drag, vp, canvas) : null;
+
+  // Medición con Alt: distancias entre selección y hover.
+  let altDistances: { x1: number; y1: number; x2: number; y2: number; label: string }[] = [];
+  if (altDown && !previewMode && !drag && selection.length > 0 && hoverId && !selection.includes(hoverId)) {
+    const selNodes = selection.map((id) => findNode(doc.root, id)).filter(Boolean) as Node[];
+    const hoverNode = findNode(doc.root, hoverId);
+    if (hoverNode && selNodes.length > 0) {
+      const hRect = selectionRect(doc.root, hoverNode, drag);
+      for (const sn of selNodes) {
+        const sRect = selectionRect(doc.root, sn, drag);
+        // Horizontal distance
+        if (sRect.x + sRect.width < hRect.x) {
+          altDistances.push({ x1: sRect.x + sRect.width, y1: (sRect.y + sRect.height / 2 + hRect.y + hRect.height / 2) / 2, x2: hRect.x, y2: (sRect.y + sRect.height / 2 + hRect.y + hRect.height / 2) / 2, label: String(Math.round(hRect.x - (sRect.x + sRect.width))) });
+        } else if (hRect.x + hRect.width < sRect.x) {
+          altDistances.push({ x1: hRect.x + hRect.width, y1: (sRect.y + sRect.height / 2 + hRect.y + hRect.height / 2) / 2, x2: sRect.x, y2: (sRect.y + sRect.height / 2 + hRect.y + hRect.height / 2) / 2, label: String(Math.round(sRect.x - (hRect.x + hRect.width))) });
+        }
+        // Vertical distance
+        if (sRect.y + sRect.height < hRect.y) {
+          altDistances.push({ x1: (sRect.x + sRect.width / 2 + hRect.x + hRect.width / 2) / 2, y1: sRect.y + sRect.height, x2: (sRect.x + sRect.width / 2 + hRect.x + hRect.width / 2) / 2, y2: hRect.y, label: String(Math.round(hRect.y - (sRect.y + sRect.height))) });
+        } else if (hRect.y + hRect.height < sRect.y) {
+          altDistances.push({ x1: (sRect.x + sRect.width / 2 + hRect.x + hRect.width / 2) / 2, y1: hRect.y + hRect.height, x2: (sRect.x + sRect.width / 2 + hRect.x + hRect.width / 2) / 2, y2: sRect.y, label: String(Math.round(sRect.y - (hRect.y + hRect.height))) });
+        }
+      }
+    }
+  }
 
   return (
     <svg className="gizmos" width="100%" height="100%">
@@ -202,6 +228,25 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
 
       {/* Vista previa de marquee / creación / zoom */}
       {preview && <rect className="preview-box" x={preview.x} y={preview.y} width={preview.width} height={preview.height} />}
+
+      {/* Medición con Alt: distancias entre selección y hover */}
+      {altDistances.map((d, i) => {
+        const a = toS(d.x1, d.y1);
+        const b = toS(d.x2, d.y2);
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        return (
+          <g key={`alt-${i}`} className="spacing-hint">
+            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#ff6b9d" strokeWidth={1} strokeDasharray="3 2" />
+            <line x1={a.x} y1={a.y - 5} x2={a.x} y2={a.y + 5} stroke="#ff6b9d" strokeWidth={1} />
+            <line x1={b.x} y1={b.y - 5} x2={b.x} y2={b.y + 5} stroke="#ff6b9d" strokeWidth={1} />
+            <rect x={mx - 14} y={my - 10} width={28} height={16} rx={4} fill="#ff6b9d" />
+            <text x={mx} y={my + 2} textAnchor="middle" fill="#fff" fontSize={10} fontWeight={600} fontFamily="Inter, sans-serif">
+              {d.label}
+            </text>
+          </g>
+        );
+      })}
 
       {/* Pins de anotaciones (solo en edición; los pins son de la pantalla del editor) */}
       {!previewMode && (

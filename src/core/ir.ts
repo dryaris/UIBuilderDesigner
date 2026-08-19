@@ -312,6 +312,8 @@ export interface Node {
   hidden?: boolean;
   /** Bloqueado: no se puede mover ni redimensionar desde el canvas. */
   locked?: boolean;
+  /** Overflow del frame: "visible" (default), "hidden" (recorta hijos), "scroll" (scrollable). */
+  overflow?: "visible" | "hidden" | "scroll";
   children: Node[];
 }
 

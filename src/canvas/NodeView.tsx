@@ -74,8 +74,8 @@ function boxCss(node: Node, s: Style, tokens: Tokens, inFlex = false): CSSProper
     css.transformOrigin = "0 0";
   }
   if (s.stroke) css.border = `${s.stroke.width}px solid ${s.stroke.color}`;
-  // Los frames y formas recortan a sus hijos (como en Figma); el texto no.
-  if (node.type !== "text") css.overflow = "hidden";
+  // Overflow: si el nodo define overflow explícito, usarlo; si no, hidden para frames/formas.
+  if (node.type !== "text") css.overflow = node.overflow ?? "hidden";
   return css;
 }
 

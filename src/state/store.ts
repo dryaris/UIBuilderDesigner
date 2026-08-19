@@ -122,6 +122,7 @@ interface EditorState {
   screens: Node[];
   connections: PrototypeConnection[];
   spaceDown: boolean;
+  altDown: boolean;
   viewport: Viewport;
   cursor: Vec | null;
   showRulers: boolean;
@@ -173,6 +174,7 @@ interface EditorState {
   removeAnnotation: (id: string) => void;
   setHover: (id: string | null) => void;
   setSpaceDown: (v: boolean) => void;
+  setAltDown: (v: boolean) => void;
   setViewport: (p: Partial<Viewport>) => void;
   setDrag: (d: DragSession | null) => void;
   setEditingText: (id: string | null) => void;
@@ -308,6 +310,7 @@ export const useStore = create<EditorState>()((set, get) => ({
   previewTransitionMs: null,
   previewTransitionKind: null,
   spaceDown: false,
+  altDown: false,
   viewport: { pan: { x: 0, y: 0 }, zoom: 1, size: { x: 800, y: 600 } },
   cursor: null,
   showRulers: true,
@@ -523,6 +526,7 @@ export const useStore = create<EditorState>()((set, get) => ({
   },
   setHover: (hoverId) => set({ hoverId }),
   setSpaceDown: (spaceDown) => set({ spaceDown }),
+  setAltDown: (altDown) => set({ altDown }),
   setViewport: (p) => set((s) => ({ viewport: { ...s.viewport, ...p } })),
   setDrag: (drag) => set({ drag }),
   setEditingText: (editingTextId) => set({ editingTextId }),
