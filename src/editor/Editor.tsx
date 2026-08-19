@@ -23,6 +23,8 @@ import { ShortcutsModal } from "../ui/ShortcutsModal";
 import { Tour } from "../ui/Tour";
 import { ContextMenu, type ContextMenuState } from "../ui/ContextMenu";
 import { HistoryPanel } from "../ui/HistoryPanel";
+import { SearchPanel } from "../ui/SearchPanel";
+import { AlignToolbar } from "../ui/AlignToolbar";
 
 export function Editor() {
   const [booted, setBooted] = useState(false);
@@ -30,6 +32,7 @@ export function Editor() {
   const toast = useStore((s) => s.toast);
   const rightTab = useStore((s) => s.rightTab);
   const setRightTab = useStore((s) => s.setRightTab);
+  const presentationMode = useStore((s) => s.presentationMode);
 
   useKeyboard();
   useTimelinePlayer();
@@ -58,7 +61,7 @@ export function Editor() {
   if (!booted) return null;
 
   return (
-    <div className="editor">
+    <div className={`editor${presentationMode ? " presentation-mode" : ""}`}>
       <TopBar />
       <div className="editor-main">
         <Toolbar />
@@ -66,6 +69,7 @@ export function Editor() {
         <div className="canvas-wrap">
           <Rulers />
           <Canvas openContextMenu={setCtxMenu} />
+          <AlignToolbar />
         </div>
         <div className="right-side">
           <div className="right-tabs">
@@ -112,6 +116,7 @@ export function Editor() {
       <Tour />
       <ContextMenu menu={ctxMenu} onClose={() => setCtxMenu(null)} />
       <HistoryPanel />
+      <SearchPanel />
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

@@ -45,6 +45,8 @@ const GROUPS: { title: string; rows: [string, string][] }[] = [
       ["⌘H", "Panel de historial (undo/redo visible)"],
       ["⌘1 / ⌘2", "Zoom a pantalla / Zoom a selección"],
       ["⌘Y", "Modo outline (solo bordes, wireframe)"],
+      ["⌘F", "Búsqueda global de nodos"],
+      ["⌘↵", "Modo presentación (fullscreen sin UI)"],
       ["⌘S / ⌘O", "Guardar / abrir proyecto (.canvas)"],
       ["⌘K", "Palette de acciones"],
       ["⇧1 / ⇧0", "Ajustar a pantalla / zoom 100%"],

@@ -136,6 +136,8 @@ interface EditorState {
   penPoints: { x: number; y: number; cp1x?: number; cp1y?: number; cp2x?: number; cp2y?: number }[] | null;
   focusColorPicker: string | null;
   paletteOpen: boolean;
+  searchOpen: boolean;
+  presentationMode: boolean;
   newProjectOpen: boolean;
   toast: string | null;
 
@@ -176,6 +178,8 @@ interface EditorState {
   setEditingText: (id: string | null) => void;
   setFocusColorPicker: (id: string | null) => void;
   setPaletteOpen: (v: boolean) => void;
+  setSearchOpen: (v: boolean) => void;
+  setPresentationMode: (v: boolean) => void;
   setNewProjectOpen: (v: boolean) => void;
   setCursor: (c: Vec | null) => void;
   toggle: (k: "showRulers" | "showGuides" | "showSafeAreas" | "showGrid") => void;
@@ -317,6 +321,8 @@ export const useStore = create<EditorState>()((set, get) => ({
   penPoints: null,
   focusColorPicker: null,
   paletteOpen: false,
+  searchOpen: false,
+  presentationMode: false,
   newProjectOpen: false,
   toast: null,
   annotateMode: false,
@@ -522,6 +528,8 @@ export const useStore = create<EditorState>()((set, get) => ({
   setEditingText: (editingTextId) => set({ editingTextId }),
   setFocusColorPicker: (focusColorPicker) => set({ focusColorPicker }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  setSearchOpen: (searchOpen) => set({ searchOpen }),
+  setPresentationMode: (presentationMode) => set({ presentationMode }),
   setNewProjectOpen: (newProjectOpen) => set({ newProjectOpen }),
   setCursor: (cursor) => set({ cursor }),
   toggle: (k) => set((s) => ({ [k]: !s[k] }) as Partial<EditorState>),

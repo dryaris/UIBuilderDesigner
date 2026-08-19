@@ -47,6 +47,18 @@ export function useKeyboard(): void {
         st.setPaletteOpen(!st.paletteOpen);
         return;
       }
+      // Cmd/Ctrl+Enter = modo presentation (fullscreen sin UI).
+      if (mod && e.key === "Enter") {
+        e.preventDefault();
+        st.setPresentationMode(!st.presentationMode);
+        return;
+      }
+      // Cmd/Ctrl+F = búsqueda global.
+      if (mod && key === "f" && !e.shiftKey) {
+        e.preventDefault();
+        st.setSearchOpen(!st.searchOpen);
+        return;
+      }
       // Cmd/Ctrl+/ = atajos (ayuda).
       if (mod && key === "/") {
         e.preventDefault();
@@ -153,7 +165,8 @@ export function useKeyboard(): void {
       }
       if (e.key === "Escape") {
         st.setDrag(null);
-        if (st.previewMode) {
+        if (st.presentationMode) st.setPresentationMode(false);
+        else if (st.previewMode) {
           st.setPreviewMode(false);
           st.setPlaying(false);
         } else if (st.annotateMode) st.setAnnotateMode(false);
