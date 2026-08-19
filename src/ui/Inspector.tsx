@@ -262,6 +262,26 @@ function NodeInspector({ node }: { node: Node }) {
         </Section>
       )}
 
+      {node.type === "image" && (
+        <Section title="Imagen">
+          <div className="field">
+            <span className="field-label">Ajuste</span>
+            <select
+              className="text-input"
+              value={node.objectFit ?? "cover"}
+              onChange={(e) => patch((n) => { n.objectFit = e.target.value as import("../core/ir").Node["objectFit"]; })}
+            >
+              <option value="cover">Recortar (cover)</option>
+              <option value="contain">Contener (contain)</option>
+              <option value="fill">Estirar (fill)</option>
+            </select>
+          </div>
+          <div className="dim safe-hint">
+            Arrastra una imagen al lienzo o usa Archivo → Importar imagen.
+          </div>
+        </Section>
+      )}
+
       {node.type === "frame" && (
         <Section title="Pantalla">
           <div className="field">

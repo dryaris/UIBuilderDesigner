@@ -304,6 +304,10 @@ export interface Node {
   fillRule?: "nonzero" | "evenodd";
   /** Para nodos type === "text". */
   text?: string;
+  /** Para nodos type === "image": data URL o blob URL de la imagen. */
+  imageSrc?: string;
+  /** Obj-fit de la imagen: cover, contain, fill. */
+  objectFit?: "cover" | "contain" | "fill";
   /** Oculto del render y del export (ojo en layers). */
   hidden?: boolean;
   /** Bloqueado: no se puede mover ni redimensionar desde el canvas. */

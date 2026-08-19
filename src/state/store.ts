@@ -17,6 +17,7 @@ import { topLevelNodes } from "../core/tree";
 import { isFlexChild } from "../core/layout";
 import { applyConstraintsOnResize } from "../core/constraints";
 import { parseSvg } from "../import/svg";
+import { parseFigmaJson } from "../import/figma";
 import { frameNode } from "../core/defaults";
 
 export type Tool =
@@ -26,6 +27,7 @@ export type Tool =
   | "rect"
   | "ellipse"
   | "line"
+  | "pen"
   | "hand"
   | "zoom";
 
@@ -109,6 +111,8 @@ interface EditorState {
   activeTimelineId: string | null;
   /** Pantalla activa en el preview (navegación del prototipo, Fase 7). */
   previewScreen: Node | null;
+  /** Modo multi-pantalla: muestra todas las pantallas lado a lado. */
+  multiScreenMode: boolean;
   /** Duración (ms) de la transición de la última navegación del prototipo. */
   previewTransitionMs: number | null;
   /** Tipo de transición de la última navegación del prototipo. */
@@ -128,6 +132,8 @@ interface EditorState {
   /** Nº de entradas de historial visibles en el panel History. */
   historyPanelOpen: boolean;
   editingTextId: string | null;
+  /** Puntos del camino en progreso (herramienta Pen). */
+  penPoints: { x: number; y: number; cp1x?: number; cp1y?: number; cp2x?: number; cp2y?: number }[] | null;
   focusColorPicker: string | null;
   paletteOpen: boolean;
   newProjectOpen: boolean;
@@ -144,6 +150,7 @@ interface EditorState {
   setPlaying: (v: boolean) => void;
   setActiveTimelineId: (id: string | null) => void;
   setPreviewScreen: (n: Node | null) => void;
+  setMultiScreenMode: (v: boolean) => void;
   previewNavigate: (toScreenId: string, durationMs?: number | null, kind?: import("../core/ir").TransitionKind | null) => void;
 
   // ---- prototipado (Fase 7) ----
@@ -198,6 +205,10 @@ interface EditorState {
   setConstraints: (id: string, constraints: Constraints) => void;
   /** Importa un SVG como frame con vectores en la posición dada. Devuelve error o null. */
   importSvg: (text: string, at: Vec, name?: string) => string | null;
+  /** Importa un JSON de Figma y lo convierte al IR. */
+  importFigma: (json: string, name?: string) => string | null;
+  /** Añade una imagen al canvas desde una data URL. */
+  addImage: (dataUrl: string, at: Vec, name?: string, w?: number, h?: number) => void;
   /** Crea un tema nuevo con los colores actuales. */
   addTheme: (name: string) => void;
   /** Activa un tema ("base" = el por defecto); tokens.colors pasa a ser el suyo. */
@@ -289,6 +300,7 @@ export const useStore = create<EditorState>()((set, get) => ({
   playing: false,
   activeTimelineId: null,
   previewScreen: null,
+  multiScreenMode: false,
   previewTransitionMs: null,
   previewTransitionKind: null,
   spaceDown: false,
@@ -302,6 +314,7 @@ export const useStore = create<EditorState>()((set, get) => ({
   lastNudge: null,
   historyPanelOpen: false,
   editingTextId: null,
+  penPoints: null,
   focusColorPicker: null,
   paletteOpen: false,
   newProjectOpen: false,
@@ -384,6 +397,7 @@ export const useStore = create<EditorState>()((set, get) => ({
   setPlaying: (playing) => set({ playing }),
   setActiveTimelineId: (activeTimelineId) => set({ activeTimelineId }),
   setPreviewScreen: (previewScreen) => set({ previewScreen }),
+  setMultiScreenMode: (multiScreenMode) => set({ multiScreenMode }),
 
   previewNavigate: (toScreenId, durationMs = null, kind = null) => {
     const s = get();
@@ -668,6 +682,46 @@ export const useStore = create<EditorState>()((set, get) => ({
     } catch (err) {
       return err instanceof Error ? err.message : "No se pudo importar el SVG";
     }
+  },
+
+  importFigma: (json, _name) => {
+    try {
+      const { root, warnings } = parseFigmaJson(json);
+      get().apply((d) => {
+        d.root = root;
+        const screens = (root as any)._screens as import("../core/ir").Node[] | undefined;
+        if (screens && screens.length > 0) {
+          d.screens = screens;
+        }
+        delete (root as any)._screens;
+      });
+      get().fitTo({ x: 0, y: 0, width: root.style.width, height: root.style.height });
+      get().showToast(
+        warnings.length > 0 ? `Figma importado (${warnings.length} avisos)` : "Figma importado",
+      );
+      return null;
+    } catch (err) {
+      return err instanceof Error ? err.message : "No se pudo importar el Figma";
+    }
+  },
+
+  addImage: (dataUrl, at, name, w, h) => {
+    const width = Math.round(w ?? 300);
+    const height = Math.round(h ?? 200);
+    const node: Node = {
+      id: uid(),
+      type: "image",
+      name: name ?? "Imagen",
+      style: { x: Math.round(at.x), y: Math.round(at.y), width, height },
+      imageSrc: dataUrl,
+      objectFit: "cover",
+      children: [],
+    };
+    get().apply((d) => {
+      d.root.children.push(node);
+    });
+    get().select([node.id]);
+    get().showToast("Imagen añadida");
   },
 
   addTheme: (name) =>

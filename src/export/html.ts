@@ -153,7 +153,10 @@ function renderNode(
     )
     .join("");
   const inner =
-    node.type === "text" ? escapeHtml(node.text ?? "") : node.type === "vector" ? vectorSvg(node, tokens) : children;
+    node.type === "text" ? escapeHtml(node.text ?? "")
+    : node.type === "vector" ? vectorSvg(node, tokens)
+    : node.type === "image" && node.imageSrc ? `<img src="${node.imageSrc}" alt="${escapeHtml(node.name)}" style="width:100%;height:100%;object-fit:${node.objectFit ?? "cover"};pointer-events:none" />`
+    : children;
   const disabled = states.disabled ? " is-disabled" : "";
   const conn = conns?.get(node.id);
   const connAttrs = conn ? ` data-conn="${conn.to}" data-dur="${conn.dur}" data-kind="${(conn as { kind: string }).kind ?? "fade"}" style="cursor:pointer"` : "";

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ZoomIn, ZoomOut, Maximize, Download, Play, Square } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize, Download, Play, Square, LayoutGrid } from "lucide-react";
 import { useStore } from "../state/store";
 import { nodeRect, findNode } from "../core/tree";
 import { toWorld } from "../canvas/transform";
@@ -279,10 +279,22 @@ export function TopBar() {
 
       <div className="zoom-controls">
         <IconButton
+          title="Ver todas las pantallas (multi-screen)"
+          active={useStore((s) => s.multiScreenMode)}
+          onClick={() => {
+            const st2 = useStore.getState();
+            st2.setMultiScreenMode(!st2.multiScreenMode);
+            if (!st2.multiScreenMode) st2.fitTo({ x: 0, y: 0, width: st2.doc.root.style.width * (st2.screens.length + 1) + 60 * st2.screens.length, height: st2.doc.root.style.height });
+          }}
+        >
+          <LayoutGrid size={15} />
+        </IconButton>
+        <IconButton
           title={previewMode ? "Salir del preview (Esc)" : "Probar la pantalla (preview)"}
           active={previewMode}
           onClick={() => {
             const st2 = useStore.getState();
+            st2.setMultiScreenMode(false);
             st2.setPreviewMode(!previewMode);
             if (previewMode) st2.setPlaying(false);
           }}

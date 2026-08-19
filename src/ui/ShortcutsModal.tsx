@@ -10,7 +10,7 @@ const GROUPS: { title: string; rows: [string, string][] }[] = [
   {
     title: "Herramientas",
     rows: [
-      ["V · F · T · R · O · L", "Select · Frame · Text · Rect · Elipse · Línea"],
+      ["V · F · T · R · O · L · P", "Select · Frame · Text · Rect · Elipse · Línea · Trazo (Pen)"],
       ["H · Z · I", "Mano (pan) · Zoom (marquee) · Eyedropper"],
       ["Espacio (mantenido)", "Pan temporal"],
       ["⌘ / Ctrl + scroll", "Zoom al cursor"],

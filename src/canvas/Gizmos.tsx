@@ -48,6 +48,7 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
   const showGrid = useStore((s) => s.showGrid);
   const selectedAnnotationId = useStore((s) => s.selectedAnnotationId);
   const setSelectedAnnotationId = useStore((s) => s.setSelectedAnnotationId);
+  const penPoints = useStore((s) => s.penPoints);
 
   const canvas = canvasRef.current;
   const toS = (wx: number, wy: number) => toScreen(canvas as HTMLDivElement, wx, wy, vp);
@@ -132,6 +133,34 @@ export function Gizmos({ canvasRef }: { canvasRef: RefObject<HTMLDivElement | nu
         const p2 = toS(l.axis === "x" ? l.pos : l.to, l.axis === "x" ? l.to : l.pos);
         return <line key={i} className="snap-line" x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} />;
       })}
+
+      {/* Pen tool: puntos y camino en progreso */}
+      {penPoints && penPoints.length > 0 && (
+        <g>
+          <polyline
+            className="pen-preview"
+            points={penPoints.map((p) => `${toS(p.x, p.y).x},${toS(p.x, p.y).y}`).join(" ")}
+            fill="none"
+            stroke="var(--accent)"
+            strokeWidth={1.5 / vp.zoom}
+            strokeDasharray={`${4 / vp.zoom} ${3 / vp.zoom}`}
+          />
+          {penPoints.map((p, i) => {
+            const sp = toS(p.x, p.y);
+            return (
+              <circle
+                key={i}
+                cx={sp.x}
+                cy={sp.y}
+                r={4 / vp.zoom}
+                fill="var(--accent)"
+                stroke="#fff"
+                strokeWidth={1.5 / vp.zoom}
+              />
+            );
+          })}
+        </g>
+      )}
 
       {/* Pistas de medición (spacing hints) */}
       {hints.map((h, i) => (

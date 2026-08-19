@@ -58,6 +58,11 @@ Lo que ya funciona:
 - **Tamaño porcentual**: en el Inspector → Tamaño, el botón "%" permite definir el ancho/alto como porcentaje del padre (0–200%), ideal para layouts responsive.
 - **Component properties**: los componentes de la librería pueden definir **props booleanas/string** (desde Diseño → Librería → Props). Las instancias en el lienzo muestran los overrides en el Inspector, permitiendo personalizar cada instancia sin afectar la definición del componente.
 - **Prototype transitions con tipos**: al conectar pantallas, puedes elegir entre **Fade, Slide (←→↑↓), Zoom** o **Sin transición**, además de duración y curva de easing. El preview del editor y el exportador HTML reproducen la animación exacta con CSS transitions.
+- **Soporte de imágenes**: arrastra `.jpg`, `.png`, `.webp` u otros al lienzo → se coloca como nodo `image` con dimensiones automáticas. El Inspector permite cambiar el ajuste (cover/contain/fill). Se exporta en HTML con `<img>` y en PNG con el mismo render.
+- **Herramienta Pen/Bezier** (`P`): crea trazos vectoriales punto a punto. Clic = línea recta, doble clic o `Escape` = terminar. Los trazos se convierten en nodos vector editables con su path SVG.
+- **Vista multi-pantalla**: botón en la barra superior muestra todas las pantallas del proyecto lado a lado, con sus nombres, para comparar y navegar visualmente.
+- **Importar Figma**: arrastra un `.json` exportado de la API de Figma al lienzo → se convierte automáticamente al IR con fills, strokes, textos, sombras, gradientes y estructura de frames. Soporta pages con múltiples frames.
+- **Boolean props → visibilidad**: las props booleanas de componentes ahora ocultan/muestran hijos del componente cuyo nombre coincida con la prop (estilo Figma: `showIcon: true/false`).
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 
@@ -169,7 +174,7 @@ Los binarios se compilan en GitHub Actions (los binarios nativos requieren su pr
 | `Alt+Shift+H` / `Alt+Shift+V` | Distribuir horizontal / vertical |
 | `Cmd/Ctrl + K` | Palette de acciones |
 | `Cmd/Ctrl + S` / `Shift+O` | Guardar / Abrir `.canvas` |
-| `V F T R O L H Z` | Select / Frame / Text / Rect / Elipse / Línea / Mano / Zoom |
+| `V F T R O L P H Z` | Select / Frame / Text / Rect / Elipse / Línea / Trazo (Pen) / Mano / Zoom |
 | `Shift+1` / `Shift+0` | Ajustar a pantalla / 100% |
 | `Supr` | Eliminar · `Esc` deseleccionar / salir del preview |
 

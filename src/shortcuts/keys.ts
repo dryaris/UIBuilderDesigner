@@ -13,14 +13,16 @@ import { useEffect } from "react";
 import { useStore } from "../state/store";
 import { nodeRect, findNode as findNodeById } from "../core/tree";
 import { saveProjectFile, openProjectFile } from "../export/project";
+import { finishPen } from "../canvas/pointer";
 
-const TOOL_KEYS: Record<string, "select" | "frame" | "text" | "rect" | "ellipse" | "line" | "hand" | "zoom"> = {
+const TOOL_KEYS: Record<string, "select" | "frame" | "text" | "rect" | "ellipse" | "line" | "pen" | "hand" | "zoom"> = {
   v: "select",
   f: "frame",
   t: "text",
   r: "rect",
   o: "ellipse",
   l: "line",
+  p: "pen",
   h: "hand",
   z: "zoom",
 };
@@ -157,6 +159,7 @@ export function useKeyboard(): void {
         } else if (st.annotateMode) st.setAnnotateMode(false);
         else if (st.paletteOpen) st.setPaletteOpen(false);
         else if (st.editingTextId) st.setEditingText(null);
+        else if (st.penPoints) finishPen(false);
         else st.select([]);
         return;
       }

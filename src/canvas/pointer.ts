@@ -17,7 +17,7 @@ import type React from "react";
 import { unstable_batchedUpdates } from "react-dom";
 import { useStore, type Handle, type SpacingHint } from "../state/store";
 import type { CanvasDoc, Node, Rect, Vec } from "../core/ir";
-import { findNode, findParent, hitTest, nodeRect, bbox, rectsIntersect } from "../core/tree";
+import { findNode, findParent, hitTest, nodeRect, bbox, rectsIntersect, uid } from "../core/tree";
 import { hasAutoLayout, worldRect } from "../core/layout";
 import { frameNode, shapeNode, textNode } from "../core/defaults";
 import { toWorld } from "./transform";
@@ -102,6 +102,9 @@ export function useCanvasPointer() {
         return;
       case "text":
         startTextEdit(wp);
+        return;
+      case "pen":
+        penDown(wp, e);
         return;
       case "select":
         selectDown(e, wp);
@@ -472,6 +475,29 @@ export function useCanvasPointer() {
     }
   }
 
+  // ---------------------------------------------------------------- pen tool
+  function penDown(wp: Vec, _e: React.PointerEvent) {
+    const s = useStore.getState();
+    const pts = s.penPoints;
+    if (!pts) {
+      useStore.setState({ penPoints: [{ x: Math.round(wp.x), y: Math.round(wp.y) }] } as any);
+      return;
+    }
+    // Doble clic = cerrar y terminar.
+    if (pts.length >= 3) {
+      const first = pts[0];
+      const dist = Math.hypot(wp.x - first.x, wp.y - first.y);
+      if (dist < 8 / s.viewport.zoom) {
+        finishPen(true);
+        return;
+      }
+    }
+    const newPts = [...pts, { x: Math.round(wp.x), y: Math.round(wp.y) }];
+    useStore.setState({ penPoints: newPts } as any);
+  }
+
+
+
   // ---------------------------------------------------------------- text tool
   function startTextEdit(wp: Vec) {
     const s = useStore.getState();
@@ -485,6 +511,42 @@ export function useCanvasPointer() {
   }
 
   return { onPointerDown, onPointerMove, onPointerUp, onWheel, onDoubleClick };
+}
+
+/** Termina el trazo de la herramienta Pen y crea un nodo vector. */
+export function finishPen(close: boolean) {
+  const s = useStore.getState();
+  const pts = s.penPoints;
+  if (!pts || pts.length < 2) {
+    useStore.setState({ penPoints: null } as any);
+    return;
+  }
+  let d = `M${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) d += ` L${pts[i].x} ${pts[i].y}`;
+  if (close) d += " Z";
+  const xs = pts.map((p) => p.x);
+  const ys = pts.map((p) => p.y);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const maxX = Math.max(...xs);
+  const maxY = Math.max(...ys);
+  const w = Math.max(1, maxX - minX);
+  const h = Math.max(1, maxY - minY);
+  const node: import("../core/ir").Node = {
+    id: uid(),
+    type: "vector",
+    name: "Trazo",
+    style: { x: minX, y: minY, width: w, height: h },
+    path: d,
+    fillRule: "nonzero",
+    children: [],
+  };
+  s.apply((draft) => {
+    draft.root.children.push(node);
+  });
+  s.select([node.id]);
+  useStore.setState({ penPoints: null } as any);
+  s.showToast("Trazo creado");
 }
 
 // ---------------------------------------------------------------------------

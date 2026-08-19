@@ -5,6 +5,7 @@ import {
   Square,
   Circle,
   Minus,
+  Pen,
   Hand,
   ZoomIn,
   History,
@@ -18,6 +19,7 @@ const TOOLS: { id: Tool; label: string; key: string; icon: typeof MousePointer2 
   { id: "rect", label: "Rectángulo", key: "R", icon: Square },
   { id: "ellipse", label: "Elipse", key: "O", icon: Circle },
   { id: "line", label: "Línea", key: "L", icon: Minus },
+  { id: "pen", label: "Trazo (Pen)", key: "P", icon: Pen },
   { id: "hand", label: "Mano (pan)", key: "H", icon: Hand },
   { id: "zoom", label: "Zoom", key: "Z", icon: ZoomIn },
 ];

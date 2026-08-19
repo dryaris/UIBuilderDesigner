@@ -191,12 +191,30 @@ export const NodeView = memo(function NodeView({ node, inFlex = false }: { node:
     >
       {node.type === "vector" ? (
         <span className="cn-vector" dangerouslySetInnerHTML={{ __html: vectorSvg(node, tokens) }} />
+      ) : node.type === "image" && node.imageSrc ? (
+        <img
+          className="cn-image"
+          src={node.imageSrc}
+          alt={node.name}
+          draggable={false}
+          style={{ width: "100%", height: "100%", objectFit: node.objectFit ?? "cover", pointerEvents: "none" }}
+        />
       ) : node.type === "text" ? (
         <EditableText node={node} editing={editing} />
       ) : (
-        node.children.map((child) => (
-          <NodeView key={child.id} node={child} inFlex={Boolean(s.flexDirection)} />
-        ))
+        node.children
+          .filter((child) => {
+            // Boolean props → visibilidad: si el padre tiene propOverrides
+            // y el nombre del hijo coincide con una prop booleana que es false, ocultarlo.
+            if (node.propOverrides && Object.keys(node.propOverrides).length > 0) {
+              const propVal = node.propOverrides[child.name];
+              if (propVal !== undefined && typeof propVal === "boolean" && !propVal) return false;
+            }
+            return true;
+          })
+          .map((child) => (
+            <NodeView key={child.id} node={child} inFlex={Boolean(s.flexDirection)} />
+          ))
       )}
     </div>
   );
