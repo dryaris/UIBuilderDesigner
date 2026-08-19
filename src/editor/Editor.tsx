@@ -22,6 +22,7 @@ import { NewProjectModal } from "../ui/NewProjectModal";
 import { ShortcutsModal } from "../ui/ShortcutsModal";
 import { Tour } from "../ui/Tour";
 import { ContextMenu, type ContextMenuState } from "../ui/ContextMenu";
+import { HistoryPanel } from "../ui/HistoryPanel";
 
 export function Editor() {
   const [booted, setBooted] = useState(false);
@@ -110,6 +111,7 @@ export function Editor() {
       <ShortcutsModal />
       <Tour />
       <ContextMenu menu={ctxMenu} onClose={() => setCtxMenu(null)} />
+      <HistoryPanel />
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

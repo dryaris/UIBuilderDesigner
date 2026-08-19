@@ -7,6 +7,7 @@ import {
   Minus,
   Hand,
   ZoomIn,
+  History,
 } from "lucide-react";
 import { useStore, type Tool } from "../state/store";
 
@@ -25,6 +26,9 @@ export function Toolbar() {
   const tool = useStore((s) => s.tool);
   const setTool = useStore((s) => s.setTool);
 
+  const historyPanelOpen = useStore((s) => s.historyPanelOpen);
+  const setHistoryPanelOpen = useStore((s) => s.setHistoryPanelOpen);
+
   return (
     <nav className="toolbar" aria-label="Herramientas">
       {TOOLS.map((t) => {
@@ -41,6 +45,15 @@ export function Toolbar() {
           </button>
         );
       })}
+      <div style={{ flex: 1 }} />
+      <button
+        className={`tool-btn${historyPanelOpen ? " is-active" : ""}`}
+        title="Historial (Cmd+H)"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setHistoryPanelOpen(!historyPanelOpen)}
+      >
+        <History size={18} strokeWidth={1.8} />
+      </button>
     </nav>
   );
 }

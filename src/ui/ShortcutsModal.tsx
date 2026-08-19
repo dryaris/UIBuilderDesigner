@@ -20,8 +20,11 @@ const GROUPS: { title: string; rows: [string, string][] }[] = [
     title: "Selección y edición",
     rows: [
       ["Flechas / ⇧ + flechas", "Nudge 1 px / 10 px"],
-      ["⌘D", "Duplicar"],
+      ["⌘D", "Duplicar (con offset del último nudge)"],
       ["⌘G / ⇧⌘G", "Agrupar / desagrupar"],
+      ["[ / ]", "Mover capa atrás / adelante"],
+      ["⌘L", "Bloquear / desbloquear nodo"],
+      ["⌘⇧H / ⌘⇧J", "Voltear horizontal / vertical"],
       ["Doble clic", "Editar texto · color picker del relleno"],
       ["Supr", "Eliminar selección"],
     ],
@@ -39,6 +42,7 @@ const GROUPS: { title: string; rows: [string, string][] }[] = [
     title: "Documento",
     rows: [
       ["⌘Z / ⇧⌘Z", "Deshacer / rehacer"],
+      ["⌘H", "Panel de historial (undo/redo visible)"],
       ["⌘S / ⌘O", "Guardar / abrir proyecto (.canvas)"],
       ["⌘K", "Palette de acciones"],
       ["⇧1 / ⇧0", "Ajustar a pantalla / zoom 100%"],

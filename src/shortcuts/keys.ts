@@ -121,6 +121,12 @@ export function useKeyboard(): void {
         if (sel.length === 1) st.toggleLock(sel[0]);
         return;
       }
+      // Cmd/Ctrl+H = panel de historial (undo/redo visible).
+      if (mod && key === "h" && !e.shiftKey) {
+        e.preventDefault();
+        st.setHistoryPanelOpen(!st.historyPanelOpen);
+        return;
+      }
       // [ / ] = mover capa atrás/adelante (Photoshop).
       if (key === "[" && !mod) {
         e.preventDefault();

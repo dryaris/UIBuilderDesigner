@@ -48,6 +48,9 @@ Lo que ya funciona:
 - **Editor de easing visual (Fase 4/8)**: los tokens de easing ya no se escriben a mano — en la pestaña **Diseño** cada curva es una gráfica con dos puntos de control **arrastrables** (estilo After Effects), presets de un clic (Lineal, Entrada, Salida, Entrada y salida, **Resorte** con sobre-paso, Brusco) y un botón **Probar** que anima una bolita sobre la curva para sentir el ritmo. El valor sigue siendo `cubic-bezier(x1, y1, x2, y2)`: el mismo contrato que usan canvas, preview, HTML y Lottie, así que todo lo animado se beneficia al instante.
 - **Constraints/responsive (Fase 3)**: sección **Responsive** en el Inspector (sin jerga: iconos de fijar/centrar/estirar/escalar) — cada nodo decide cómo reacciona al cambiar el tamaño de su pantalla. Al redimensionar un frame (arrastrando un handle o con **Redimensionar a** en la sección Pantalla), los hijos se reposicionan/estiran/escalan en vivo, estilo Figma; el exportador HTML emite el CSS responsive correspondiente y UMG mapea los constraints a **Anchors** nativos. Se ignora en hijos de auto-layout (los coloca el apilado).
 - **Pauta de prueba (Fase 8)**: `TESTING.md` con el guion de la **regla de los 10 minutos** (recorrido cronometrado en 4 tramos), criterios de aceptación por destino (HTML, PNG, Unity, UMG, Lottie, DTCG, PDF) y registro de fricciones para las sesiones con diseñadores.
+- **Duplicación estilo Photoshop**: `Cmd+D` ahora usa el **offset del último nudge** como desplazamiento del duplicado (como Photoshop: mueves 20px a la derecha → el duplicado aparece 20px más a la derecha).
+- **Panel de historial visual**: `Cmd+H` (o icono en la barra de herramientas) abre un panel que muestra todas las acciones de undo/redo con labels legibles ("Mover nodo", "Cambiar color", "Añadir nodo", etc.). Puedes saltar a cualquier punto del historial con un clic.
+- **Marquee mejorado**: al arrastrar un marquee en el lienzo, ahora se incluyen **hijos anidados** (no solo de primer nivel). Los frames se seleccionan solo si al menos uno de sus hijos NO está en el marquee, evitando selecciones redundantes.
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 
@@ -141,11 +144,15 @@ Los binarios se compilan en GitHub Actions (los binarios nativos requieren su pr
 | `Espacio` (mantenido) | Pan |
 | `Cmd/Ctrl + scroll` | Zoom al cursor |
 | `Flechas` / `Shift+Flechas` | Nudge 1px / 10px |
-| `Cmd/Ctrl + D` | Duplicar |
+| `Cmd/Ctrl + D` | Duplicar (con offset del último nudge) |
 | `Cmd/Ctrl + Z` / `Shift+Z` (o `Y`) | Deshacer / Rehacer |
+| `Cmd/Ctrl + H` | Panel de historial (undo/redo visible) |
 | `Cmd/Ctrl + A` | Seleccionar todo |
 | `Cmd/Ctrl + G` / `Shift+G` | Agrupar / Desagrupar |
 | `Cmd/Ctrl + Shift + C/V` | Copiar / Pegar estilo |
+| `[` / `]` | Mover capa atrás / adelante |
+| `Cmd/Ctrl + L` | Bloquear / desbloquear nodo |
+| `Cmd/Ctrl + Shift + H/J` | Voltear horizontal / vertical |
 | `Alt+A/D/W/S` | Alinear izquierda / derecha / arriba / abajo |
 | `Alt+C` / `Alt+M` | Alinear centro H / centro V |
 | `Alt+Shift+H` / `Alt+Shift+V` | Distribuir horizontal / vertical |

@@ -344,9 +344,27 @@ export function useCanvasPointer() {
           s2.setSelectedAnnotationId(null);
           return;
         }
-        const ids = s2.doc.root.children
-          .filter((n) => !n.hidden && rectsIntersect(worldRect(s2.doc.root, n), rect))
-          .map((n) => n.id);
+        // Marquee: incluye hijos anidados (no solo de primer nivel).
+        const ids: string[] = [];
+        function collectMarquee(n: Node) {
+          if (n.hidden) return;
+          // Solo incluir hojas (nodos con pintura o sin hijos)
+          // o frames vacíos — no duplicar padres si sus hijos ya están.
+          const wr = worldRect(s2.doc.root, n);
+          if (rectsIntersect(wr, rect)) {
+            if (n.children.length === 0 || n.type === "text" || n.type === "vector" || n.type === "image") {
+              ids.push(n.id);
+            } else {
+              // Frame con hijos: incluir si al menos un hijo NO está en el marquee.
+              const childHits = n.children.filter((c) => !c.hidden && rectsIntersect(worldRect(s2.doc.root, c), rect));
+              if (childHits.length < n.children.length) {
+                ids.push(n.id);
+              }
+              for (const c of n.children) collectMarquee(c);
+            }
+          }
+        }
+        for (const child of s2.doc.root.children) collectMarquee(child);
         s2.select(drag.additive ? [...s2.selection, ...ids] : ids);
         break;
       }

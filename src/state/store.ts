@@ -88,6 +88,9 @@ interface EditorState {
   undo: () => void;
   redo: () => void;
 
+  // ---- último nudge (para Cmd+D estilo Photoshop) ----
+  lastNudge: { dx: number; dy: number } | null;
+
   // ---- selección y UI ----
   selection: string[];
   hoverId: string | null;
@@ -120,6 +123,8 @@ interface EditorState {
   showSafeAreas: boolean;
   showGrid: boolean;
   drag: DragSession | null;
+  /** Nº de entradas de historial visibles en el panel History. */
+  historyPanelOpen: boolean;
   editingTextId: string | null;
   focusColorPicker: string | null;
   paletteOpen: boolean;
@@ -166,6 +171,7 @@ interface EditorState {
   setCursor: (c: Vec | null) => void;
   toggle: (k: "showRulers" | "showGuides" | "showSafeAreas" | "showGrid") => void;
   showToast: (msg: string) => void;
+  setHistoryPanelOpen: (v: boolean) => void;
   // ---- Fase 8: ayuda y onboarding ----
   tourOpen: boolean;
   shortcutsOpen: boolean;
@@ -276,6 +282,8 @@ export const useStore = create<EditorState>()((set, get) => ({
   showSafeAreas: true,
   showGrid: true,
   drag: null,
+  lastNudge: null,
+  historyPanelOpen: false,
   editingTextId: null,
   focusColorPicker: null,
   paletteOpen: false,
@@ -489,6 +497,8 @@ export const useStore = create<EditorState>()((set, get) => ({
   setTourOpen: (tourOpen) => set({ tourOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
 
+  setHistoryPanelOpen: (historyPanelOpen) => set({ historyPanelOpen }),
+
   showToast: (msg) => {
     if (toastTimer) clearTimeout(toastTimer);
     set({ toast: msg });
@@ -521,6 +531,10 @@ export const useStore = create<EditorState>()((set, get) => ({
   duplicateSelection: () => {
     const ids = get().selection;
     if (ids.length === 0) return;
+    // Cmd+D estilo Photoshop: usa el último nudge como offset.
+    const nd = get().lastNudge;
+    const offX = nd ? nd.dx : 16;
+    const offY = nd ? nd.dy : 16;
     const clones: Node[] = [];
     get().apply((d) => {
       for (const id of ids) {
@@ -529,8 +543,8 @@ export const useStore = create<EditorState>()((set, get) => ({
         const original = p.parent.children[p.index];
         const clone = cloneNode(original);
         remapIds(clone);
-        clone.style.x += 16;
-        clone.style.y += 16;
+        clone.style.x += offX;
+        clone.style.y += offY;
         p.parent.children.splice(p.index + 1, 0, clone);
         clones.push(clone);
       }
@@ -541,6 +555,7 @@ export const useStore = create<EditorState>()((set, get) => ({
   nudgeSelection: (dx, dy) => {
     const ids = get().selection;
     if (ids.length === 0) return;
+    set({ lastNudge: { dx, dy } });
     get().apply((d) => {
       for (const id of ids) {
         const n = findNode(d.root, id);
