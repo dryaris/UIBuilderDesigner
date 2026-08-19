@@ -9,6 +9,7 @@ import { exportHtml } from "../export/html";
 import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
 import { exportUnityFile } from "../export/unity";
 import { exportUmgFile } from "../export/umg";
+import { exportGodotFile } from "../export/godot";
 import { exportSpecSheetFile } from "../export/spec";
 import { exportLottieFile } from "../export/lottie";
 import { exportTokensFile } from "../export/tokens";
@@ -165,6 +166,13 @@ export function TopBar() {
             onClick: () => {
               exportUnityFile(useStore.getState().doc);
               useStore.getState().showToast("Unity UI Toolkit exportado");
+            },
+          },
+          {
+            label: "Exportar Godot (.tscn + .theme)",
+            onClick: () => {
+              exportGodotFile(useStore.getState().doc);
+              useStore.getState().showToast("Godot exportado");
             },
           },
           {

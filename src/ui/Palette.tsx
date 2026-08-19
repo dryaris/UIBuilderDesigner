@@ -6,6 +6,7 @@ import { exportHtml } from "../export/html";
 import { exportPngFile, exportBundle, downloadBlob, projectFileName } from "../export/png";
 import { exportUnityFile } from "../export/unity";
 import { exportUmgFile } from "../export/umg";
+import { exportGodotFile } from "../export/godot";
 import { exportSpecSheetFile } from "../export/spec";
 import { exportLottieFile } from "../export/lottie";
 import { exportTokensFile } from "../export/tokens";
@@ -40,6 +41,11 @@ export function Palette() {
         const s = useStore.getState();
         exportUnityFile(s.doc);
         s.showToast("Unity UI Toolkit exportado");
+      } },
+      { id: "godot", label: "Exportar Godot (.tscn + .theme)", keywords: "godot gdengine motor juego scene theme control node 2d", run: () => {
+        const s = useStore.getState();
+        exportGodotFile(s.doc);
+        s.showToast("Godot exportado");
       } },
       { id: "umg", label: "Exportar Unreal UMG (manifest + guía)", keywords: "unreal umg ue5 motor juego exportar blueprint", run: () => {
         const s = useStore.getState();
