@@ -287,6 +287,8 @@ export interface Node {
   text?: string;
   /** Oculto del render y del export (ojo en layers). */
   hidden?: boolean;
+  /** Bloqueado: no se puede mover ni redimensionar desde el canvas. */
+  locked?: boolean;
   children: Node[];
 }
 

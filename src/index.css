@@ -359,6 +359,33 @@ body {
   background: var(--hover);
 }
 
+.layer-lock {
+  display: flex;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.layer-row:hover .layer-lock,
+.layer-row.is-selected .layer-lock,
+.layer-lock.is-locked {
+  opacity: 1;
+}
+
+.layer-lock.is-locked {
+  color: var(--accent);
+}
+
+.layer-lock:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
 .layer-icon {
   display: flex;
   color: var(--text-dim);

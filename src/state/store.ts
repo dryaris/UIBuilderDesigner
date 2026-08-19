@@ -202,6 +202,8 @@ interface EditorState {
   distributeSelection: (kind: "h" | "v") => void;
   setNodeName: (id: string, name: string) => void;
   toggleHidden: (id: string) => void;
+  /** Bloquea/desbloquea un nodo (no se puede mover ni redimensionar). */
+  toggleLock: (id: string) => void;
   setText: (id: string, text: string, width: number, height: number) => void;
   copyStyle: () => void;
   pasteStyle: () => void;
@@ -507,11 +509,13 @@ export const useStore = create<EditorState>()((set, get) => ({
     if (ids.length === 0) return;
     get().apply((d) => {
       for (const id of ids) {
+        const n = findNode(d.root, id);
+        if (n?.locked) continue; // nodos bloqueados no se eliminan
         const p = findParent(d.root, id);
         if (p) p.parent.children.splice(p.index, 1);
       }
     });
-    set({ selection: [] });
+    set({ selection: get().selection.filter((id) => { const n = findNode(get().doc.root, id); return n && !n.locked; }) });
   },
 
   duplicateSelection: () => {
@@ -541,7 +545,7 @@ export const useStore = create<EditorState>()((set, get) => ({
       for (const id of ids) {
         const n = findNode(d.root, id);
         // Los hijos de auto-layout no se mueven libremente (lo decide el layout).
-        if (n && !isFlexChild(d.root, n)) {
+        if (n && !isFlexChild(d.root, n) && !n.locked) {
           n.style.x = Math.round(n.style.x + dx);
           n.style.y = Math.round(n.style.y + dy);
         }
@@ -989,6 +993,12 @@ export const useStore = create<EditorState>()((set, get) => ({
     get().apply((d) => {
       const n = findNode(d.root, id);
       if (n) n.hidden = !n.hidden;
+    }),
+
+  toggleLock: (id) =>
+    get().apply((d) => {
+      const n = findNode(d.root, id);
+      if (n) n.locked = !n.locked;
     }),
 
   setText: (id, text, width, height) =>

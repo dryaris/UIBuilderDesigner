@@ -14,6 +14,7 @@
  *  - Doble clic en texto = editar inline; doble clic en nodo = color picker
  */
 import type React from "react";
+import { unstable_batchedUpdates } from "react-dom";
 import { useStore, type Handle, type SpacingHint } from "../state/store";
 import type { CanvasDoc, Node, Rect, Vec } from "../core/ir";
 import { findNode, findParent, hitTest, nodeRect, bbox, rectsIntersect } from "../core/tree";
@@ -144,7 +145,7 @@ export function useCanvasPointer() {
     }
 
     const hit = hitTest(s.doc.root, wp.x, wp.y);
-    if (hit) {
+    if (hit && !hit.locked) {
       // Selección estilo Figma: se aplica al bajar; el drag mueve la selección.
       const next = s.selection.includes(hit.id)
         ? e.shiftKey
@@ -297,30 +298,34 @@ export function useCanvasPointer() {
     }
     const drag = s.drag;
     if (!drag) return;
-    s.setDrag(null);
+    // Batch setDrag(null) con el apply/resizeFrame siguiente para que React
+    // renderice el estado final (posición committeada + sin offset) en un
+    // solo frame, evitando el flash de "snap back" al soltar.
+    unstable_batchedUpdates(() => {
+      s.setDrag(null);
 
-    switch (drag.kind) {
-      case "move": {
-        if (drag.dx !== 0 || drag.dy !== 0) {
-          s.apply((d) => {
-            for (const id of drag.ids) {
-              const n = findNode(d.root, id);
-              if (n) {
-                n.style.x = Math.round(n.style.x + drag.dx);
-                n.style.y = Math.round(n.style.y + drag.dy);
+      switch (drag.kind) {
+        case "move": {
+          if (drag.dx !== 0 || drag.dy !== 0) {
+            s.apply((d) => {
+              for (const id of drag.ids) {
+                const n = findNode(d.root, id);
+                if (n) {
+                  n.style.x = Math.round(n.style.x + drag.dx);
+                  n.style.y = Math.round(n.style.y + drag.dy);
+                }
               }
-            }
-          });
+            });
+          }
+          break;
         }
-        break;
-      }
 
-      case "resize": {
-        // Un solo commit (una entrada de undo): tamaño nuevo + constraints de
-        // los hijos directos (responsive, Fase 3).
-        s.resizeFrame(drag.id, drag.rect, drag.startRect);
-        break;
-      }
+        case "resize": {
+          // Un solo commit (una entrada de undo): tamaño nuevo + constraints de
+          // los hijos directos (responsive, Fase 3).
+          s.resizeFrame(drag.id, drag.rect, drag.startRect);
+          break;
+        }
 
       case "marquee": {
         const rect = normRect(drag.start, drag.current);
@@ -414,6 +419,7 @@ export function useCanvasPointer() {
       case "pan":
         break;
     }
+    }); // unstable_batchedUpdates
   }
 
   // ---------------------------------------------------------------- wheel

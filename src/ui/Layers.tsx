@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Eye, EyeOff, Frame, Type, Square, Circle, Minus, Layers as LayersIcon, ArrowUp, ArrowDown } from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Frame, Type, Square, Circle, Minus, Layers as LayersIcon, ArrowUp, ArrowDown } from "lucide-react";
 import { useStore } from "../state/store";
 import type { Node } from "../core/ir";
 
@@ -85,6 +85,14 @@ function LayerRow({
       }}
       onDoubleClick={() => onStartRename(node.id, node.name)}
     >
+      <button
+        className={`layer-lock${node.locked ? " is-locked" : ""}`}
+        title={node.locked ? "Desbloquear (Cmd+L)" : "Bloquear (Cmd+L)"}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => st.toggleLock(node.id)}
+      >
+        {node.locked ? <Lock size={13} /> : <Unlock size={13} />}
+      </button>
       <button
         className="layer-eye"
         title={node.hidden ? "Mostrar" : "Ocultar"}

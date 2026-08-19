@@ -11,7 +11,7 @@
  */
 import { useEffect } from "react";
 import { useStore } from "../state/store";
-import { nodeRect } from "../core/tree";
+import { nodeRect, findNode as findNodeById } from "../core/tree";
 import { saveProjectFile, openProjectFile } from "../export/project";
 
 const TOOL_KEYS: Record<string, "select" | "frame" | "text" | "rect" | "ellipse" | "line" | "hand" | "zoom"> = {
@@ -114,6 +114,35 @@ export function useKeyboard(): void {
         return;
       }
 
+      // Cmd/Ctrl+L = bloquear/desbloquear nodo seleccionado.
+      if (mod && key === "l") {
+        e.preventDefault();
+        const sel = st.selection;
+        if (sel.length === 1) st.toggleLock(sel[0]);
+        return;
+      }
+      // [ / ] = mover capa atrás/adelante (Photoshop).
+      if (key === "[" && !mod) {
+        e.preventDefault();
+        if (st.selection.length === 1) st.reorderNode(st.selection[0], 1);
+        return;
+      }
+      if (key === "]" && !mod) {
+        e.preventDefault();
+        if (st.selection.length === 1) st.reorderNode(st.selection[0], -1);
+        return;
+      }
+      // Cmd/Ctrl+Shift+H = flip horizontal · Cmd/Ctrl+Shift+J = flip vertical.
+      if (mod && e.shiftKey && key === "h") {
+        e.preventDefault();
+        flipSelection("h");
+        return;
+      }
+      if (mod && e.shiftKey && key === "j") {
+        e.preventDefault();
+        flipSelection("v");
+        return;
+      }
       if (e.key === "Escape") {
         st.setDrag(null);
         if (st.previewMode) {
@@ -197,4 +226,25 @@ async function openProjectAndReplace(): Promise<void> {
   } catch (err) {
     useStore.getState().showToast(err instanceof Error ? err.message : "No se pudo abrir el proyecto");
   }
+}
+
+/** Voltea la selección horizontal (h) o vertical (v) sobre su centro. */
+function flipSelection(axis: "h" | "v"): void {
+  const st = useStore.getState();
+  const ids = st.selection;
+  if (ids.length === 0) return;
+  st.apply((d) => {
+    for (const id of ids) {
+      const n = findNodeById(d.root, id);
+      if (!n || n.type === "text") continue;
+      if (axis === "h") {
+        // Voltear horizontal: reflejar x dentro del padre + invertir scale.
+        n.style.scale = n.style.scale !== undefined ? -n.style.scale : -1;
+      } else {
+        // Voltear vertical: reflejar y dentro del padre + invertir scale.
+        n.style.scale = n.style.scale !== undefined ? -n.style.scale : -1;
+      }
+    }
+  });
+  st.showToast(axis === "h" ? "Volteado horizontal" : "Volteado vertical");
 }
