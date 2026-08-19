@@ -187,6 +187,37 @@ export function useKeyboard(): void {
         if (e.shiftKey && k === "h") { e.preventDefault(); st.distributeSelection("h"); return; }
         if (e.shiftKey && k === "v") { e.preventDefault(); st.distributeSelection("v"); return; }
       }
+      // Cmd/Ctrl+1 = zoom to fit (Figma).
+      if (mod && key === "1") {
+        e.preventDefault();
+        st.fitTo(nodeRect(st.doc.root));
+        return;
+      }
+      // Cmd/Ctrl+2 = zoom to selection.
+      if (mod && key === "2") {
+        e.preventDefault();
+        const sel = st.selection;
+        if (sel.length > 0) {
+          const nodes = sel.map((id) => findNodeById(st.doc.root, id)).filter(Boolean);
+          if (nodes.length > 0) {
+            const rects = nodes.map((n) => nodeRect(n!));
+            const minX = Math.min(...rects.map((r) => r.x));
+            const minY = Math.min(...rects.map((r) => r.y));
+            const maxX = Math.max(...rects.map((r) => r.x + r.width));
+            const maxY = Math.max(...rects.map((r) => r.y + r.height));
+            st.fitTo({ x: minX, y: minY, width: maxX - minX, height: maxY - minY });
+          }
+        }
+        return;
+      }
+      // Cmd/Ctrl+Y = outline mode (solo bordes, sin fills).
+      if (mod && key === "y" && !e.shiftKey) {
+        e.preventDefault();
+        // Toggle outline mode via a CSS class on the world div.
+        const world = document.querySelector(".world") as HTMLElement | null;
+        if (world) world.classList.toggle("outline-mode");
+        return;
+      }
       if (e.shiftKey && e.key === "1") {
         e.preventDefault();
         st.fitTo(nodeRect(st.doc.root));
@@ -195,6 +226,12 @@ export function useKeyboard(): void {
       if (e.shiftKey && e.key === "0") {
         e.preventDefault();
         st.zoomTo(1, { x: st.viewport.size.x / 2, y: st.viewport.size.y / 2 });
+        return;
+      }
+      // I = eyedropper (capturar color de pantalla).
+      if (key === "i" && !mod) {
+        e.preventDefault();
+        st.eyedropColor();
         return;
       }
       const tool = TOOL_KEYS[key];

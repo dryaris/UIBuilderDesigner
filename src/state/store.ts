@@ -172,6 +172,8 @@ interface EditorState {
   toggle: (k: "showRulers" | "showGuides" | "showSafeAreas" | "showGrid") => void;
   showToast: (msg: string) => void;
   setHistoryPanelOpen: (v: boolean) => void;
+  /** Usa la API EyeDropper del navegador para capturar un color de pantalla. */
+  eyedropColor: () => void;
   // ---- Fase 8: ayuda y onboarding ----
   tourOpen: boolean;
   shortcutsOpen: boolean;
@@ -498,6 +500,29 @@ export const useStore = create<EditorState>()((set, get) => ({
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
 
   setHistoryPanelOpen: (historyPanelOpen) => set({ historyPanelOpen }),
+
+  eyedropColor: async () => {
+    try {
+      // @ts-expect-error EyeDropper API
+      const dropper = new window.EyeDropper();
+      const result = await dropper.open();
+      const color = result.sRGBHex;
+      const ids = get().selection;
+      if (ids.length > 0) {
+        get().apply((d) => {
+          for (const id of ids) {
+            const n = findNode(d.root, id);
+            if (n) n.style.backgroundColor = color;
+          }
+        });
+        get().showToast(`Color ${color} aplicado`);
+      } else {
+        get().showToast(`Color capturado: ${color}`);
+      }
+    } catch {
+      // EyeDropper cancelado por el usuario.
+    }
+  },
 
   showToast: (msg) => {
     if (toastTimer) clearTimeout(toastTimer);

@@ -11,7 +11,7 @@ const GROUPS: { title: string; rows: [string, string][] }[] = [
     title: "Herramientas",
     rows: [
       ["V · F · T · R · O · L", "Select · Frame · Text · Rect · Elipse · Línea"],
-      ["H · Z", "Mano (pan) · Zoom (marquee)"],
+      ["H · Z · I", "Mano (pan) · Zoom (marquee) · Eyedropper"],
       ["Espacio (mantenido)", "Pan temporal"],
       ["⌘ / Ctrl + scroll", "Zoom al cursor"],
     ],
@@ -43,6 +43,8 @@ const GROUPS: { title: string; rows: [string, string][] }[] = [
     rows: [
       ["⌘Z / ⇧⌘Z", "Deshacer / rehacer"],
       ["⌘H", "Panel de historial (undo/redo visible)"],
+      ["⌘1 / ⌘2", "Zoom a pantalla / Zoom a selección"],
+      ["⌘Y", "Modo outline (solo bordes, wireframe)"],
       ["⌘S / ⌘O", "Guardar / abrir proyecto (.canvas)"],
       ["⌘K", "Palette de acciones"],
       ["⇧1 / ⇧0", "Ajustar a pantalla / zoom 100%"],

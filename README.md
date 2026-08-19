@@ -51,6 +51,11 @@ Lo que ya funciona:
 - **Duplicación estilo Photoshop**: `Cmd+D` ahora usa el **offset del último nudge** como desplazamiento del duplicado (como Photoshop: mueves 20px a la derecha → el duplicado aparece 20px más a la derecha).
 - **Panel de historial visual**: `Cmd+H` (o icono en la barra de herramientas) abre un panel que muestra todas las acciones de undo/redo con labels legibles ("Mover nodo", "Cambiar color", "Añadir nodo", etc.). Puedes saltar a cualquier punto del historial con un clic.
 - **Marquee mejorado**: al arrastrar un marquee en el lienzo, ahora se incluyen **hijos anidados** (no solo de primer nivel). Los frames se seleccionan solo si al menos uno de sus hijos NO está en el marquee, evitando selecciones redundantes.
+- **Drag & drop en Capas**: reordena nodos arrastrándolos en el panel de capas con indicadores visuales (línea azul antes/después del nodo destino).
+- **Eyedropper global**: herramienta `I` o botón en el Inspector que usa la API EyeDropper del navegador para capturar cualquier color de la pantalla y aplicarlo al nodo seleccionado.
+- **Zoom a pantalla/selección**: `Cmd+1` ajusta la vista a toda la pantalla, `Cmd+2` hace zoom a los nodos seleccionados (atajos estándar de Figma).
+- **Modo outline (wireframe)**: `Cmd+Y` alterna entre vista normal y modo outline (solo bordes, sin fills) para ver la estructura del diseño.
+- **Tamaño porcentual**: en el Inspector → Tamaño, el botón "%" permite definir el ancho/alto como porcentaje del padre (0–200%), ideal para layouts responsive.
 
 **Regla de los 10 minutos**: abre la app → "Menú de juego" → ya tienes una pantalla de juego animable y bonita. Doble clic en el título para reescribir el texto, arrastra los botones, `⌘D` para duplicar, flechas para nudge, `Alt+C` para centrar y guarda el color del botón como token.
 
@@ -153,6 +158,10 @@ Los binarios se compilan en GitHub Actions (los binarios nativos requieren su pr
 | `[` / `]` | Mover capa atrás / adelante |
 | `Cmd/Ctrl + L` | Bloquear / desbloquear nodo |
 | `Cmd/Ctrl + Shift + H/J` | Voltear horizontal / vertical |
+| `Cmd/Ctrl + 1` | Zoom a pantalla completa |
+| `Cmd/Ctrl + 2` | Zoom a selección |
+| `Cmd/Ctrl + Y` | Modo outline (solo bordes, wireframe) |
+| `I` | Eyedropper (capturar color de pantalla) |
 | `Alt+A/D/W/S` | Alinear izquierda / derecha / arriba / abajo |
 | `Alt+C` / `Alt+M` | Alinear centro H / centro V |
 | `Alt+Shift+H` / `Alt+Shift+V` | Distribuir horizontal / vertical |

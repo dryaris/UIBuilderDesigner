@@ -118,6 +118,9 @@ export interface Style {
   wrap?: boolean;
   /** Ajuste al contenido por eje ("hug"): el tamaño se calcula de los hijos. */
   sizing?: { x?: "fixed" | "hug"; y?: "fixed" | "hug" };
+  /** Tamaño en % del padre (0–100). Si se define, tiene prioridad sobre width/height fijos. */
+  widthPct?: number;
+  heightPct?: number;
 
   // ---- visual ----
   /** Color sólido, o referencia "$token" (ej. "$primary"). */

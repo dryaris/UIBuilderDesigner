@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { Eye, EyeOff, Lock, Unlock, Frame, Type, Square, Circle, Minus, Layers as LayersIcon, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, useCallback, useRef, type ReactNode } from "react";
+import { Eye, EyeOff, Lock, Unlock, Frame, Type, Square, Circle, Minus, Layers as LayersIcon, GripVertical } from "lucide-react";
 import { useStore } from "../state/store";
 import type { Node } from "../core/ir";
 
@@ -19,9 +19,57 @@ export function Layers() {
     setRenaming(null);
   };
 
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dragOverPos, setDragOverPos] = useState<"before" | "after" | null>(null);
+  const dragIdRef = useRef<string | null>(null);
+
+  const onDragStart = useCallback((id: string) => {
+    dragIdRef.current = id;
+  }, []);
+
+  const onDragOver = useCallback((e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (dragIdRef.current === id) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    const pos = e.clientY < mid ? "before" : "after";
+    setDragOverId(id);
+    setDragOverPos(pos);
+  }, []);
+
+  const onDrop = useCallback((targetId: string) => {
+    const srcId = dragIdRef.current;
+    dragIdRef.current = null;
+    setDragOverId(null);
+    setDragOverPos(null);
+    if (!srcId || srcId === targetId) return;
+    const st = useStore.getState();
+    const pos = dragOverPos ?? "after";
+    // Mover srcId antes/después de targetId en el mismo padre.
+    st.apply((d) => {
+      const srcResult = findParentNode(d.root, srcId);
+      const tgtResult = findParentNode(d.root, targetId);
+      if (!srcResult || !tgtResult) return;
+      const srcP = srcResult.parent;
+      const tgtP = tgtResult.parent;
+      const srcIdx = srcP.children.findIndex((c: Node) => c.id === srcId);
+      const [moved] = srcP.children.splice(srcIdx, 1);
+      let tgtIdx = tgtP.children.findIndex((c: Node) => c.id === targetId);
+      if (pos === "after") tgtIdx += 1;
+      tgtP.children.splice(tgtIdx, 0, moved);
+    });
+  }, [dragOverPos]);
+
+  const onDragEnd = useCallback(() => {
+    dragIdRef.current = null;
+    setDragOverId(null);
+    setDragOverPos(null);
+  }, []);
+
   const rows: ReactNode[] = [];
   const walk = (node: Node, depth: number) => {
     for (const child of node.children) {
+      const isDragOver = dragOverId === child.id;
       rows.push(
         <LayerRow
           key={child.id}
@@ -33,6 +81,12 @@ export function Layers() {
           onEditingName={setEditingName}
           onStartRename={startRename}
           onCommitRename={commitRename}
+          isDragOver={isDragOver}
+          dragOverPos={isDragOver ? dragOverPos : null}
+          onDragStart={onDragStart}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          onDragEnd={onDragEnd}
         />,
       );
       if (!child.hidden || child.children.length > 0) walk(child, depth + 1);
@@ -57,6 +111,12 @@ function LayerRow({
   onEditingName,
   onStartRename,
   onCommitRename,
+  isDragOver,
+  dragOverPos,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
 }: {
   node: Node;
   depth: number;
@@ -66,13 +126,28 @@ function LayerRow({
   onEditingName: (v: string) => void;
   onStartRename: (id: string, name: string) => void;
   onCommitRename: () => void;
+  isDragOver: boolean;
+  dragOverPos: "before" | "after" | null;
+  onDragStart: (id: string) => void;
+  onDragOver: (e: React.DragEvent, id: string) => void;
+  onDrop: (id: string) => void;
+  onDragEnd: () => void;
 }) {
   const st = useStore.getState();
   const Icon = typeIcon(node);
   return (
     <div
-      className={`layer-row${selected ? " is-selected" : ""}`}
+      className={`layer-row${selected ? " is-selected" : ""}${isDragOver ? " layer-drag-over" : ""}${isDragOver && dragOverPos === "before" ? " layer-drag-before" : ""}${isDragOver && dragOverPos === "after" ? " layer-drag-after" : ""}`}
       style={{ paddingLeft: 8 + depth * 14 }}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", node.id);
+        onDragStart(node.id);
+      }}
+      onDragOver={(e) => onDragOver(e, node.id)}
+      onDrop={() => onDrop(node.id)}
+      onDragEnd={onDragEnd}
       onPointerDown={(e) => {
         if (e.shiftKey) {
           const sel = useStore.getState().selection;
@@ -124,32 +199,9 @@ function LayerRow({
       {node.ref?.startsWith("comp:") && (
         <span className="layer-comp-badge" title="Instancia de componente">◆</span>
       )}
-      {selected && (
-        <span className="layer-reorder">
-          <button
-            className="icon-btn"
-            title="Subir en el orden (auto-layout)"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              useStore.getState().reorderNode(node.id, -1);
-            }}
-          >
-            <ArrowUp size={12} />
-          </button>
-          <button
-            className="icon-btn"
-            title="Bajar en el orden (auto-layout)"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              useStore.getState().reorderNode(node.id, 1);
-            }}
-          >
-            <ArrowDown size={12} />
-          </button>
-        </span>
-      )}
+      <span className="layer-drag-handle" title="Arrastrar para reordenar">
+        <GripVertical size={12} />
+      </span>
     </div>
   );
 }
@@ -165,4 +217,14 @@ function typeIcon(node: Node) {
     default:
       return Frame;
   }
+}
+
+/** Busca el padre e índice de un nodo en el árbol. */
+function findParentNode(node: Node, id: string): { parent: Node; index: number } | null {
+  for (let i = 0; i < node.children.length; i++) {
+    if (node.children[i].id === id) return { parent: node, index: i };
+    const hit = findParentNode(node.children[i], id);
+    if (hit) return hit;
+  }
+  return null;
 }

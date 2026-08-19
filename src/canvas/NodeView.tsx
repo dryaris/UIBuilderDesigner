@@ -37,8 +37,8 @@ function boxCss(node: Node, s: Style, tokens: Tokens, inFlex = false): CSSProper
     css.left = s.x;
     css.top = s.y;
   }
-  css.width = s.sizing?.x === "hug" ? "fit-content" : s.width;
-  css.height = s.sizing?.y === "hug" ? "fit-content" : s.height;
+  css.width = s.widthPct !== undefined ? `${s.widthPct}%` : s.sizing?.x === "hug" ? "fit-content" : s.width;
+  css.height = s.heightPct !== undefined ? `${s.heightPct}%` : s.sizing?.y === "hug" ? "fit-content" : s.height;
   // Auto-layout: flexbox real (el mismo motor que el exportador HTML).
   if (s.flexDirection) {
     css.display = "flex";

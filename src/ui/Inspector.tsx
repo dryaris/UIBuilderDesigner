@@ -9,6 +9,7 @@ import {
   AlignRight,
   Eye,
   EyeOff,
+  Pipette,
   Rows3,
   Columns3,
   AlignStartHorizontal,
@@ -485,38 +486,78 @@ function AutoLayoutSection({ node }: { node: Node }) {
               <span className="sizing-name">Ancho</span>
               <div className="seg">
                 <button
-                  className={(s.sizing?.x ?? "fixed") === "fixed" ? "is-active" : ""}
-                  onClick={() => set({ sizing: { x: "fixed", y: s.sizing?.y ?? "fixed" } })}
+                  className={(s.sizing?.x ?? "fixed") === "fixed" && s.widthPct === undefined ? "is-active" : ""}
+                  onClick={() => set({ sizing: { x: "fixed", y: s.sizing?.y ?? "fixed" }, widthPct: undefined })}
                 >
                   Fijo
                 </button>
                 <button
                   className={s.sizing?.x === "hug" ? "is-active" : ""}
                   title="Se ajusta al contenido"
-                  onClick={() => set({ sizing: { x: "hug", y: s.sizing?.y ?? "fixed" } })}
+                  onClick={() => set({ sizing: { x: "hug", y: s.sizing?.y ?? "fixed" }, widthPct: undefined })}
                 >
                   Contenido
                 </button>
+                <button
+                  className={s.widthPct !== undefined ? "is-active" : ""}
+                  title="Porcentaje del padre"
+                  onClick={() => set({ widthPct: s.widthPct ?? 100, sizing: { x: "fixed", y: s.sizing?.y ?? "fixed" } })}
+                >
+                  %
+                </button>
               </div>
             </div>
+            {s.widthPct !== undefined && (
+              <div className="sizing-row">
+                <span className="sizing-name">%</span>
+                <input
+                  className="num-input"
+                  type="number"
+                  min={0}
+                  max={200}
+                  value={s.widthPct}
+                  onChange={(e) => set({ widthPct: Math.max(0, Math.min(200, Number(e.target.value) || 0)) })}
+                />
+              </div>
+            )}
             <div className="sizing-row">
               <span className="sizing-name">Alto</span>
               <div className="seg">
                 <button
-                  className={(s.sizing?.y ?? "fixed") === "fixed" ? "is-active" : ""}
-                  onClick={() => set({ sizing: { x: s.sizing?.x ?? "fixed", y: "fixed" } })}
+                  className={(s.sizing?.y ?? "fixed") === "fixed" && s.heightPct === undefined ? "is-active" : ""}
+                  onClick={() => set({ sizing: { x: s.sizing?.x ?? "fixed", y: "fixed" }, heightPct: undefined })}
                 >
                   Fijo
                 </button>
                 <button
                   className={s.sizing?.y === "hug" ? "is-active" : ""}
                   title="Se ajusta al contenido"
-                  onClick={() => set({ sizing: { x: s.sizing?.x ?? "fixed", y: "hug" } })}
+                  onClick={() => set({ sizing: { x: s.sizing?.x ?? "fixed", y: "hug" }, heightPct: undefined })}
                 >
                   Contenido
                 </button>
+                <button
+                  className={s.heightPct !== undefined ? "is-active" : ""}
+                  title="Porcentaje del padre"
+                  onClick={() => set({ heightPct: s.heightPct ?? 100, sizing: { x: s.sizing?.x ?? "fixed", y: "fixed" } })}
+                >
+                  %
+                </button>
               </div>
             </div>
+            {s.heightPct !== undefined && (
+              <div className="sizing-row">
+                <span className="sizing-name">%</span>
+                <input
+                  className="num-input"
+                  type="number"
+                  min={0}
+                  max={200}
+                  value={s.heightPct}
+                  onChange={(e) => set({ heightPct: Math.max(0, Math.min(200, Number(e.target.value) || 0)) })}
+                />
+              </div>
+            )}
           </div>
         </>
       )}
@@ -761,6 +802,13 @@ function ColorField({
             if (e.key === "Enter") (e.target as HTMLInputElement).blur();
           }}
         />
+        <button
+          className="icon-btn"
+          title="Capturar color de pantalla (eyedropper)"
+          onClick={() => useStore.getState().eyedropColor()}
+        >
+          <Pipette size={14} />
+        </button>
       </div>
       <ColorTokenChips current={value} onPick={onCommit} />
       <button className="mini-btn token-save-btn" onClick={saveAsToken}>
