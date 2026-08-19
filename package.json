@@ -1,8 +1,8 @@
 {
-  "name": "canvas-editor",
+  "name": "ui-forger",
   "private": true,
   "version": "0.1.0",
-  "description": "Canvas — Editor visual de UI/UX offline, agnóstico y multi-destino (HTML/CSS, Unity UI Toolkit, Unreal UMG).",
+  "description": "UI Forger — Editor visual de UI/UX offline, agnóstico y multi-destino (HTML/CSS, Unity, Unreal, Godot).",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -149,7 +149,7 @@ export function buildReviewHtml(doc: CanvasDoc): string {
 </head>
 <body>
   <h1>Revisión de diseño — ${escapeHtml(doc.root.name)}</h1>
-  <div class="meta">${escapeHtml(date)} · ${escapeHtml(doc.root.name)} (${doc.root.style.width}×${doc.root.style.height}px) · ${anns.length} anotaciones · generado por Canvas</div>
+  <div class="meta">${escapeHtml(date)} · ${escapeHtml(doc.root.name)} (${doc.root.style.width}×${doc.root.style.height}px) · ${anns.length} anotaciones · generado por UI Forger</div>
   <span class="badge ${open > 0 ? "open" : "done"}">${open > 0 ? `${open} pendiente${open > 1 ? "s" : ""} de resolver` : "Revisión resuelta ✓"}</span>
 
   <section class="page">
@@ -161,7 +161,7 @@ export function buildReviewHtml(doc: CanvasDoc): string {
   </section>
 
   ${screens}
-  <footer>Exportado por Canvas — editor visual offline · ${escapeHtml(projectFileName(doc))}</footer>
+  <footer>Exportado por UI Forger — editor visual offline · ${escapeHtml(projectFileName(doc))}</footer>
 </body>
 </html>
 `;

@@ -1,5 +1,5 @@
 /**
- * Canvas — editor visual de UI/UX offline, agnóstico y multi-destino.
+ * UI Forger — editor visual de UI/UX offline, agnóstico y multi-destino.
  * Fase 1: fundamentos tipo Figma (drag & drop, snapping, guías, atajos,
  * presets de pantalla con safe areas TV, undo/redo y autosave).
  */

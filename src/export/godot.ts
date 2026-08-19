@@ -501,7 +501,7 @@ PASOS
 
   4) Los vectores SVG se exportan como paths; Godot no los renderiza
      directamente. Opciones:
-     a) Exporta el SVG desde Canvas y ponlo como textura en TextureRect
+     a) Exporta el SVG desde UI Forger y ponlo como textura en TextureRect
      b) Usa un ColorRect del mismo color como placeholder
      c) Importa el SVG en Godot (soporte limitado en 4.x)
 
@@ -549,7 +549,7 @@ NOTAS
     en el Inspector de Godot.
 
 TIMELINES (${doc.timelines.length})
-  ${doc.timelines.length === 0 ? "(ninguna — crea timelines en Canvas para generar tracks)" : ""}
+  ${doc.timelines.length === 0 ? "(ninguna — crea timelines en UI Forger para generar tracks)" : ""}
   ${doc.timelines.map((tl) => `  - ${tl.name}: ${tl.durationMs}ms, loop=${tl.loop}, playMode=${tl.playMode}`).join("\n")}
 
 CONTRATO

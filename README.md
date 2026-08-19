@@ -1,6 +1,6 @@
-# Canvas — Editor visual de UI/UX offline
+# UI Forger — Editor visual de UI/UX offline
 
-Un editor de diseño de interfaces **100% offline, sin cuenta y sin backend**, tan fácil de usar como PowerPoint pero con potencia de animación de calidad AAA. Multi-destino: exporta a **HTML/CSS/JS**, **Unity UI Toolkit (UXML + USS)** y **Unreal UMG**.
+Un editor de diseño de interfaces **100% offline, sin cuenta y sin backend**, tan fácil de usar como PowerPoint pero con potencia de animación de calidad AAA. Multi-destino: exporta a **HTML/CSS/JS**, **Unity UI Toolkit (UXML + USS)**, **Unreal UMG** y **Godot**.
 
 > "Un Figma más agnóstico": el diseñador no necesita saber nada de motores ni de código; un diseñador técnico llega al detalle fino.
 
@@ -8,7 +8,7 @@ Un editor de diseño de interfaces **100% offline, sin cuenta y sin backend**, t
 
 Lo que ya funciona:
 
-- **Canvas con drag & drop**: selección (clic, Shift+clic, marquee, clic en vacío dentro del artboard = seleccionar pantalla), mover, redimensionar con 8 handles, **pixel-snap estricto a enteros** y **snapping** a guías, bordes del frame y nodos hermanos con líneas de guía visuales.
+- **UI Forger con drag & drop**: selección (clic, Shift+clic, marquee, clic en vacío dentro del artboard = seleccionar pantalla), mover, redimensionar con 8 handles, **pixel-snap estricto a enteros** y **snapping** a guías, bordes del frame y nodos hermanos con líneas de guía visuales.
 - **Spacing hints (medición al mover)**: al arrastrar un nodo cerca de otros se muestran las distancias exactas en px, estilo Figma (líneas rojas con etiqueta).
 - **Alineación y distribución**: `Alt+A/D/W/S` = izquierda/derecha/arriba/abajo, `Alt+C/M` = centrar H/V, `Alt+Shift+H/V` = distribuir — los atajos exactos de Figma.
 - **Cuadrículas de layout por frame**: columnas/filas con margin y gutter, configurables desde el Inspector y dibujadas sobre el lienzo.

@@ -122,13 +122,13 @@ export function TopBar() {
 
   return (
     <header className="topbar">
-      <div className="topbar-brand" title="Canvas — editor visual offline">
+      <div className="topbar-brand" title="UI Forger — editor visual offline">
         <svg width="22" height="22" viewBox="0 0 32 32">
           <rect width="32" height="32" rx="8" fill="#7C5CFF" />
           <rect x="7" y="7" width="18" height="18" rx="3" fill="none" stroke="#fff" strokeWidth="2.5" />
           <circle cx="24" cy="24" r="4" fill="#FF6B9D" />
         </svg>
-        <span className="topbar-brand-name">Canvas</span>
+        <span className="topbar-brand-name">UI Forger</span>
       </div>
 
       <Menu

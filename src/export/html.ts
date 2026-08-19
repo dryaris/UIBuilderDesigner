@@ -56,7 +56,7 @@ window.addEventListener("resize",scale);scale();
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${escapeHtml(doc.root.name || "Export Canvas")}</title>
+<title>${escapeHtml(doc.root.name || "Export UI Forger")}</title>
 <style>
 * { box-sizing: border-box; }
 body { margin: 0; background: #0b0e1a; overflow: hidden; }

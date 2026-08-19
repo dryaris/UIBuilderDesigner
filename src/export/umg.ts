@@ -82,7 +82,7 @@ function buildManifest(doc: CanvasDoc): UmgManifest {
   const children = root.children.map((c) => toUmgNode(c, doc)).filter((n): n is UmgNode => Boolean(n));
 
   return {
-    generator: "Canvas editor visual de UI/UX",
+    generator: "UI Forger — editor visual de UI/UX",
     screen: root.name,
     size: { width: root.style.width, height: root.style.height },
     tokens: { colors: doc.tokens.colors },

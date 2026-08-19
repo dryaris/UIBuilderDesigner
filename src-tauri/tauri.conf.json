@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Canvas",
+  "productName": "UI Forger",
   "version": "0.1.0",
-  "identifier": "com.canvas.editor",
+  "identifier": "com.uiforger.app",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Canvas — Editor visual offline",
+        "title": "UI Forger — Editor visual offline",
         "width": 1440,
         "height": 900,
         "minWidth": 1024,
@@ -30,7 +30,7 @@
     "targets": "all",
     "category": "DeveloperTool",
     "shortDescription": "Editor visual de UI/UX offline, agnóstico y multi-destino",
-    "publisher": "Canvas",
+    "publisher": "UI Forger",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

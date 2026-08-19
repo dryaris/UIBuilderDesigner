@@ -93,7 +93,7 @@ function dtcEasings(tokens: Tokens): Record<string, DtcToken> {
 /** tokens.json — W3C DTCG. */
 export function dtcTokensJson(tokens: Tokens): string {
   const doc = {
-    $description: "Design tokens exportados por Canvas — formato W3C DTCG.",
+    $description: "Design tokens exportados por UI Forger — formato W3C DTCG.",
     color: dtcColors(tokens),
     radius: dtcDimensions(tokens.radii),
     spacing: dtcDimensions(tokens.spacing),
@@ -163,7 +163,7 @@ const SD_CONFIG = `{
   }
 }`;
 
-const SD_README = `# Style Dictionary — tokens de Canvas
+const SD_README = `# Style Dictionary — tokens de UI Forger
 
 1. Instala:  npm i -D style-dictionary
 2. Copia tokens.json y config.json a tu proyecto.
@@ -194,7 +194,7 @@ export async function exportTokensBundle(doc: CanvasDoc): Promise<Blob> {
 
   zip.file(
     "README.md",
-    `# Design tokens — ${escapeHtml(doc.root.name)}\n\n- tokens.json: formato W3C DTCG (design-tokens.github.io/community-group) — tema activo${doc.activeThemeId ? ` («${escapeHtml(themes.find((t) => t.id === doc.activeThemeId)?.name ?? "")}»)` : ""}.\n- style-dictionary/: formato Style Dictionary listo para compilar.\n- tokens.css: custom properties para usar directamente.\n${themeReadme.join("\n")}\n\nExportado por Canvas — editor visual offline.\n`,
+    `# Design tokens — ${escapeHtml(doc.root.name)}\n\n- tokens.json: formato W3C DTCG (design-tokens.github.io/community-group) — tema activo${doc.activeThemeId ? ` («${escapeHtml(themes.find((t) => t.id === doc.activeThemeId)?.name ?? "")}»)` : ""}.\n- style-dictionary/: formato Style Dictionary listo para compilar.\n- tokens.css: custom properties para usar directamente.\n${themeReadme.join("\n")}\n\nExportado por UI Forger — editor visual offline.\n`,
   );
   return zip.generateAsync({ type: "blob" });
 }

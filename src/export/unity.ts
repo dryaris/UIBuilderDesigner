@@ -24,7 +24,7 @@ const STATE_PSEUDO: [keyof NonNullable<Node["states"]>, string][] = [
 
 export function exportUnity(doc: CanvasDoc): { uxml: string; uss: string } {
   const uss: string[] = [];
-  uss.push("/* Canvas → Unity UI Toolkit (USS) — generado automáticamente */");
+  uss.push("/* UI Forger → Unity UI Toolkit (USS) — generado automáticamente */");
 
   const vars = ussVars(doc.tokens);
   if (vars) uss.push(`:root {\n${vars}\n}`);

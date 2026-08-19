@@ -76,7 +76,7 @@ export function exportSpecSheet(doc: CanvasDoc, nodeId?: string): string {
 </head>
 <body>
   <h1>${escapeHtml(root.name)}</h1>
-  <div class="sub">Especificaciones de diseño · ${escapeHtml(doc.root.name)} · ${root.style.width}×${root.style.height}px · generado por Canvas</div>
+  <div class="sub">Especificaciones de diseño · ${escapeHtml(doc.root.name)} · ${root.style.width}×${root.style.height}px · generado por UI Forger</div>
   <div class="colors">${swatches || "<span class='sub'>Sin colores</span>"}</div>
   <table>
     <thead><tr><th>Elemento</th><th>Posición · tamaño</th><th>Detalle</th></tr></thead>
