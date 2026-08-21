@@ -5,8 +5,10 @@
  * las herramientas. Cada sesión vive en `drag` del store; el documento solo se
  * muta al soltar (un commit = una entrada de historial).
  *
- * Memoria muscular de Figma:
- *  - Espacio (mantenido) = pan
+ * Navegación estilo game editor (Unity/Godot):
+ *  - Espacio (mantenido) + drag = pan
+ *  - Clic derecho (button 2) + drag = pan
+ *  - Scroll wheel = zoom hacia el cursor
  *  - Cmd/Ctrl + scroll = zoom hacia el cursor
  *  - Click en nodo = seleccionar; Shift+click = sumar/quitar
  *  - Drag en vacío = marquee; Shift+drag = añadir al marquee
@@ -63,8 +65,8 @@ export function useCanvasPointer() {
     // Clic sobre una línea de guía: el drag lo gestiona la propia guía.
     if (target.closest?.(".guide-line")) return;
 
-    // Pan: espacio mantenido o herramienta Mano (también en preview).
-    if (s.spaceDown || s.tool === "hand") {
+    // Pan: espacio mantenido, herramienta Mano, o clic derecho (button === 2).
+    if (s.spaceDown || s.tool === "hand" || e.button === 2) {
       s.setDrag({ kind: "pan", start: { x: e.clientX, y: e.clientY }, startPan: s.viewport.pan });
       s.setHover(null);
       return;
@@ -444,15 +446,35 @@ export function useCanvasPointer() {
   }
 
   // ---------------------------------------------------------------- wheel
+  // Scroll wheel = zoom hacia el cursor (estilo Unity/Godot).
+  // Cmd/Ctrl + scroll también zoom (compatibilidad Figma).
+  // Shift+scroll = pan horizontal · trackpad = pan con deltaX/deltaY.
   function onWheel(e: React.WheelEvent) {
     e.preventDefault();
     const s = useStore.getState();
     const rect = getCanvas().getBoundingClientRect();
     const center = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    if (e.ctrlKey || e.metaKey) {
-      // Cmd/Ctrl + scroll = zoom hacia el cursor (pinch del trackpad incluido).
-      s.zoomBy(e.deltaY < 0 ? 1.1 : 1 / 1.1, center);
-    } else {
+
+    // Shift+scroll = pan horizontal (comportamiento estándar).
+    if (e.shiftKey) {
+      s.setViewport({
+        pan: { x: s.viewport.pan.x - e.deltaY, y: s.viewport.pan.y },
+      });
+      return;
+    }
+
+    // Wheel delta puro (mouse wheel) vs trackpad (deltaX/deltaY suaves).
+    // Mouse wheel: deltaY grandes (±100), deltaX ≈ 0 → zoom.
+    // Trackpad: deltaX/deltaY pequeños (~1-5) → pan (gesto de deslizar).
+    const isMouseWheel = Math.abs(e.deltaY) > 20 && e.deltaMode === 0;
+    const isTrackpadPan = !isMouseWheel && (Math.abs(e.deltaX) > 0 || Math.abs(e.deltaY) < 20);
+
+    if (isMouseWheel || e.ctrlKey || e.metaKey) {
+      // Scroll wheel (o pinch en trackpad con Ctrl) → zoom hacia el cursor.
+      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      s.zoomBy(factor, center);
+    } else if (isTrackpadPan) {
+      // Trackpad drag (sin Ctrl) → pan.
       s.setViewport({
         pan: { x: s.viewport.pan.x - e.deltaX, y: s.viewport.pan.y - e.deltaY },
       });

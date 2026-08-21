@@ -10,15 +10,11 @@ import { useStore } from "../state/store";
 import { toWorld } from "./transform";
 import { NodeView } from "./NodeView";
 import { Gizmos } from "./Gizmos";
-import { useCanvasPointer, canvasElement, handleCursor, hitAtClient } from "./pointer";
+import { useCanvasPointer, canvasElement, handleCursor } from "./pointer";
 import { isFigmaJson } from "../import/figma";
 import { MiniMap } from "../ui/MiniMap";
 
-export function Canvas({
-  openContextMenu,
-}: {
-  openContextMenu: (menu: { x: number; y: number; nodeId: string | null }) => void;
-}) {
+export function Canvas() {
   const viewport = useStore((s) => s.viewport);
   const tool = useStore((s) => s.tool);
   const spaceDown = useStore((s) => s.spaceDown);
@@ -149,10 +145,8 @@ export function Canvas({
         }
       }}
       onContextMenu={(e: MouseEvent) => {
+        // Clic derecho = paneo (estilo Unity/Godot), no menú contextual.
         e.preventDefault();
-        if (previewMode) return;
-        const hit = hitAtClient(e.clientX, e.clientY);
-        openContextMenu({ x: e.clientX, y: e.clientY, nodeId: hit ? hit.id : null });
       }}
     >
       <div

@@ -68,7 +68,7 @@ export function Editor() {
         <Layers />
         <div className="canvas-wrap">
           <Rulers />
-          <Canvas openContextMenu={setCtxMenu} />
+          <Canvas />
           <AlignToolbar />
         </div>
         <div className="right-side">
