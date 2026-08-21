@@ -11,6 +11,7 @@ import { toWorld } from "./transform";
 import { NodeView } from "./NodeView";
 import { Gizmos } from "./Gizmos";
 import { useCanvasPointer, canvasElement, handleCursor } from "./pointer";
+import { ProfilingOverlay } from "../ui/ProfilingOverlay";
 import { isFigmaJson } from "../import/figma";
 import { MiniMap } from "../ui/MiniMap";
 
@@ -172,6 +173,7 @@ export function Canvas() {
       </div>
       {ready && <Gizmos canvasRef={ref} />}
       {!previewMode && <MiniMap />}
+      {!previewMode && <ProfilingOverlay />}
     </div>
   );
 }

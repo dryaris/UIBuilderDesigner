@@ -98,7 +98,7 @@ interface EditorState {
   hoverId: string | null;
   tool: Tool;
   /** Pestaña activa del panel derecho (Inspector | Diseño | Animar | Prototipo). */
-  rightTab: "inspector" | "design" | "animate" | "prototype";
+  rightTab: "inspector" | "design" | "animate" | "prototype" | "game";
   /** Estado que se previsualiza en el lienzo (Fase 3): nodo + estado. */
   previewState: { nodeId: string; state: StateKey } | null;
 
@@ -145,7 +145,7 @@ interface EditorState {
   // ---- acciones de UI ----
   select: (ids: string[], additive?: boolean) => void;
   setTool: (t: Tool) => void;
-  setRightTab: (tab: "inspector" | "design" | "animate" | "prototype") => void;
+  setRightTab: (tab: "inspector" | "design" | "animate" | "prototype" | "game") => void;
   setPreviewState: (p: { nodeId: string; state: StateKey } | null) => void;
   setPreviewMode: (v: boolean) => void;
   setPreviewHoverId: (id: string | null) => void;

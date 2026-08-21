@@ -314,7 +314,110 @@ export interface Node {
   locked?: boolean;
   /** Overflow del frame: "visible" (default), "hidden" (recorta hijos), "scroll" (scrollable). */
   overflow?: "visible" | "hidden" | "scroll";
+
+  // ---- Nivel 4: Game UI Core ----
+
+  /** 9-slice / 9-patch scaling: define las zonas de borde que se estiran sin deformar. */
+  nineSlice?: {
+    enabled: boolean;
+    /** Pixeles del borde izquierdo que no se deforman. */
+    left: number;
+    /** Pixeles del borde derecho que no se deforman. */
+    right: number;
+    /** Pixeles del borde superior que no se deforman. */
+    top: number;
+    /** Pixeles del borde inferior que no se deforman. */
+    bottom: number;
+  };
+
+  /** Pivote de transformación (0..1 relativo al nodo). Default: (0.5, 0.5) = centro. */
+  pivot?: { x: number; y: number };
+
+  /** Áncora de posicionamiento (estilo Unity/Godot). */
+  anchor?: {
+    horizontal: "left" | "center" | "right" | "stretch";
+    vertical: "top" | "center" | "bottom" | "stretch";
+  };
+
+  /** Condiciones de visibilidad del nodo (solo se muestra si TODAS se cumplen). */
+  conditionalVisibility?: ConditionalRule[];
+
+  /** Clave de localización para texto (ej: "ui.hp_label"). El texto se exporta como key. */
+  localizationKey?: string;
+
+  /** Pista de audio asociada a un evento de interacción. */
+  audioCue?: {
+    onHover?: string;
+    onPress?: string;
+    onRelease?: string;
+    onOpen?: string;
+    onClose?: string;
+  };
+
+  /** Sprite sheet: define la hoja de sprites y la animación por frames. */
+  spriteSheet?: {
+    /** Data URL de la imagen sprite sheet. */
+    src: string;
+    /** Ancho de cada frame en px. */
+    frameWidth: number;
+    /** Alto de cada frame en px. */
+    frameHeight: number;
+    /** Índices de frames a reproducir (en orden). Si se omite, todos los frames. */
+    frames?: number[];
+    /** Velocidad de reproducción en FPS. */
+    fps: number;
+    /** Si hace loop. */
+    loop: boolean;
+  };
+
+  /** Overrides por plataforma. Las propiedades definidas aquí sobreescriben las del padre. */
+  platformOverrides?: Partial<Record<PlatformKey, Partial<Style>>>;
+
   children: Node[];
+}
+
+// ---------------------------------------------------------------------------
+// Nivel 4/5: Tipos auxiliares
+// ---------------------------------------------------------------------------
+
+/** Regla de condición para visibilidad condicional. */
+export interface ConditionalRule {
+  /** Nombre de la variable (ej: "hasItem", "playerHP"). */
+  variable: string;
+  /** Operador de comparación. */
+  operator: "==" | "!=" | ">" | "<" | ">=" | "<=" | "truthy" | "falsy";
+  /** Valor a comparar (ignorado para truthy/falsy). */
+  value?: string | number | boolean;
+}
+
+/** Clave de plataforma para overrides. */
+export type PlatformKey = "mobile" | "console" | "pc" | "web";
+
+/** Resolución predefinida para multi-resolution preview. */
+export interface ResolutionPreset {
+  name: string;
+  width: number;
+  height: number;
+  /** Plataforma asociada (para icono y UI). */
+  platform: PlatformKey;
+}
+
+/** Variable de juego para preview interactivo. */
+export interface GameVariable {
+  name: string;
+  type: "string" | "number" | "boolean";
+  defaultValue: string | number | boolean;
+  /** Valor actual en preview. */
+  currentValue?: string | number | boolean;
+}
+
+/** Entrada de audio cue registrada en el proyecto. */
+export interface AudioCueEntry {
+  name: string;
+  /** Data URL del audio. */
+  dataUrl?: string;
+  /** Archivo original (nombre). */
+  fileName?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -342,6 +445,20 @@ export interface CanvasDoc {
   themes?: { id: string; name: string; colors: Record<string, string> }[];
   /** Id del tema activo (undefined = tema base). */
   activeThemeId?: string;
+
+  // ---- Nivel 4/5/6: Game UI features ----
+
+  /** Variables de juego para preview interactivo y visibilidad condicional. */
+  gameVariables?: GameVariable[];
+
+  /** Resoluciones personalizadas para multi-resolution preview. */
+  resolutionPresets?: ResolutionPreset[];
+
+  /** Audio cues registrados en el proyecto. */
+  audioCues?: AudioCueEntry[];
+
+  /** Plataforma activa para overrides (undefined = sin filtro). */
+  activePlatform?: PlatformKey;
 }
 
 // ---------------------------------------------------------------------------

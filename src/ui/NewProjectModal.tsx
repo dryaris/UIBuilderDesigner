@@ -2,6 +2,7 @@ import { Tv, Smartphone, Monitor, Gamepad2, Crosshair, X } from "lucide-react";
 import { useStore } from "../state/store";
 import { FRAME_PRESETS, newDoc, type FramePreset } from "../core/defaults";
 import { nodeRect } from "../core/tree";
+import { GAME_TEMPLATES, templateToDoc } from "../core/gameTemplates";
 
 const ICONS = { tv: Tv, smartphone: Smartphone, monitor: Monitor } as const;
 
@@ -54,6 +55,22 @@ export function NewProjectModal() {
               <span className="starter-name">HUD móvil</span>
               <span className="starter-desc">393×844 · vida, score, minimapa y joystick</span>
             </button>
+            {GAME_TEMPLATES.map((t) => (
+              <button key={t.id} className="starter-card" onClick={() => {
+                const doc = templateToDoc(t);
+                const st = useStore.getState();
+                st.replaceDoc(doc);
+                st.fitTo(nodeRect(doc.root));
+                st.setNewProjectOpen(false);
+                st.showToast(`${t.name} listo ${t.icon}`);
+              }}>
+                <span className="starter-icon" style={{ background: "linear-gradient(135deg,#4a3f5c,#7C5CFF)" }}>
+                  <span style={{ fontSize: 20 }}>{t.icon}</span>
+                </span>
+                <span className="starter-name">{t.name}</span>
+                <span className="starter-desc">{t.genre} · {t.description}</span>
+              </button>
+            ))}
           </div>
         </div>
 

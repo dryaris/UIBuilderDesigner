@@ -16,6 +16,7 @@ import { exportTokensFile } from "../export/tokens";
 import { exportReviewPdf } from "../export/pdf";
 import { Menu } from "./Menu";
 import { IconButton } from "./Menu";
+import { PlatformSelector } from "./PlatformSelector";
 
 export function TopBar() {
   const rootName = useStore((s) => s.doc.root.name);
@@ -289,6 +290,7 @@ export function TopBar() {
         >
           <LayoutGrid size={15} />
         </IconButton>
+        <PlatformSelector />
         <IconButton
           title={previewMode ? "Salir del preview (Esc)" : "Probar la pantalla (preview)"}
           active={previewMode}

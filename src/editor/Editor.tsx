@@ -25,6 +25,8 @@ import { ContextMenu, type ContextMenuState } from "../ui/ContextMenu";
 import { HistoryPanel } from "../ui/HistoryPanel";
 import { SearchPanel } from "../ui/SearchPanel";
 import { AlignToolbar } from "../ui/AlignToolbar";
+import { GamePanel } from "../ui/GamePanel";
+import { MultiResPreview } from "../ui/MultiResPreview";
 
 export function Editor() {
   const [booted, setBooted] = useState(false);
@@ -97,6 +99,12 @@ export function Editor() {
             >
               Prototipo
             </button>
+            <button
+              className={`right-tab${rightTab === "game" ? " is-active" : ""}`}
+              onClick={() => setRightTab("game")}
+            >
+              🎮
+            </button>
           </div>
           {rightTab === "inspector" ? (
             <Inspector />
@@ -104,6 +112,8 @@ export function Editor() {
             <DesignPanel />
           ) : rightTab === "animate" ? (
             <TimelinePanel />
+          ) : rightTab === "game" ? (
+            <GamePanel />
           ) : (
             <PrototypePanel />
           )}
@@ -117,6 +127,7 @@ export function Editor() {
       <ContextMenu menu={ctxMenu} onClose={() => setCtxMenu(null)} />
       <HistoryPanel />
       <SearchPanel />
+      <MultiResPreview />
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

@@ -140,6 +140,34 @@ export const NodeView = memo(function NodeView({ node, inFlex = false }: { node:
 
   // Vista previa en vivo durante drag (el doc real solo cambia al soltar).
   let s = node.style;
+
+  // Platform override: si hay una plataforma activa y el nodo tiene overrides.
+  const activePlatform = useStore.getState().doc.activePlatform;
+  if (activePlatform && node.platformOverrides?.[activePlatform]) {
+    s = { ...s, ...node.platformOverrides[activePlatform] };
+  }
+
+  // Conditional visibility: si hay reglas, verificar que todas se cumplan.
+  if (node.conditionalVisibility && node.conditionalVisibility.length > 0) {
+    const gameVars = useStore.getState().doc.gameVariables ?? [];
+    const visible = node.conditionalVisibility.every((rule) => {
+      const v = gameVars.find((gv) => gv.name === rule.variable);
+      const val = v?.currentValue ?? v?.defaultValue;
+      if (val === undefined) return false;
+      switch (rule.operator) {
+        case "truthy": return Boolean(val);
+        case "falsy": return !Boolean(val);
+        case "==": return String(val) === String(rule.value);
+        case "!=": return String(val) !== String(rule.value);
+        case ">": return Number(val) > Number(rule.value);
+        case "<": return Number(val) < Number(rule.value);
+        case ">=": return Number(val) >= Number(rule.value);
+        case "<=": return Number(val) <= Number(rule.value);
+        default: return true;
+      }
+    });
+    if (!visible) return null;
+  }
   if (drag?.kind === "move") {
     s = { ...s, x: s.x + drag.dx, y: s.y + drag.dy };
   } else if (drag?.kind === "resize") {
@@ -191,6 +219,10 @@ export const NodeView = memo(function NodeView({ node, inFlex = false }: { node:
     >
       {node.type === "vector" ? (
         <span className="cn-vector" dangerouslySetInnerHTML={{ __html: vectorSvg(node, tokens) }} />
+      ) : node.nineSlice?.enabled && node.imageSrc ? (
+        <NineSliceRenderer node={node} />
+      ) : node.spriteSheet ? (
+        <SpriteSheetRenderer node={node} />
       ) : node.type === "image" && node.imageSrc ? (
         <img
           className="cn-image"
@@ -275,9 +307,88 @@ const EditableText = memo(function EditableText({ node, editing }: { node: Node;
           e.preventDefault();
           (e.target as HTMLElement).blur();
         }
-      }}
-    >
-      {node.text ?? ""}
-    </div>
+      }}      >
+        {node.localizationKey ? `{${node.localizationKey}}` : (node.text ?? "")}
+      </div>
   );
 });
+
+// ---------------------------------------------------------------------------
+// Nine-Slice Renderer — renderiza una imagen con 9-slice scaling
+// ---------------------------------------------------------------------------
+
+function NineSliceRenderer({ node }: { node: Node }) {
+  const ns = node.nineSlice!;
+  const imgSrc = node.imageSrc!;
+  const w = node.style.width;
+  const h = node.style.height;
+
+  // CSS border-image con 9-slice: 4 bordes definen las zonas no deformables.
+  const slice = `${ns.top} ${ns.right} ${ns.bottom} ${ns.left}`;
+
+  return (
+    <img
+      className="cn-nine-slice"
+      src={imgSrc}
+      alt={node.name}
+      draggable={false}
+      style={{
+        width: w,
+        height: h,
+        objectFit: "fill",
+        borderImageSlice: slice,
+        borderImageWidth: `${ns.top}px ${ns.right}px ${ns.bottom}px ${ns.left}px`,
+        borderImageRepeat: "stretch",
+        borderStyle: "solid",
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sprite Sheet Renderer — muestra y reproduce frames de un sprite sheet
+// ---------------------------------------------------------------------------
+
+function SpriteSheetRenderer({ node }: { node: Node }) {
+  const ss = node.spriteSheet!;
+  const frameRef = useRef(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!ss.src) return;
+    const totalFrames = ss.frames?.length ?? Math.ceil((new Image().src, 0));
+    const ms = Math.round(1000 / ss.fps);
+    intervalRef.current = setInterval(() => {
+      frameRef.current = (frameRef.current + 1) % totalFrames;
+      // Force re-render by updating a data attribute.
+      const el = document.querySelector(`[data-sprite-id="${node.id}"]`) as HTMLElement | null;
+      if (el) {
+        const frame = ss.frames?.[frameRef.current] ?? frameRef.current;
+        const cols = Math.ceil(512 / ss.frameWidth);
+        const fx = (frame % cols) * ss.frameWidth;
+        const fy = Math.floor(frame / cols) * ss.frameHeight;
+        el.style.backgroundPosition = `-${fx}px -${fy}px`;
+      }
+    }, ms);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [ss.src, ss.fps, ss.frameWidth, ss.frameHeight, ss.frames, node.id]);
+
+  return (
+    <div
+      data-sprite-id={node.id}
+      className="cn-sprite-sheet"
+      style={{
+        width: "100%",
+        height: "100%",
+        backgroundImage: `url(${ss.src})`,
+        backgroundSize: `${ss.frameWidth}px ${ss.frameHeight}px`,
+        backgroundPosition: "0 0",
+        backgroundRepeat: "no-repeat",
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
