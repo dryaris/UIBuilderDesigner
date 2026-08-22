@@ -41,11 +41,27 @@ export function Canvas() {
     if (!el) return;
     canvasElement.current = el;
     setReady(true);
+    // Debounce ResizeObserver to prevent infinite render loops.
+    // The observer fires on every layout shift; we batch updates
+    // to avoid creating new store references on rapid size changes.
+    let pendingW = -1;
+    let pendingH = -1;
+    let rafId = 0;
     const ro = new ResizeObserver(() => {
-      useStore.getState().updateCanvasSize(el.clientWidth, el.clientHeight);
+      pendingW = el.clientWidth;
+      pendingH = el.clientHeight;
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          rafId = 0;
+          useStore.getState().updateCanvasSize(pendingW, pendingH);
+        });
+      }
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   const cursor = previewMode

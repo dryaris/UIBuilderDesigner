@@ -1410,7 +1410,7 @@ export const useStore = create<EditorState>()((set, get) => ({
 
   updateCanvasSize: (w, h) =>
     set((s) => {
-      if (s.viewport.size.x === w && s.viewport.size.y === h) return {};
+      if (s.viewport.size.x === w && s.viewport.size.y === h) return s;
       return { viewport: { ...s.viewport, size: { x: w, y: h } } };
     }),
 }));
