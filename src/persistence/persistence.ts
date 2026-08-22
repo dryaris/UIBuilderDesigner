@@ -1,10 +1,8 @@
 /**
  * Persistencia — autosave con debounce (3s) + recuperación ante cierres.
  *
- * En navegador el autosave vive en localStorage; en la app de escritorio
- * (Tauri) el mismo autosave local se puede volcar a disco vía comandos Rust
- * (ver src-tauri/src/lib.rs). La abstracción `platform` mantiene el editor
- * agnóstico del entorno.
+ * El autosave vive en localStorage. La app también soporta File System Access API
+ * (Chrome/Edge) para guardar directamente en disco, y fallback a descarga.
  */
 import type { CanvasDoc } from "../core/ir";
 import { migrate } from "../core/ir";
@@ -86,28 +84,14 @@ export function markTourSeen(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Plataforma — Tauri (desktop) vs navegador
+// Plataforma — Web pura
 // ---------------------------------------------------------------------------
 
-export function isTauri(): boolean {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-}
-
 /**
- * Guarda el proyecto a través de la plataforma activa.
- * Tauri → comando Rust `save_project`; navegador → descarga del .canvas.
+ * Guarda el proyecto. Web: descarga del .canvas o File System Access API.
  */
-export async function saveProjectViaPlatform(doc: CanvasDoc, name: string): Promise<void> {
+export async function saveProjectViaPlatform(doc: CanvasDoc, _name: string): Promise<void> {
   const { saveProjectFile } = await import("../export/project");
-  if (isTauri()) {
-    // El ZIP se genera igual en ambos entornos; en Tauri lo escribe Rust.
-    const { generateProjectZip } = await import("../export/project");
-    const blob = await generateProjectZip(doc);
-    const bytes = new Uint8Array(await blob.arrayBuffer());
-    const { invoke } = await import("./tauriBridge");
-    await invoke("save_project", { projectName: name, contents: Array.from(bytes) });
-  } else {
-    await saveProjectFile(doc);
-  }
+  await saveProjectFile(doc);
 }
 

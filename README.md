@@ -2,8 +2,8 @@
 
 > Un editor de diseño de interfaces **100% offline, sin cuenta y sin backend**, tan fácil de usar como PowerPoint pero con potencia de animación de calidad AAA. Multi-destino: exporta a **HTML/CSS/JS**, **Unity UI Toolkit**, **Unreal UMG**, **Godot** y **Lottie**.
 
-> 🖥️ **Escritorio**: app nativa via Tauri 2 (Windows / macOS / Linux)  
-> 🌐 **Web**: editor completo en el navegador — sin instalación  
+> 🌐 **100% Web**: editor completo en el navegador — sin instalación, sin problemas de GPU  
+> 📱 **PWA**: funciona offline después de la primera visita  
 
 ---
 
@@ -12,19 +12,16 @@
 ### Windows
 | Requisito | Mínimo | Recomendado |
 |---|---|---|
-| **Sistema operativo** | Windows 10 (1809+) | Windows 11 |
+| **Navegador** | Chrome 86+, Edge 86+ | Chrome 120+ |
 | **RAM** | 4 GB | 8 GB |
-| **Disco** | 500 MB libres | 1 GB |
-| **GPU** | Cualquiera | NVIDIA 535+ / AMD / Intel |
-| **WebView2** | Se instala automáticamente | — |
+| **Disco** | Ninguno (localStorage) | — |
 
-### macOS
-| Requisito | Mínimo | Recomendado |
-|---|---|---|
-| **Sistema operativo** | macOS 10.15 (Catalina) | macOS 13+ |
-| **RAM** | 4 GB | 8 GB |
-| **Disco** | 500 MB libres | 1 GB |
-| **GPU** | Cualquiera (Metal compatible) | — |
+### macOS / Linux / Cualquier SO
+| Requisito | Mínimo |
+|---|---|
+| **Navegador** | Chrome 86+, Edge 86+, Firefox 78+, Safari 14+ |
+| **RAM** | 4 GB |
+| **Instalación** | Ninguna — abre la URL |
 
 ### Web (navegador)
 | Requisito | Mínimo |
@@ -33,8 +30,8 @@
 | **RAM** | 4 GB |
 | **Instalación** | Ninguna — abre la URL y listo |
 
-### ⚠️ GPUs NVIDIA conocidas
-Algunas GPUs NVIDIA (especialmente **RTX 3050/3060 laptop**, drivers < v535) pueden causar pantalla negra. La app detecta automáticamente NVIDIA y activa software rendering como fallback. Si persiste, ver [Solución de problemas](#conocidos-problemas).
+### ✅ Sin problemas de GPU
+Al ser una app web, el navegador maneja la GPU. No hay problemas de pantalla negra con NVIDIA, AMD o Intel. La app funciona en cualquier navegador moderno.
 
 ---
 
@@ -52,14 +49,13 @@ Algunas GPUs NVIDIA (especialmente **RTX 3050/3060 laptop**, drivers < v535) pue
 | **JSZip** | 3.10 | Empaquetado ZIP para exports (.canvas, Unity, Unreal, Godot, Lottie, tokens) |
 | **Lucide React** | 0.525 | Iconos SVG en la UI (herramientas, inspector, menús) |
 
-### Backend / Escritorio
+### Backend / Persistencia
 
 | Tecnología | Versión | Uso |
 |---|---|---|
-| **Tauri 2** | 2.x | App de escritorio nativa (Windows/macOS/Linux) — reemplaza Electron con menor consumo de RAM |
-| **Rust** | 2021 edition | Backend de Tauri: save/load atómico de proyectos, detección GPU |
-| **Cargo** | — | Gestor de paquetes Rust |
-| **serde / serde_json** | 1.x | Serialización JSON para comunicación Rust ↔ JS |
+| **localStorage** | Web API | Autosave cada 3s + recuperación |
+| **File System Access API** | Chrome 86+ | Guardar/abrir archivos directamente en disco |
+| **Service Worker** | PWA | Cache offline para uso sin conexión |
 
 ### Canvas y rendering
 
@@ -113,10 +109,8 @@ Algunas GPUs NVIDIA (especialmente **RTX 3050/3060 laptop**, drivers < v535) pue
 
 | Plataforma | Formato | Canal |
 |---|---|---|
-| **Windows** | `.msi` installer | GitHub Releases |
-| **macOS** | `.dmg` | GitHub Releases |
-| **Linux** | `.deb` + `.AppImage` | GitHub Releases |
-| **Web** | HTML estático | Freebuff deploy / cualquier hosting |
+| **Web** | HTML estático + PWA | GitHub Pages / cualquier hosting |
+| **ZIP** | `uiforger.zip` | Descarga para uso offline |
 
 ---
 
@@ -231,42 +225,28 @@ Algunas GPUs NVIDIA (especialmente **RTX 3050/3060 laptop**, drivers < v535) pue
 
 ---
 
-## Conocidos problemas
+## Notas
 
-### 🖥️ Pantalla negra en GPUs NVIDIA (Windows)
-
-**Síntomas**: La app no carga y se queda en pantalla negra.
-
-**Causa**: Drivers NVIDIA < v535 tienen problemas con composición GPU en Chromium/Tauri2.
-
-**Soluciones** (en orden de facilidad):
-1. **Actualizar drivers NVIDIA** a versión 535+ desde [nvidia.com/drivers](https://www.nvidia.com/drivers)
-2. **NVIDIA Control Panel** → Configuración 3D → "Preferencia de procesamiento gráfico" → "Integrada"
-3. **Variable de entorno**: `UIFORGER_DISABLE_GPU=1` antes de abrir la app
-4. **Chrome con flags**: `chrome --disable-gpu --disable-gpu-compositing`
-
-**PCs afectadas conocidas**: i5 10ª gen + 16GB RAM + RTX 3050 Laptop + Windows 10 Home
-
-La app detecta automáticamente NVIDIA y activa software rendering como fallback.
+La app funciona 100% en el navegador, por lo que no hay problemas de compatibilidad con GPUs. El navegador se encarga del rendering GPU de forma transparente.
 
 ---
 
 ## Instalación
 
 ### Web (recomendado)
-Abre la URL del deploy en tu navegador. No requiere instalación.
+Abre la URL del deploy en tu navegador. No requiere instalación. La app es una PWA — funciona offline después de la primera visita.
 
-### Escritorio
-Descarga desde [Releases](https://github.com/dryaris/UIBuilderDesigner/releases):
+### Offline
+Descarga `uiforger.zip` desde [Releases](https://github.com/dryaris/UIBuilderDesigner/releases) y abre `index.html` en tu navegador. Sin instalación, sin permisos de admin.
 
-**Windows:**
-- **Installer**: `.msi` o `.exe` — instala en Program Files con acceso directo
-- **Portable**: `.zip` — extrae y ejecuta `UI Forger.exe`, sin instalación (ideal para USB o PCs sin permisos de admin)
-
-**macOS:**
-- **`.dmg`** (universal: Apple Silicon + Intel) — arrastra a Applications
-
-> Nota: en macOS, si Gatekeeper bloquea la app, haz clic derecho → Abrir.
+### Desarrollo local
+```bash
+git clone https://github.com/dryaris/UIBuilderDesigner.git
+cd UIBuilderDesigner
+bun install
+bun run dev       # abre http://localhost:5173
+bun tsc -b --noEmit  # typecheck
+```
 
 ### Desarrollo
 ```bash

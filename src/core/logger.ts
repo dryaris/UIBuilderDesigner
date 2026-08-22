@@ -28,7 +28,6 @@ export interface SystemInfo {
   memoryGB?: number;
   cores?: number;
   platform?: string;
-  tauri?: boolean;
 }
 
 const STORAGE_KEY = "uiforger_logs";
@@ -68,7 +67,7 @@ function getSystemInfo(): SystemInfo {
     memoryGB: (navigator as any).deviceMemory,
     cores: navigator.hardwareConcurrency,
     platform: navigator.platform,
-    tauri: !!(window as any).__TAURI__,
+
   };
 
   // Detectar GPU via WebGL

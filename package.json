@@ -1,15 +1,14 @@
 {
   "name": "ui-forger",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "UI Forger — Editor visual de UI/UX offline, agnóstico y multi-destino (HTML/CSS, Unity, Unreal, Godot).",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit",
-    "tauri": "tauri"
+    "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
     "immer": "^10.1.1",
