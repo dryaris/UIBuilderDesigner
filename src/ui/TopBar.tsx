@@ -17,6 +17,8 @@ import { exportReviewPdf } from "../export/pdf";
 import { Menu } from "./Menu";
 import { IconButton } from "./Menu";
 import { PlatformSelector } from "./PlatformSelector";
+import { CanvasThemeSelector } from "./CanvasThemeSelector";
+import { saveToFile, loadFromFile } from "../persistence/fileSystem";
 
 export function TopBar() {
   const rootName = useStore((s) => s.doc.root.name);
@@ -139,6 +141,8 @@ export function TopBar() {
           { label: "Abrir proyecto…", shortcut: "⌘O", onClick: () => void openProject() },
           { label: "Importar SVG…", onClick: importSvgViaMenu },
           { label: "Guardar proyecto (.canvas)", shortcut: "⌘S", onClick: saveProject },
+          { label: "Guardar como…", onClick: async () => { const ok = await saveToFile(useStore.getState().doc); if (ok) useStore.getState().showToast("Proyecto guardado"); } },
+          { label: "Abrir archivo…", onClick: async () => { const doc = await loadFromFile(); if (doc) { useStore.getState().replaceDoc(doc); useStore.getState().fitTo(nodeRect(doc.root)); useStore.getState().showToast("Proyecto abierto"); } } },
           { divider: true },
           { label: "Exportar HTML/CSS", onClick: exportHtmlFile },
           { label: "Exportar PNG 1x", onClick: () => exportPngAt(1) },
@@ -303,6 +307,7 @@ export function TopBar() {
         >
           {previewMode ? <Square size={15} /> : <Play size={15} />}
         </IconButton>
+        <CanvasThemeSelector />
         <IconButton title="Alejar" onClick={() => act().zoomBy(1 / 1.25, zoomCenter())}>
           <ZoomOut size={15} />
         </IconButton>

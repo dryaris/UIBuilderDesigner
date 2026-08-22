@@ -98,6 +98,18 @@ export function useKeyboard(): void {
         st.duplicateSelection();
         return;
       }
+      // Cmd+C = copy nodes (not style)
+      if (mod && key === "c" && !e.shiftKey) {
+        e.preventDefault();
+        st.copyNodes();
+        return;
+      }
+      // Cmd+V = paste nodes
+      if (mod && key === "v" && !e.shiftKey) {
+        e.preventDefault();
+        st.pasteNodes();
+        return;
+      }
       if (mod && key === "a") {
         e.preventDefault();
         st.select(st.doc.root.children.filter((n) => !n.hidden).map((n) => n.id));
@@ -119,10 +131,17 @@ export function useKeyboard(): void {
         st.pasteStyle();
         return;
       }
-      if (mod && key === "s") {
+      if (mod && key === "s" && !e.shiftKey) {
         e.preventDefault();
         void saveProjectFile(st.doc);
         st.showToast("Proyecto .canvas guardado");
+        return;
+      }
+      // Cmd+Shift+S = save snapshot
+      if (mod && e.shiftKey && key === "s") {
+        e.preventDefault();
+        const name = `Snapshot ${new Date().toLocaleTimeString()}`;
+        st.saveSnapshot(name);
         return;
       }
       if (mod && e.shiftKey && key === "o") {

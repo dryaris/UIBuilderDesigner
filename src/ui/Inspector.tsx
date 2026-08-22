@@ -180,6 +180,7 @@ function NodeInspector({ node }: { node: Node }) {
       <StatesSection node={node} />
 
       <ComponentPropsSection node={node} />
+      <ComponentSyncSection node={node} />
 
       {node.type === "text" && (
         <Section title="Texto">
@@ -1145,6 +1146,39 @@ function ComponentPropsSection({ node }: { node: Node }) {
 
   // Si el nodo NO es instancia de componente, no mostrar nada.
   return null;
+}
+
+/** Sección de sync de componente: sincroniza instancias desde el padre. */
+function ComponentSyncSection({ node }: { node: Node }) {
+  const compId = node.ref?.startsWith("comp:") ? node.ref.slice(5) : null;
+  if (!compId) return null;
+  const comp = useStore((s) => s.doc.library.components[compId]);
+  if (!comp) return null;
+
+  return (
+    <Section title="🔄 Sync de componente">
+      <div className="dim" style={{ marginBottom: 6, fontSize: 10 }}>
+        Instancia de: {comp.name}
+        <span className="sync-indicator" />
+      </div>
+      <div style={{ display: "flex", gap: 4 }}>
+        <button
+          className="mini-btn"
+          onClick={() => useStore.getState().pushToComponent(node.id)}
+          title="Empujar cambios de esta instancia al componente padre + sincronizar todas las instancias"
+        >
+          ↑ Push al padre
+        </button>
+        <button
+          className="mini-btn"
+          onClick={() => useStore.getState().syncAllInstances(compId)}
+          title="Pull: actualizar esta instancia desde el componente padre"
+        >
+          ↓ Pull del padre
+        </button>
+      </div>
+    </Section>
+  );
 }
 
 /** Cuadrícula de layout del frame (columnas/filas con margin y gutter). */

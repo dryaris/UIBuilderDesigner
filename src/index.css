@@ -3018,3 +3018,87 @@ input[type="range"] {
   opacity: 0.3;
   pointer-events: none;
 }
+
+/* ── Canvas theme: light/dark ── */
+[data-canvas-theme="light"] .canvas {
+  background-color: #f0f0f0 !important;
+  background-image: none !important;
+}
+[data-canvas-theme="light"] .world {
+  filter: none;
+}
+[data-canvas-theme="light"] .cn-frame {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* ── Snapshots panel ── */
+.snapshots-panel {
+  position: absolute;
+  bottom: 40px;
+  left: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 11px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 50;
+  min-width: 180px;
+}
+.snapshots-panel .snap-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.snapshots-panel .snap-item:hover {
+  background: var(--bg-hover);
+}
+.snapshots-panel .snap-item button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 10px;
+}
+
+/* ── Component sync indicator ── */
+.sync-indicator {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  margin-left: 4px;
+  animation: pulse-sync 2s infinite;
+}
+@keyframes pulse-sync {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Thread comments ── */
+.comment-thread {
+  position: absolute;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 11px;
+  max-width: 240px;
+  z-index: 60;
+}
+.comment-thread .comment-input {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  resize: vertical;
+  min-height: 40px;
+}

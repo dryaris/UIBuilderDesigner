@@ -27,6 +27,8 @@ import { SearchPanel } from "../ui/SearchPanel";
 import { AlignToolbar } from "../ui/AlignToolbar";
 import { GamePanel } from "../ui/GamePanel";
 import { MultiResPreview } from "../ui/MultiResPreview";
+import { SnapshotsPanel } from "../ui/SnapshotsPanel";
+import { CommentsThread } from "../ui/CommentsThread";
 
 export function Editor() {
   const [booted, setBooted] = useState(false);
@@ -128,6 +130,8 @@ export function Editor() {
       <HistoryPanel />
       <SearchPanel />
       <MultiResPreview />
+      <SnapshotsPanel />
+      <CommentsThread />
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

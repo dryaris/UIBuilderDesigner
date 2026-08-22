@@ -273,6 +273,33 @@ interface EditorState {
   /** Quita un override de prop. */
   removePropOverride: (nodeId: string, propName: string) => void;
 
+  // ---- Component sync (Feature 1): sincroniza instancias desde el padre ----
+  /** Empuja los cambios del componente a TODAS sus instancias en el canvas. */
+  syncAllInstances: (componentId: string) => void;
+  /** Si un nodo es instancia, empuja su estilo actual al componente padre. */
+  pushToComponent: (nodeId: string) => void;
+
+  // ---- Copy/paste entre pantallas (Feature 5) ----
+  /** Copia nodos al portapapeles del editor (con deep clone). */
+  copyNodes: () => void;
+  /** Pega nodos del portapapeles a la pantalla actual. */
+  pasteNodes: () => void;
+
+  // ---- Version snapshots (Feature 13) ----
+  /** Guarda un snapshot nombrado del estado actual. */
+  saveSnapshot: (name: string) => void;
+  /** Restaura un snapshot por índice. */
+  restoreSnapshot: (index: number) => void;
+  snapshots: Array<{ name: string; doc: CanvasDoc; timestamp: number }>;
+
+  // ---- Canvas theme (Feature 15) ----
+  canvasTheme: "dark" | "light";
+  setCanvasTheme: (t: "dark" | "light") => void;
+
+  // ---- Shortcuts cheatsheet interactivo (Feature 14) ----
+  recentShortcuts: string[];
+  addRecentShortcut: (shortcut: string) => void;
+
   fitTo: (rect: Rect) => void;
   zoomBy: (factor: number, center: Vec) => void;
   zoomTo: (zoom: number, center: Vec) => void;
@@ -319,6 +346,8 @@ export const useStore = create<EditorState>()((set, get) => ({
   showGrid: true,
   drag: null,
   lastNudge: null,
+  _clipboard: undefined,
+  snapshots: [],
   historyPanelOpen: false,
   editingTextId: null,
   penPoints: null,
@@ -1142,6 +1171,116 @@ export const useStore = create<EditorState>()((set, get) => ({
       const n = findNode(d.root, nodeId);
       if (n?.propOverrides) delete n.propOverrides[propName];
     }),
+
+  // ------------------------------------------------------------------ Feature 1: Component Sync
+  syncAllInstances: (componentId) => {
+    const comp = get().doc.library.components[componentId];
+    if (!comp) return;
+    const template = comp.root;
+    let count = 0;
+    get().apply((d) => {
+      function syncNode(n: Node) {
+        if (n.ref === `comp:${componentId}`) {
+          // Sync style (except position which is instance-specific)
+          const { x, y, ...rest } = template.style;
+          n.style = { ...n.style, ...rest };
+          n.name = template.name;
+          count++;
+        }
+        for (const c of n.children) syncNode(c);
+      }
+      syncNode(d.root);
+      for (const sc of d.screens ?? []) syncNode(sc);
+    });
+    get().showToast(`${count} instancia(s) sincronizada(s)`);
+  },
+
+  pushToComponent: (nodeId) => {
+    const n = findNode(get().doc.root, nodeId);
+    if (!n?.ref?.startsWith("comp:")) return;
+    const compId = n.ref.slice(5);
+    const comp = get().doc.library.components[compId];
+    if (!comp) return;
+    const template = cloneNode(n);
+    remapIds(template);
+    template.style.x = 0;
+    template.style.y = 0;
+    get().apply((d) => {
+      const c = d.library.components[compId];
+      if (c) c.root = template;
+    });
+    // Auto-sync all other instances
+    get().syncAllInstances(compId);
+    get().showToast("Componente actualizado + instancias sincronizadas");
+  },
+
+  // ------------------------------------------------------------------ Feature 5: Copy/Paste entre pantallas
+  copyNodes: () => {
+    const ids = get().selection;
+    if (ids.length === 0) return;
+    const nodes: Node[] = [];
+    for (const id of ids) {
+      const n = findNode(get().doc.root, id);
+      if (n) nodes.push(cloneNode(n));
+    }
+    useStore.setState({ _clipboard: nodes } as any);
+    get().showToast(`${nodes.length} nodo(s) copiado(s)`);
+  },
+
+  pasteNodes: () => {
+    const clip = (get() as any)._clipboard as Node[] | undefined;
+    if (!clip || clip.length === 0) {
+      get().showToast("No hay nodos copiados");
+      return;
+    }
+    const offset = 20;
+    get().apply((d) => {
+      const pasted: string[] = [];
+      for (const raw of clip) {
+        const clone = cloneNode(raw);
+        remapIds(clone);
+        clone.style.x += offset;
+        clone.style.y += offset;
+        d.root.children.push(clone);
+        pasted.push(clone.id);
+      }
+      // Update selection to pasted nodes
+      (d as any)._pastedIds = pasted;
+    });
+    const pasted = (get() as any)._pastedIds;
+    if (pasted) get().select(pasted);
+    get().showToast(`${clip.length} nodo(s) pegado(s)`);
+  },
+
+  // ------------------------------------------------------------------ Feature 13: Snapshots
+
+  saveSnapshot: (name) => {
+    const snap = { name, doc: structuredClone(get().doc), timestamp: Date.now() };
+    set((s) => ({ snapshots: [...s.snapshots, snap] }));
+    get().showToast(`Snapshot "${name}" guardado`);
+  },
+
+  restoreSnapshot: (index) => {
+    const snap = get().snapshots[index];
+    if (!snap) return;
+    get().replaceDoc(structuredClone(snap.doc));
+    get().showToast(`Snapshot "${snap.name}" restaurado`);
+  },
+
+  // ------------------------------------------------------------------ Feature 15: Canvas theme
+  canvasTheme: "dark",
+  setCanvasTheme: (canvasTheme) => {
+    set({ canvasTheme });
+    document.documentElement.setAttribute("data-canvas-theme", canvasTheme);
+  },
+
+  // ------------------------------------------------------------------ Feature 14: Recent shortcuts
+  recentShortcuts: [],
+  addRecentShortcut: (shortcut) => {
+    set((s) => ({
+      recentShortcuts: [shortcut, ...s.recentShortcuts.filter((r) => r !== shortcut)].slice(0, 10),
+    }));
+  },
 
   setNodeName: (id, name) =>
     get().apply((d) => {
