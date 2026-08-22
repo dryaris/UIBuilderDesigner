@@ -40,7 +40,7 @@ jobs:
         run: bun tsc -b --noEmit
 
       - name: Build
-        run: bun run build
+        run: npx vite build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -75,7 +75,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build
-        run: bun run build
+        run: npx vite build
 
       - name: Create release
         uses: softprops/action-gh-release@v2
