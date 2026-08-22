@@ -347,6 +347,7 @@ export function TopBar() {
       <Menu
         label="Ayuda"
         items={[
+          { label: "📖 Ayuda completa (HTML)", onClick: () => window.open("help.html", "_blank") },
           { label: "Atajos de teclado", shortcut: "⌘/", onClick: () => act().setShortcutsOpen(true) },
           { label: "Tour de inicio", onClick: () => act().setTourOpen(true) },
         ]}

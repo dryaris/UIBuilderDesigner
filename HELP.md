@@ -2,6 +2,8 @@
 
 > Editor visual de UI/UX offline, agnóstico y multi-destino. Diseña pantallas como en Figma; exporta a HTML, Unity, Unreal, Godot, Lottie y más.
 
+> 📖 **Ayuda HTML interactiva**: abre `public/help.html` en el navegador o desde **Ayuda → Ayuda completa** en la app.
+
 ---
 
 ## 1. Primeros pasos

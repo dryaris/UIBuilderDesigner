@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI Forger — Ayuda completa</title>
+<style>
+  :root {
+    --bg: #0B0E1A; --surface: #161B2E; --card: #1E2438;
+    --accent: #7C5CFF; --accent2: #FF6B9D; --success: #4ade80;
+    --warning: #facc15; --danger: #f87171; --text: #F5F7FF;
+    --dim: #8A93B8; --border: #2a3050;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .layout { display: flex; min-height: 100vh; }
+  nav { width: 280px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto; }
+  nav h1 { padding: 0 20px; font-size: 20px; margin-bottom: 4px; }
+  nav h1 span { color: var(--accent); }
+  nav .subtitle { padding: 0 20px; font-size: 11px; color: var(--dim); margin-bottom: 20px; }
+  nav a { display: block; padding: 6px 20px; color: var(--dim); text-decoration: none; font-size: 13px; transition: all .15s; }
+  nav a:hover, nav a.active { color: var(--text); background: var(--card); }
+  nav a.section { font-weight: 700; color: var(--text); margin-top: 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  main { margin-left: 280px; padding: 40px 60px; max-width: 900px; }
+  h1 { font-size: 32px; margin-bottom: 8px; }
+  h1 span { color: var(--accent); }
+  h2 { font-size: 22px; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 16px; margin: 24px 0 12px; color: var(--accent2); }
+  p { margin-bottom: 12px; color: var(--dim); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; background: var(--card); color: var(--accent); font-weight: 600; border-bottom: 2px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: var(--card); }
+  code { background: var(--card); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent2); font-family: 'JetBrains Mono', monospace; }
+  kbd { background: var(--card); padding: 2px 8px; border-radius: 4px; font-size: 12px; border: 1px solid var(--border); font-family: inherit; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-new { background: var(--accent); color: #fff; }
+  .badge-game { background: var(--success); color: #000; }
+  .badge-pro { background: var(--accent2); color: #fff; }
+  .tip { background: #7C5CFF15; border-left: 3px solid var(--accent); padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 13px; }
+  .warning { background: #facc1515; border-left: 3px solid var(--warning); padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 13px; }
+  ul { margin: 8px 0 16px 20px; }
+  li { margin-bottom: 6px; font-size: 14px; color: var(--dim); }
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .feature-card { background: var(--card); border-radius: 8px; padding: 16px; border: 1px solid var(--border); }
+  .feature-card h4 { font-size: 14px; margin-bottom: 6px; }
+  .feature-card p { font-size: 12px; margin: 0; }
+  @media (max-width: 768px) { nav { display: none; } main { margin-left: 0; padding: 20px; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <h1>UI <span>Forger</span></h1>
+  <div class="subtitle">Ayuda completa v0.2.0</div>
+  <a href="#intro" class="section">Introducción</a>
+  <a href="#getting-started">Primeros pasos</a>
+  <a href="#canvas">El lienzo</a>
+  <a href="#tools">Herramientas</a>
+  <a href="#selection">Selección y movimiento</a>
+  <a href="#shapes">Formas y texto</a>
+  <a href="#styles">Estilos visuales</a>
+  <a href="#tokens">Design Tokens</a>
+  <a href="#components">Componentes</a>
+  <a href="#autolayout">Auto-layout</a>
+  <a href="#states">Estados interactivos</a>
+  <a href="#animation">Animación</a>
+  <a href="#prototype">Prototipado</a>
+  <a href="#constraints">Constraints</a>
+  <a href="#themes">Temas múltiples</a>
+  <a href="#export">Exportación</a>
+  <a href="#project-folder">Carpeta del proyecto</a>
+  <a href="#annotations">Anotaciones</a>
+  <a href="#game-ui" class="section">🎮 Game UI</a>
+  <a href="#nine-slice">9-Slice scaling</a>
+  <a href="#conditional-vis">Visibilidad condicional</a>
+  <a href="#localization">Localización</a>
+  <a href="#audio-cues">Audio cues</a>
+  <a href="#sprite-sheets">Sprite sheets</a>
+  <a href="#templates">Templates de juego</a>
+  <a href="#multi-res">Multi-resolución</a>
+  <a href="#platforms">Plataformas</a>
+  <a href="#profiling">Profiling</a>
+  <a href="#advanced" class="section">⚡ Avanzado</a>
+  <a href="#component-sync">Component sync</a>
+  <a href="#copy-paste">Copy/paste entre pantallas</a>
+  <a href="#snapshots">Snapshots</a>
+  <a href="#canvas-theme">Tema del canvas</a>
+  <a href="#comments">Comentarios</a>
+  <a href="#shortcuts">Atajos de teclado</a>
+</nav>
+
+<main>
+<h1>UI <span>Forger</span> — Ayuda completa</h1>
+<p>Editor visual de UI/UX offline, agnóstico y multi-destino. Diseña pantallas como en Figma; exporta a HTML, Unity, Unreal, Godot, Lottie y más.</p>
+
+<h2 id="intro">Introducción</h2>
+<p>UI Forger es un editor visual de interfaz de usuario diseñado específicamente para <strong>juegos y aplicaciones multiplataforma</strong>. Permite diseñar pantallas completas con componentes reutilizables, estados interactivos, animaciones y exportar directamente a motores de juego.</p>
+
+<div class="feature-grid">
+  <div class="feature-card"><h4>🎨 Diseño visual</h4><p>Arrastrar y soltar, snap, guías, reglas, auto-layout flexbox, gradientes, sombras, blend modes.</p></div>
+  <div class="feature-card"><h4>🧩 Componentes</h4><p>Crear, instanciar, variantes, props boolean/string, sync automático entre instancias.</p></div>
+  <div class="feature-card"><h4>🎬 Animación</h4><p>Timelines con keyframes, easing visual, estados interactivos, preview en vivo.</p></div>
+  <div class="feature-card"><h4>🎮 Game UI</h4><p>9-slice, conditional visibility, localization, audio cues, sprite sheets, profiling.</p></div>
+  <div class="feature-card"><h4>📤 Exportación</h4><p>HTML/CSS, PNG @1x/2x/3x, Unity, Godot, Unreal, Lottie, tokens DTCG.</p></div>
+  <div class="feature-card"><h4>📁 Persistencia</h4><p>Autosave, File System Access API, carpetas de proyecto organizadas.</p></div>
+</div>
+
+<h2 id="getting-started">Primeros pasos</h2>
+<h3>Abrir la app</h3>
+<p>Al abrir UI Forger por primera vez verás un <strong>tour guiado</strong> por las zonas del editor. Puedes reabrirlo desde <strong>Ayuda → Tour de la app</strong>.</p>
+<h3>Crear un proyecto</h3>
+<ul>
+  <li><strong>Archivo → Nuevo proyecto</strong> (<kbd>Cmd/Ctrl+N</kbd>): elige un tamaño o starter kit.</li>
+  <li><strong>Starter kits</strong>: Menú de juego (1080p), HUD móvil, RPG Inventory, FPS HUD, Racing, Platformer, Strategy.</li>
+</ul>
+<h3>Guardar</h3>
+<ul>
+  <li><kbd>Cmd/Ctrl+S</kbd>: guarda como <code>.canvas</code>.</li>
+  <li><strong>Archivo → Guardar como…</strong>: File System Access API (Chrome/Edge).</li>
+  <li><strong>Archivo → 💾 Guardar en carpeta</strong>: guarda en la carpeta del proyecto.</li>
+  <li><strong>Autosave</strong>: cada 3 segundos en localStorage.</li>
+</ul>
+
+<h2 id="canvas">El lienzo</h2>
+<h3>Navegación</h3>
+<table>
+  <tr><th>Acción</th><th>Cómo</th></tr>
+  <tr><td>Pan</td><td><kbd>Espacio</kbd> + drag, <kbd>H</kbd> (Mano), o <kbd>clic derecho</kbd> + drag</td></tr>
+  <tr><td>Zoom</td><td><kbd>Scroll wheel</kbd> (hacia cursor), <kbd>Cmd+scroll</kbd>, <kbd>Cmd+1</kbd> (fit), <kbd>Cmd+2</kbd> (selección)</td></tr>
+  <tr><td>Zoom marquee</td><td><kbd>Z</kbd> + arrastra zona</td></tr>
+  <tr><td>100%</td><td><kbd>Shift+0</kbd></td></tr>
+  <tr><td>Ajustar a pantalla</td><td><kbd>Shift+1</kbd> o <kbd>Cmd+1</kbd></td></tr>
+</table>
+
+<h2 id="tools">Herramientas</h2>
+<table>
+  <tr><th>Tecla</th><th>Herramienta</th><th>Uso</th></tr>
+  <tr><td><kbd>V</kbd></td><td>Select</td><td>Seleccionar, mover, redimensionar</td></tr>
+  <tr><td><kbd>F</kbd></td><td>Frame</td><td>Crear frames (contenedores)</td></tr>
+  <tr><td><kbd>T</kbd></td><td>Text</td><td>Crear texto (doble clic = editar inline)</td></tr>
+  <tr><td><kbd>R</kbd></td><td>Rect</td><td>Crear rectángulos</td></tr>
+  <tr><td><kbd>O</kbd></td><td>Elipse</td><td>Crear elipses</td></tr>
+  <tr><td><kbd>L</kbd></td><td>Línea</td><td>Crear líneas</td></tr>
+  <tr><td><kbd>P</kbd></td><td>Pen</td><td>Trazos vectoriales punto a punto</td></tr>
+  <tr><td><kbd>H</kbd></td><td>Mano</td><td>Pan del lienzo</td></tr>
+  <tr><td><kbd>Z</kbd></td><td>Zoom</td><td>Zoom marquee</td></tr>
+  <tr><td><kbd>I</kbd></td><td>Eyedropper</td><td>Capturar color de pantalla</td></tr>
+</table>
+
+<h2 id="selection">Selección y movimiento</h2>
+<h3>Selección</h3>
+<ul>
+  <li><strong>Clic</strong>: selecciona un nodo.</li>
+  <li><kbd>Shift+clic</kbd>: añade/quita de la selección.</li>
+  <li><strong>Marquee</strong>: arrastrar en vacío selecciona nodos tocados (incluye hijos anidados).</li>
+  <li><kbd>Cmd+A</kbd>: seleccionar todo.</li>
+  <li><kbd>Esc</kbd>: deseleccionar.</li>
+</ul>
+<h3>Mover</h3>
+<ul>
+  <li><strong>Flechas</strong>: nudge 1px. <kbd>Shift+flechas</kbd>: 10px.</li>
+  <li><kbd>Shift</kbd> durante drag: restringir al eje dominante.</li>
+  <li><strong>Snap</strong>: guías rojas de alineación + spacing hints.</li>
+  <li><kbd>[ / ]</kbd>: mover capa atrás/adelante.</li>
+</ul>
+<h3>Redimensionar</h3>
+<p>Selecciona un nodo → 8 handles aparecen. Arrastra para redimensionar.</p>
+
+<h2 id="shapes">Formas y texto</h2>
+<h3>Formas</h3>
+<p>Rectángulo (<kbd>R</kbd>), Elipse (<kbd>O</kbd>), Línea (<kbd>L</kbd>). Todas editables en el Inspector: color, borde, radios, sombra, opacidad.</p>
+<h3>Texto</h3>
+<ul>
+  <li><kbd>T</kbd> + clic = crear texto.</li>
+  <li><strong>Doble clic</strong> = editar inline.</li>
+  <li>Inspector: familia, peso, tamaño, tracking, line-height, alineación.</li>
+  <li><strong>Localización</strong>: define una clave de localización (ej: <code>ui.hp_label</code>) en el panel 🎮.</li>
+</ul>
+<h3>Imágenes</h3>
+<p>Arrastra <code>.jpg</code>, <code>.png</code>, <code>.webp</code> al lienzo. Inspector: ajuste cover/contain/fill.</p>
+<h3>Vectores (SVG)</h3>
+<p>Arrastra un <code>.svg</code> al lienzo → nodo vector editable con path SVG.</p>
+
+<h2 id="styles">Estilos visuales</h2>
+<table>
+  <tr><th>Propiedad</th><th>Descripción</th></tr>
+  <tr><td>Color</td><td>HEX/RGB/HSL, guardable como token</td></tr>
+  <tr><td>Gradientes</td><td>Lineal/Radial con ángulo y paradas de color</td></tr>
+  <tr><td>Sombras</td><td>Drop shadow + Inner shadow, múltiples apilables</td></tr>
+  <tr><td>Bordes</td><td>Stroke (ancho, color) + Border radius</td></tr>
+  <tr><td>Blend modes</td><td>multiply, screen, overlay, etc.</td></tr>
+  <tr><td>Blur</td><td>Desenfoque gaussiano</td></tr>
+  <tr><td>Opacidad</td><td>0–1</td></tr>
+</table>
+
+<h2 id="tokens">Design Tokens</h2>
+<p>Valores reutilizables del sistema de diseño. Se gestionan en la pestaña <strong>Diseño</strong>.</p>
+<table>
+  <tr><th>Tipo</th><th>Ejemplo</th></tr>
+  <tr><td>Colores</td><td><code>primary: #7C5CFF</code></td></tr>
+  <tr><td>Radios</td><td><code>small: 4px</code></td></tr>
+  <tr><td>Espaciado</td><td><code>md: 16px</code></td></tr>
+  <tr><td>Tipografía</td><td><code>heading: Inter 700 24px</code></td></tr>
+  <tr><td>Sombras</td><td><code>elevated: 0 4px 12px rgba(0,0,0,0.3)</code></td></tr>
+  <tr><td>Easings</td><td><code>smooth: cubic-bezier(0.4, 0, 0.2, 1)</code></td></tr>
+</table>
+<p>Los colores se aplican como referencias <code>$nombre</code> desde chips en el Inspector. Cambia el token → se actualizan todos los nodos que lo usen.</p>
+
+<h2 id="components">Componentes</h2>
+<h3>Crear</h3>
+<p>Selecciona un nodo → <strong>Crear componente</strong> (o <kbd>Cmd+Shift+C</kbd>). Aparece en la pestaña Diseño → Librería.</p>
+<h3>Insertar</h3>
+<p>En Diseño → Librería, clic en un componente → se inserta en el centro del lienzo.</p>
+<h3>Variantes</h3>
+<p>Selecciona componente → <strong>Añadir variante</strong> (ej: "Primary", "Secondary", "Danger").</p>
+<h3>Component Sync <span class="badge badge-new">NEW</span></h3>
+<ul>
+  <li><strong>↑ Push al padre</strong>: empuja los cambios de una instancia al componente padre.</li>
+  <li><strong>↓ Pull del padre</strong>: actualiza una instancia desde el componente padre.</li>
+  <li><strong>Auto-sync</strong>: al hacer push, TODAS las instancias se actualizan.</li>
+  <li>Botones en el Inspector bajo "🔄 Sync de componente".</li>
+</ul>
+<h3>Props</h3>
+<p>Los componentes pueden definir props boolean/string. Las instancias muestran overrides en el Inspector.</p>
+
+<h2 id="autolayout">Auto-layout</h2>
+<p>Apila y distribuye hijos automáticamente (flexbox visual).</p>
+<table>
+  <tr><th>Opción</th><th>Descripción</th></tr>
+  <tr><td>Dirección</td><td>Horizontal (→) o Vertical (↓)</td></tr>
+  <tr><td>Espaciado</td><td>Gap entre hijos</td></tr>
+  <tr><td>Padding</td><td>Espacio interior (4 campos)</td></tr>
+  <tr><td>Alineación principal</td><td>Inicio / Centro / Fin / Repartir</td></tr>
+  <tr><td>Alineación cruzada</td><td>Arriba / Centro / Abajo / Estirar</td></tr>
+  <tr><td>Wrap</td><td>Envolver al rebosar</td></tr>
+  <tr><td>Tamaño</td><td>Fijo o Contenido (hug)</td></tr>
+</table>
+
+<h2 id="states">Estados interactivos</h2>
+<p>Define cómo se ve un nodo en diferentes estados: <strong>Hover</strong>, <strong>Pressed</strong>, <strong>Disabled</strong>, <strong>Focused</strong>.</p>
+<ul>
+  <li>Configura overrides de estilo por estado.</li>
+  <li>Transición: duración (ms) + curva de easing.</li>
+  <li>Preview en vivo en modo Preview.</li>
+</ul>
+
+<h2 id="animation">Animación</h2>
+<h3>Timelines</h3>
+<ul>
+  <li>Pestaña <strong>Animar</strong> → Crear línea de tiempo.</li>
+  <li>Selecciona nodo → <strong>Capturar keyframe</strong> en el instante deseado.</li>
+  <li>Reproduce con <strong>▶</strong> (Web Animations API).</li>
+</ul>
+<h3>Editor de easing</h3>
+<p>Gráfica con puntos de control arrastrables (estilo After Effects). Presets: Lineal, Entrada, Salida, Resorte, Brusco.</p>
+
+<h2 id="prototype">Prototipado</h2>
+<ul>
+  <li>Crea pantallas adicionales (pestaña Prototipo).</li>
+  <li>Conecta nodos a pantallas con transición (fade, slide, zoom).</li>
+  <li>Preview con <kbd>▶</kbd> → pulsa nodos conectados para navegar.</li>
+  <li>Exportador HTML reproduce el flujo completo.</li>
+</ul>
+
+<h2 id="constraints">Constraints (Responsive)</h2>
+<p>Cada nodo decide cómo reacciona al cambiar el tamaño de su pantalla:</p>
+<ul>
+  <li>Fijo a la izquierda/derecha/arriba/abajo.</li>
+  <li>Centrado.</li>
+  <li>Estirar (stretch).</li>
+  <li>Escalar (scale).</li>
+</ul>
+<p>Exportador HTML emite CSS responsive real. Unity/Unreal mapea a Anchors nativos.</p>
+
+<h2 id="themes">Temas múltiples</h2>
+<p>Crea variantes de color (light/dark/…). Cada tema guarda su paleta. Export de tokens incluye DTCG + CSS por tema.</p>
+
+<h2 id="export">Exportación</h2>
+<table>
+  <tr><th>Formato</th><th>Archivos</th><th>Notas</th></tr>
+  <tr><td>HTML/CSS/JS</td><td><code>.html</code></td><td>Autocontenido, escala al viewport, estados, animaciones, tokens</td></tr>
+  <tr><td>PNG</td><td><code>@1x.png</code>, <code>@2x.png</code>, <code>@3x.png</code></td><td>Pixel-perfect, offscreen rendering</td></tr>
+  <tr><td>Bundle</td><td><code>.zip</code></td><td>HTML + PNGs 1x/2x/3x</td></tr>
+  <tr><td>Unity</td><td><code>.uxml</code> + <code>.uss</code></td><td>UI Toolkit, flexbox nativo</td></tr>
+  <tr><td>Godot</td><td><code>.tscn</code> + <code>.theme</code></td><td>Nodos Control, anchors responsive</td></tr>
+  <tr><td>Unreal</td><td><code>manifest.json</code> + guía</td><td>UMG widgets, anchors</td></tr>
+  <tr><td>Lottie</td><td><code>.lottie</code> / <code>.json</code></td><td>Bodymovin, keyframes + easing</td></tr>
+  <tr><td>Tokens</td><td><code>tokens.json</code> + <code>.css</code></td><td>W3C DTCG + Style Dictionary</td></tr>
+  <tr><td>Spec sheet</td><td><code>.html</code></td><td>Ficha técnica de especificaciones</td></tr>
+  <tr><td>Review PDF</td><td><code>.html</code></td><td>Anotaciones + specs, print to PDF</td></tr>
+</table>
+
+<h2 id="project-folder">Carpeta del proyecto <span class="badge badge-new">NEW</span></h2>
+<p>Los exports se guardan en una carpeta organizada en vez de descargar:</p>
+<ul>
+  <li><strong>Archivo → 📁 Elegir carpeta del proyecto…</strong>: abre Directory Picker.</li>
+  <li><strong>Archivo → 💾 Guardar en carpeta</strong>: guarda el <code>.canvas</code>.</li>
+  <li>Todos los exports van a subcarpetas (<code>exports/unity/</code>, <code>exports/godot/</code>, etc.).</li>
+</ul>
+<div class="tip">💡 Si no eliges carpeta, los exports siguen descargándose como antes (fallback).</div>
+
+<h2 id="annotations">Anotaciones de review</h2>
+<ul>
+  <li>Modo anotar: clic en la pantalla → pin numerado.</li>
+  <li>Escribe la nota en el panel Prototipo.</li>
+  <li>Marca como resuelta ✓ o bórrala.</li>
+  <li><strong>Comments thread</strong> <span class="badge badge-new">NEW</span>: panel de comentarios con threading.</li>
+</ul>
+
+<h2 id="game-ui">🎮 Game UI Features</h2>
+
+<h2 id="nine-slice">9-Slice Scaling <span class="badge badge-game">GAME</span></h2>
+<p>Define zonas de borde que se estiran sin deformar (botones, paneles, tooltips):</p>
+<ul>
+  <li>Panel 🎮 → 9-Slice Scaling → Activar.</li>
+  <li>Configura pixeles de cada borde (top, right, bottom, left).</li>
+  <li>Se renderiza con CSS <code>border-image-slice</code>.</li>
+</ul>
+
+<h2 id="conditional-vis">Visibilidad condicional <span class="badge badge-game">GAME</span></h2>
+<p>El nodo solo se muestra si se cumplen condiciones de variables de juego:</p>
+<ul>
+  <li>Panel 🎮 → Variables de juego: define variables (bool/num/str).</li>
+  <li>Panel 🎮 → Visibilidad condicional: añade reglas (==, !=, truthy, etc.).</li>
+  <li>En preview, cambia las variables para ver los nodos aparecer/desaparecer.</li>
+</ul>
+
+<h2 id="localization">Localización <span class="badge badge-game">GAME</span></h2>
+<p>Define claves de localización para textos:</p>
+<ul>
+  <li>Selecciona nodo de texto → Panel 🎮 → Localización.</li>
+  <li>Escribe la clave (ej: <code>ui.hp_label</code>).</li>
+  <li>En canvas se muestra como <code>{ui.hp_label}</code>.</li>
+  <li>El exportador HTML usa la clave como contenido del elemento.</li>
+</ul>
+
+<h2 id="audio-cues">Audio Cues <span class="badge badge-game">GAME</span></h2>
+<p>Asocia sonidos a eventos de interacción:</p>
+<ul>
+  <li>Panel 🎮 → Audio Cues.</li>
+  <li>Eventos: Hover, Press, Release, Open, Close.</li>
+  <li>Escribe el nombre del sonido para cada evento.</li>
+</ul>
+
+<h2 id="sprite-sheets">Sprite Sheets <span class="badge badge-game">GAME</span></h2>
+<p>Importa y anima sprite sheets frame-by-frame:</p>
+<ul>
+  <li>Define en el IR: <code>spriteSheet: { src, frameWidth, frameHeight, fps, loop }</code>.</li>
+  <li>El renderer reproduce los frames automáticamente en el canvas.</li>
+</ul>
+
+<h2 id="templates">Templates de juego <span class="badge badge-game">GAME</span></h2>
+<p>5 starter kits pre-diseñados:</p>
+<table>
+  <tr><th>Template</th><th>Género</th><th>Pantalla</th></tr>
+  <tr><td>⚔️ RPG Inventory</td><td>RPG</td><td>Inventario con slots, stats, equipamiento</td></tr>
+  <tr><td>🔫 FPS HUD</td><td>Shooter</td><td>Crosshair, health bar, ammo, minimapa</td></tr>
+  <tr><td>🏎️ Racing HUD</td><td>Carreras</td><td>Speedometer, position, lap, track map</td></tr>
+  <tr><td>🍄 Platformer HUD</td><td>Platformer</td><td>Lives, coins, score, power-ups, boss HP</td></tr>
+  <tr><td>🏰 Strategy UI</td><td>Strategy</td><td>Resources, minimap, unit panel, build menu</td></tr>
+</table>
+<p>Archivo → Nuevo proyecto → selecciona el template.</p>
+
+<h2 id="multi-res">Multi-resolución <span class="badge badge-game">GAME</span></h2>
+<p>Preview del diseño en múltiples resoluciones simultáneamente:</p>
+<ul>
+  <li>7 presets: 720p, 1080p, 4K, Ultrawide, iPhone 14, Android, Web.</li>
+  <li>Clic en un preset → redimensiona el root a esa resolución.</li>
+  <li>Multi-res preview panel con miniaturas de cada resolución.</li>
+</ul>
+
+<h2 id="platforms">Overrides por plataforma <span class="badge badge-game">GAME</span></h2>
+<p>Define estilos diferentes por plataforma:</p>
+<ul>
+  <li>Selector en TopBar: 📱 (mobile), 🎮 (console), 🖥️ (PC), 🌐 (web).</li>
+  <li>Activa una plataforma → los overrides se aplican en tiempo real.</li>
+  <li>En el Inspector, cada campo de estilo tiene botón de plataforma para definir el override.</li>
+</ul>
+
+<h2 id="profiling">Profiling overlay <span class="badge badge-game">GAME</span></h2>
+<p>Métricas de rendimiento en vivo en el canvas:</p>
+<ul>
+  <li><strong>Nodos</strong>: total y hojas.</li>
+  <li><strong>Profundidad</strong>: niveles de anidamiento.</li>
+  <li><strong>Draw calls estimados</strong>: basado en nodos con sombras, gradientes, imágenes, opacidad.</li>
+  <li><strong>Fill rate</strong>: área pintada vs área de pantalla.</li>
+  <li><strong>Grado</strong>: 🟢 Excelente (&lt;50), 🟡 Bueno (&lt;150), 🔴 Pesado (&gt;150).</li>
+</ul>
+
+<h2 id="advanced">⚡ Funciones avanzadas</h2>
+
+<h2 id="component-sync">Component Sync <span class="badge badge-pro">PRO</span></h2>
+<p>Mantén tus componentes sincronizados entre definición e instancias:</p>
+<ul>
+  <li><strong>↑ Push al padre</strong>: edita una instancia → push al componente → TODAS las instancias se actualizan.</li>
+  <li><strong>↓ Pull del padre</strong>: actualiza una instancia desde la definición del componente.</li>
+  <li>El sync respeta los overrides de posición (x, y) de cada instancia.</li>
+</ul>
+
+<h2 id="copy-paste">Copy/Paste entre pantallas <span class="badge badge-pro">PRO</span></h2>
+<ul>
+  <li><kbd>Cmd+C</kbd>: copia los nodos seleccionados (deep clone + remap IDs).</li>
+  <li><kbd>Cmd+V</kbd>: pega en la pantalla actual con offset automático (20px).</li>
+  <li>Funciona entre pantallas del prototipo.</li>
+</ul>
+
+<h2 id="snapshots">Snapshots <span class="badge badge-pro">PRO</span></h2>
+<ul>
+  <li><kbd>Cmd+Shift+S</kbd>: guarda un snapshot nombrado del estado actual.</li>
+  <li>Panel de snapshots: restaura cualquier versión anterior.</li>
+  <li>Los snapshots incluyen el documento completo (tokens, componentes, pantallas).</li>
+</ul>
+
+<h2 id="canvas-theme">Tema del canvas <span class="badge badge-pro">PRO</span></h2>
+<ul>
+  <li>Selector 🌙/☀️ en la barra de herramientas.</li>
+  <li><strong>Oscuro</strong>: fondo #0B0E1A (default).</li>
+  <li><strong>Claro</strong>: fondo #f0f0f0 (para diseñar UI de apps móviles).</li>
+</ul>
+
+<h2 id="comments">Comentarios <span class="badge badge-pro">PRO</span></h2>
+<ul>
+  <li>Panel de comentarios con threading (estilo Figma).</li>
+  <li>Marcar como resuelto/pendiente.</li>
+  <li>Textarea para editar el texto del comentario.</li>
+</ul>
+
+<h2 id="shortcuts">Atajos de teclado</h2>
+<h3>Navegación</h3>
+<table>
+  <tr><th>Atajo</th><th>Acción</th></tr>
+  <tr><td><kbd>Espacio</kbd> + drag</td><td>Pan</td></tr>
+  <tr><td><kbd>Clic derecho</kbd> + drag</td><td>Pan</td></tr>
+  <tr><td><kbd>Scroll wheel</kbd></td><td>Zoom hacia cursor</td></tr>
+  <tr><td><kbd>Cmd+1</kbd></td><td>Zoom a pantalla completa</td></tr>
+  <tr><td><kbd>Cmd+2</kbd></td><td>Zoom a selección</td></tr>
+  <tr><td><kbd>Shift+1</kbd> / <kbd>Shift+0</kbd></td><td>Ajustar / 100%</td></tr>
+</table>
+<h3>Edición</h3>
+<table>
+  <tr><th>Atajo</th><th>Acción</th></tr>
+  <tr><td><kbd>Flechas</kbd></td><td>Nudge 1px</td></tr>
+  <tr><td><kbd>Shift+Flechas</kbd></td><td>Nudge 10px</td></tr>
+  <tr><td><kbd>Cmd+C</kbd></td><td>Copiar nodos</td></tr>
+  <tr><td><kbd>Cmd+V</kbd></td><td>Pegar nodos</td></tr>
+  <tr><td><kbd>Cmd+D</kbd></td><td>Duplicar (con offset)</td></tr>
+  <tr><td><kbd>Cmd+Z</kbd> / <kbd>Cmd+Shift+Z</kbd></td><td>Deshacer / Rehacer</td></tr>
+  <tr><td><kbd>Cmd+A</kbd></td><td>Seleccionar todo</td></tr>
+  <tr><td><kbd>Cmd+L</kbd></td><td>Bloquear / Desbloquear</td></tr>
+  <tr><td><kbd>Cmd+H</kbd></td><td>Panel de historial</td></tr>
+  <tr><td><kbd>Cmd+Shift+S</kbd></td><td>Guardar snapshot</td></tr>
+  <tr><td><kbd>Cmd+Shift+C/V</kbd></td><td>Copiar / Pegar estilo</td></tr>
+  <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>Mover capa atrás / adelante</td></tr>
+  <tr><td><kbd>Cmd+Shift+H/J</kbd></td><td>Voltear horizontal / vertical</td></tr>
+  <tr><td><kbd>Cmd+K</kbd></td><td>Palette de acciones</td></tr>
+  <tr><td><kbd>Cmd+F</kbd></td><td>Búsqueda global</td></tr>
+  <tr><td><kbd>Cmd+/</kbd></td><td>Modal de atajos</td></tr>
+  <tr><td><kbd>Cmd+Enter</kbd></td><td>Modo presentación</td></tr>
+  <tr><td><kbd>Cmd+Y</kbd></td><td>Modo outline</td></tr>
+  <tr><td><kbd>I</kbd></td><td>Eyedropper</td></tr>
+  <tr><td><kbd>Supr</kbd></td><td>Eliminar</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Deseleccionar / salir</td></tr>
+</table>
+<h3>Herramientas</h3>
+<table>
+  <tr><th>Tecla</th><th>Herramienta</th></tr>
+  <tr><td><kbd>V</kbd></td><td>Select</td></tr>
+  <tr><td><kbd>F</kbd></td><td>Frame</td></tr>
+  <tr><td><kbd>T</kbd></td><td>Text</td></tr>
+  <tr><td><kbd>R</kbd></td><td>Rect</td></tr>
+  <tr><td><kbd>O</kbd></td><td>Elipse</td></tr>
+  <tr><td><kbd>L</kbd></td><td>Línea</td></tr>
+  <tr><td><kbd>P</kbd></td><td>Pen</td></tr>
+  <tr><td><kbd>H</kbd></td><td>Mano</td></tr>
+  <tr><td><kbd>Z</kbd></td><td>Zoom</td></tr>
+</table>
+<h3>Alineación</h3>
+<table>
+  <tr><th>Atajo</th><th>Acción</th></tr>
+  <tr><td><kbd>Alt+A/D/W/S</kbd></td><td>Alinear izq/der/arr/abaj</td></tr>
+  <tr><td><kbd>Alt+C</kbd> / <kbd>Alt+M</kbd></td><td>Centrar H / V</td></tr>
+  <tr><td><kbd>Alt+Shift+H/V</kbd></td><td>Distribuir H / V</td></tr>
+</table>
+
+<h2>Stack técnico</h2>
+<table>
+  <tr><th>Capa</th><th>Tecnología</th></tr>
+  <tr><td>UI</td><td>React + TypeScript + Vite</td></tr>
+  <tr><td>Estado</td><td>Zustand + Immer (undo/redo por patches)</td></tr>
+  <tr><td>Canvas</td><td>DOM puro (WYSIWYG exacto con exportador HTML)</td></tr>
+  <tr><td>Desktop</td><td>Tauri 2 (Rust)</td></tr>
+  <tr><td>Preview</td><td>Web Animations API</td></tr>
+</table>
+
+<div class="warning">⚠️ UI Forger es 100% offline. No hay servidores, no hay cuentas, no hay datos enviados a terceros. Todo vive en tu navegador.</div>
+
+<p style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--dim); font-size: 12px;">
+  UI Forger v0.2.0 — Documentación generada automáticamente.<br>
+  Repository: <a href="https://github.com/dryaris/UIBuilderDesigner" style="color: var(--accent);">github.com/dryaris/UIBuilderDesigner</a>
+</p>
+</main>
+</div>
+
+<script>
+// Active nav highlighting
+const links = document.querySelectorAll('nav a');
+const sections = [];
+links.forEach(link => {
+  const id = link.getAttribute('href')?.slice(1);
+  if (id) sections.push({ id, link });
+});
+window.addEventListener('scroll', () => {
+  let current = '';
+  for (const s of sections) {
+    const el = document.getElementById(s.id);
+    if (el && el.getBoundingClientRect().top <= 100) current = s.id;
+  }
+  links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + current));
+});
+</script>
+</body>
+</html>
