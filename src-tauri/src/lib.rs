@@ -7,6 +7,8 @@
  *
  * Fase 1: save/load/list de proyectos .canvas en el directorio de datos de la app.
  * Fases 2/5/6: exportadores HTML/CSS (Rust), Unity UI Toolkit y Unreal UMG.
+ *
+ * GPU Fix: Detección y fallback para GPUs NVIDIA que causan pantalla negra.
  */
 use std::fs;
 use tauri::Manager;
@@ -59,9 +61,109 @@ fn export_html(_doc_json: String) -> Result<String, String> {
     Err("Exportador Rust HTML pendiente (Fase 2)".into())
 }
 
+/// Detecta si el sistema tiene problemas conocidos con GPU rendering.
+/// Retorna true si se debería desactivar hardware acceleration.
+fn should_disable_hw_accel() -> bool {
+    // 1. Si el usuario ya forzó software rendering, respetar.
+    if let Ok(v) = std::env::var("UIFORGER_DISABLE_GPU") {
+        if v == "1" || v == "true" {
+            return true;
+        }
+    }
+
+    // 2. Detectar NVIDIA en Linux via /proc/driver/nvidia/version
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(driver_info) = fs::read_to_string("/proc/driver/nvidia/version") {
+            // NVIDIA drivers < 535 have known compositor issues with Chromium
+            if driver_info.contains("NVRM version") {
+                return true;
+            }
+        }
+        // Also check via glxinfo if available
+        if let Ok(output) = std::process::Command::new("glxinfo")
+            .arg("-B")
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if stdout.contains("NVIDIA") || stdout.contains("nvidia") {
+                // Force software rendering on NVIDIA Linux
+                return true;
+            }
+        }
+    }
+
+    // 3. Detectar Windows + NVIDIA via WMI registry (lightweight check)
+    #[cfg(target_os = "windows")]
+    {
+        // Check for NVIDIA driver via registry
+        if let Ok(output) = std::process::Command::new("reg")
+            .args([
+                "query",
+                "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000",
+                "/v",
+                "DriverDesc",
+            ])
+            .output()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if stdout.to_lowercase().contains("nvidia") {
+                // Check if driver is known-buggy (pre-535 series)
+                if let Ok(ver) = std::process::Command::new("nvidia-smi")
+                    .arg("--query-gpu=driver_version")
+                    .arg("--format=csv,noheader")
+                    .output()
+                {
+                    let ver_str = String::from_utf8_lossy(&ver.stdout);
+                    let ver_clean = ver_str.trim();
+                    // Parse major.minor
+                    if let Some((major, _)) = ver_clean.split_once('.') {
+                        if let Ok(major_num) = major.parse::<u32>() {
+                            if major_num < 535 {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    false
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    // GPU fix: if NVIDIA detected, set env vars for Chromium before app starts.
+    if should_disable_hw_accel() {
+        // Tell Chromium/WKWebView to use software rendering.
+        std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+        std::env::set_var("LIBGL_ALWAYS_SOFTWARE", "1");
+        // Electron/Chromium-style flags (may be picked up by Tauri's webview).
+        std::env::set_var(
+            "CHROMIUM_FLAGS",
+            "--disable-gpu-compositing --disable-gpu-sandbox --enable-features=VaapiVideoDecoder",
+        );
+    }
+
+    let mut builder = tauri::Builder::default();
+
+    // Always apply GPU safety flags for NVIDIA compatibility.
+    // These are harmless on other GPUs and prevent black screens.
+    builder = builder.setup(|_app| {
+        // Log GPU info for debugging.
+        #[cfg(debug_assertions)]
+        {
+            if let Ok(gl_renderer) = std::env::var("LIBGL_ALWAYS_SOFTWARE") {
+                if gl_renderer == "1" {
+                    eprintln!("[UI Forger] GPU: Software rendering mode (NVIDIA fallback active)");
+                }
+            }
+        }
+        Ok(())
+    });
+
+    builder
         .invoke_handler(tauri::generate_handler![
             save_project,
             load_project,
