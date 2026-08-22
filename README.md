@@ -7,6 +7,37 @@
 
 ---
 
+## Requisitos del sistema
+
+### Windows
+| Requisito | Mínimo | Recomendado |
+|---|---|---|
+| **Sistema operativo** | Windows 10 (1809+) | Windows 11 |
+| **RAM** | 4 GB | 8 GB |
+| **Disco** | 500 MB libres | 1 GB |
+| **GPU** | Cualquiera | NVIDIA 535+ / AMD / Intel |
+| **WebView2** | Se instala automáticamente | — |
+
+### macOS
+| Requisito | Mínimo | Recomendado |
+|---|---|---|
+| **Sistema operativo** | macOS 10.15 (Catalina) | macOS 13+ |
+| **RAM** | 4 GB | 8 GB |
+| **Disco** | 500 MB libres | 1 GB |
+| **GPU** | Cualquiera (Metal compatible) | — |
+
+### Web (navegador)
+| Requisito | Mínimo |
+|---|---|
+| **Navegador** | Chrome 86+, Edge 86+, Firefox 78+, Safari 14+ |
+| **RAM** | 4 GB |
+| **Instalación** | Ninguna — abre la URL y listo |
+
+### ⚠️ GPUs NVIDIA conocidas
+Algunas GPUs NVIDIA (especialmente **RTX 3050/3060 laptop**, drivers < v535) pueden causar pantalla negra. La app detecta automáticamente NVIDIA y activa software rendering como fallback. Si persiste, ver [Solución de problemas](#conocidos-problemas).
+
+---
+
 ## Stack tecnológico
 
 ### Frontend — Motor del editor
@@ -226,10 +257,16 @@ La app detecta automáticamente NVIDIA y activa software rendering como fallback
 Abre la URL del deploy en tu navegador. No requiere instalación.
 
 ### Escritorio
-Descarga el instalador para tu plataforma desde [Releases](https://github.com/dryaris/UIBuilderDesigner/releases):
-- **Windows**: `.msi`
-- **macOS**: `.dmg`
-- **Linux**: `.deb` o `.AppImage`
+Descarga desde [Releases](https://github.com/dryaris/UIBuilderDesigner/releases):
+
+**Windows:**
+- **Installer**: `.msi` o `.exe` — instala en Program Files con acceso directo
+- **Portable**: `.zip` — extrae y ejecuta `UI Forger.exe`, sin instalación (ideal para USB o PCs sin permisos de admin)
+
+**macOS:**
+- **`.dmg`** (universal: Apple Silicon + Intel) — arrastra a Applications
+
+> Nota: en macOS, si Gatekeeper bloquea la app, haz clic derecho → Abrir.
 
 ### Desarrollo
 ```bash
