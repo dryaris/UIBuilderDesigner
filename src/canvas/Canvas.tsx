@@ -34,10 +34,13 @@ export function Canvas() {
   const ref = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
 
-  // Mantiene el tamaño del canvas en el store (para fit y zoom-marquee).
+  // Mantiene el tamaño del canvas en el store (para fit y zoom-marquee)
+  // y marca el canvas como "ready" cuando el ref está montado.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    canvasElement.current = el;
+    setReady(true);
     const ro = new ResizeObserver(() => {
       useStore.getState().updateCanvasSize(el.clientWidth, el.clientHeight);
     });
@@ -73,11 +76,7 @@ export function Canvas() {
         backgroundSize: `${spacing}px ${spacing}px`,
         backgroundPosition: `${viewport.pan.x}px ${viewport.pan.y}px`,
       }}
-      ref={(el) => {
-        ref.current = el;
-        canvasElement.current = el;
-        if (el) setReady(true);
-      }}
+      ref={ref}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
