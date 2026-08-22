@@ -26,6 +26,7 @@ import { HistoryPanel } from "../ui/HistoryPanel";
 import { SearchPanel } from "../ui/SearchPanel";
 import { AlignToolbar } from "../ui/AlignToolbar";
 import { GamePanel } from "../ui/GamePanel";
+import { LogPanel, LogButton } from "../ui/LogPanel";
 import { MultiResPreview } from "../ui/MultiResPreview";
 import { SnapshotsPanel } from "../ui/SnapshotsPanel";
 import { CommentsThread } from "../ui/CommentsThread";
@@ -33,6 +34,7 @@ import { CommentsThread } from "../ui/CommentsThread";
 export function Editor() {
   const [booted, setBooted] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
+  const [showLogs, setShowLogs] = useState(false);
   const toast = useStore((s) => s.toast);
   const rightTab = useStore((s) => s.rightTab);
   const setRightTab = useStore((s) => s.setRightTab);
@@ -132,6 +134,8 @@ export function Editor() {
       <MultiResPreview />
       <SnapshotsPanel />
       <CommentsThread />
+      {showLogs && <LogPanel onClose={() => setShowLogs(false)} />}
+      <LogButton onClick={() => setShowLogs(true)} />
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

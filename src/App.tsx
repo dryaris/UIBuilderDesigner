@@ -5,6 +5,7 @@
  */
 import { Editor } from "./editor/Editor";
 import { useEffect, useState } from "react";
+import { installGlobalErrorHooks } from "./core/logger";
 
 /**
  * Detecta GPUs NVIDIA problemáticas mostrando información del renderer WebGL.
@@ -33,6 +34,9 @@ function detectGPU(): { isNvidia: boolean; renderer: string } {
 }
 
 export default function App() {
+  // Instalar hooks de logging globales al montar
+  useEffect(() => { installGlobalErrorHooks(); }, []);
+
   const [gpuError, setGpuError] = useState<string | null>(null);
   const [gpuInfo, setGpuInfo] = useState<string>("");
 
