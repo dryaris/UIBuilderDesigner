@@ -5,10 +5,7 @@
  *  - Frontend (TS): canvas, paneles, estado, layout, undo/redo, preview, prototipado.
  *  - Rust: load/save atómico, empaquetado ZIP, exportadores, thumbnails, spec sheets.
  *
- * Fase 1: save/load/list de proyectos .canvas en el directorio de datos de la app.
- * Fases 2/5/6: exportadores HTML/CSS (Rust), Unity UI Toolkit y Unreal UMG.
- *
- * GPU Fix: Detección y fallback para GPUs NVIDIA que causan pantalla negra.
+ * GPU Fix: Detección y fallback para GPUs NVIDIA y AMD que causan pantalla negra.
  */
 use std::fs;
 use tauri::Manager;
@@ -54,15 +51,16 @@ fn list_projects(app: tauri::AppHandle) -> Result<Vec<String>, String> {
 }
 
 /// Exportador HTML/CSS en Rust (Fase 2).
-/// El IR → HTML/CSS ya se valida en TS (src/export/html.ts) para iterar rápido;
-/// esta versión Rust comparte el mismo contrato y llega en la Fase 2.
 #[tauri::command]
 fn export_html(_doc_json: String) -> Result<String, String> {
     Err("Exportador Rust HTML pendiente (Fase 2)".into())
 }
 
-/// Detecta si el sistema tiene problemas conocidos con GPU rendering.
+/// Detecta GPUs con problemas conocidos de composición en Chromium.
 /// Retorna true si se debería desactivar hardware acceleration.
+///
+/// Afectados: NVIDIA (drivers < 535), AMD (R7/R9/RX con drivers antiguos),
+/// y GPUs integradas Intel antiguas.
 fn should_disable_hw_accel() -> bool {
     // 1. Si el usuario ya forzó software rendering, respetar.
     if let Ok(v) = std::env::var("UIFORGER_DISABLE_GPU") {
@@ -71,59 +69,71 @@ fn should_disable_hw_accel() -> bool {
         }
     }
 
-    // 2. Detectar NVIDIA en Linux via /proc/driver/nvidia/version
+    // 2. Linux: detectar GPU via /proc/driver/nvidia o glxinfo
     #[cfg(target_os = "linux")]
     {
         if let Ok(driver_info) = fs::read_to_string("/proc/driver/nvidia/version") {
-            // NVIDIA drivers < 535 have known compositor issues with Chromium
             if driver_info.contains("NVRM version") {
                 return true;
             }
         }
-        // Also check via glxinfo if available
         if let Ok(output) = std::process::Command::new("glxinfo")
             .arg("-B")
             .output()
         {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            if stdout.contains("NVIDIA") || stdout.contains("nvidia") {
-                // Force software rendering on NVIDIA Linux
+            let lower = stdout.to_lowercase();
+            if lower.contains("nvidia") || lower.contains("amd") || lower.contains("radeon") {
                 return true;
             }
         }
     }
 
-    // 3. Detectar Windows + NVIDIA via WMI registry (lightweight check)
+    // 3. Windows: detectar GPU via registry (NVIDIA + AMD)
     #[cfg(target_os = "windows")]
     {
-        // Check for NVIDIA driver via registry
-        if let Ok(output) = std::process::Command::new("reg")
-            .args([
-                "query",
-                "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000",
-                "/v",
-                "DriverDesc",
-            ])
-            .output()
-        {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            if stdout.to_lowercase().contains("nvidia") {
-                // Check if driver is known-buggy (pre-535 series)
-                if let Ok(ver) = std::process::Command::new("nvidia-smi")
-                    .arg("--query-gpu=driver_version")
-                    .arg("--format=csv,noheader")
-                    .output()
-                {
-                    let ver_str = String::from_utf8_lossy(&ver.stdout);
-                    let ver_clean = ver_str.trim();
-                    // Parse major.minor
-                    if let Some((major, _)) = ver_clean.split_once('.') {
-                        if let Ok(major_num) = major.parse::<u32>() {
-                            if major_num < 535 {
-                                return true;
+        // Buscar en la registry de display adapters (GPU index 0000)
+        // NVIDIA: {4d36e968-e325-11ce-bfc1-08002be10318}\0000
+        // AMD:    {4d36e968-e325-11ce-bfc1-08002be10318}\0001 o similar
+        for adapter_idx in 0..4 {
+            let reg_key = format!(
+                "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{{4d36e968-e325-11ce-bfc1-08002be10318}}\\{:04}",
+                adapter_idx
+            );
+            if let Ok(output) = std::process::Command::new("reg")
+                .args(["query", &reg_key, "/v", "DriverDesc"])
+                .output()
+            {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let lower = stdout.to_lowercase();
+
+                // NVIDIA: verificar versión del driver
+                if lower.contains("nvidia") {
+                    if let Ok(ver) = std::process::Command::new("nvidia-smi")
+                        .arg("--query-gpu=driver_version")
+                        .arg("--format=csv,noheader")
+                        .output()
+                    {
+                        let ver_str = String::from_utf8_lossy(&ver.stdout);
+                        let ver_clean = ver_str.trim();
+                        if let Some((major, _)) = ver_clean.split_once('.') {
+                            if let Ok(major_num) = major.parse::<u32>() {
+                                if major_num < 535 {
+                                    return true;
+                                }
                             }
                         }
                     }
+                    // NVIDIA drivers recientes generalmente funcionan, pero
+                    // forzar fallback por si acaso (cauteloso)
+                    return true;
+                }
+
+                // AMD: Radeon R7/R9/RX — known compositing issues
+                if lower.contains("amd") || lower.contains("radeon") {
+                    // AMD GPUs frequently have Chromium compositing bugs.
+                    // Force software rendering as safe default.
+                    return true;
                 }
             }
         }
@@ -134,29 +144,25 @@ fn should_disable_hw_accel() -> bool {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // GPU fix: if NVIDIA detected, set env vars for Chromium before app starts.
+    // GPU fix: si se detecta GPU problemática, forzar software rendering.
     if should_disable_hw_accel() {
-        // Tell Chromium/WKWebView to use software rendering.
         std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
         std::env::set_var("LIBGL_ALWAYS_SOFTWARE", "1");
-        // Electron/Chromium-style flags (may be picked up by Tauri's webview).
         std::env::set_var(
             "CHROMIUM_FLAGS",
-            "--disable-gpu-compositing --disable-gpu-sandbox --enable-features=VaapiVideoDecoder",
+            "--disable-gpu-compositing --disable-gpu-sandbox",
         );
+        eprintln!("[UI Forger] GPU: Software rendering mode active (problematic GPU detected)");
     }
 
     let mut builder = tauri::Builder::default();
 
-    // Always apply GPU safety flags for NVIDIA compatibility.
-    // These are harmless on other GPUs and prevent black screens.
     builder = builder.setup(|_app| {
-        // Log GPU info for debugging.
         #[cfg(debug_assertions)]
         {
-            if let Ok(gl_renderer) = std::env::var("LIBGL_ALWAYS_SOFTWARE") {
-                if gl_renderer == "1" {
-                    eprintln!("[UI Forger] GPU: Software rendering mode (NVIDIA fallback active)");
+            if let Ok(v) = std::env::var("LIBGL_ALWAYS_SOFTWARE") {
+                if v == "1" {
+                    eprintln!("[UI Forger] GPU: Software rendering mode (NVIDIA/AMD fallback active)");
                 }
             }
         }

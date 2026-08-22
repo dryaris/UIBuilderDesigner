@@ -5,31 +5,32 @@
  */
 import { Editor } from "./editor/Editor";
 import { useEffect, useState } from "react";
-import { installGlobalErrorHooks } from "./core/logger";
+import { installGlobalErrorHooks, logGpu } from "./core/logger";
 
 /**
- * Detecta GPUs NVIDIA problemáticas mostrando información del renderer WebGL.
- * Si el renderer contiene "NVIDIA" + driver antiguo, sugerimos desactivar GPU.
+ * Detecta GPUs problemáticas (NVIDIA, AMD) mostrando información del renderer WebGL.
+ * Si el renderer contiene "NVIDIA" o "AMD/Radeon", sugerimos desactivar GPU.
  */
-function detectGPU(): { isNvidia: boolean; renderer: string } {
+function detectGPU(): { isProblematic: boolean; renderer: string } {
   try {
     const canvas = document.createElement("canvas");
     const ctx =
       canvas.getContext("webgl2") ||
       canvas.getContext("webgl") ||
       canvas.getContext("experimental-webgl");
-    if (!ctx) return { isNvidia: false, renderer: "no-webgl" };
+    if (!ctx) return { isProblematic: false, renderer: "no-webgl" };
     const gl = ctx as WebGLRenderingContext;
     const ext = gl.getExtension("WEBGL_debug_renderer_info");
     const renderer = ext
       ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)
       : gl.getParameter(gl.RENDERER);
+    const r = String(renderer).toLowerCase();
     return {
-      isNvidia: String(renderer).toLowerCase().includes("nvidia"),
+      isProblematic: r.includes("nvidia") || r.includes("amd") || r.includes("radeon"),
       renderer: String(renderer),
     };
   } catch {
-    return { isNvidia: false, renderer: "error" };
+    return { isProblematic: false, renderer: "error" };
   }
 }
 
@@ -46,16 +47,19 @@ export default function App() {
       const msg = e.message || "";
       const isGPU =
         msg.includes("GPU") ||
+        msg.includes("gpu") ||
         msg.includes("render") ||
         msg.includes("webgl") ||
         msg.includes("drawArrays") ||
         msg.includes("paint") ||
         msg.includes("Skia") ||
-        msg.includes("OOM");
+        msg.includes("OOM") ||
+        msg.includes("composit");
       if (isGPU) {
         setGpuError(msg);
         const { renderer } = detectGPU();
         setGpuInfo(renderer);
+        logGpu(`GPU error caught: ${msg}`, "gpu-error-handler");
       }
     };
     window.addEventListener("error", onError);
@@ -106,7 +110,7 @@ export default function App() {
           }}
         >
           Tu GPU ({gpuInfo}) está causando problemas de rendering. Esto es
-          conocido con ciertas GPUs NVIDIA en Windows.
+          conocido con GPUs NVIDIA y AMD en Windows.
         </p>
         <div
           style={{
@@ -135,11 +139,11 @@ export default function App() {
               </code>
             </li>
             <li>
-              <strong>Actualizar drivers NVIDIA</strong> a versión 535+ desde
-              nvidia.com
+              <strong>Actualizar drivers GPU</strong> a la última versión desde
+              nvidia.com (NVIDIA) o amd.com (AMD)
             </li>
             <li>
-              <strong>En NVIDIA Control Panel:</strong> Configuración 3D →
+              <strong>En el panel de control de la GPU:</strong> Configuración 3D →
               "Preferencia de procesamiento gráfico" → "Integrada"
             </li>
             <li>
