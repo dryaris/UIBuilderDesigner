@@ -1,7 +1,7 @@
 {
   "name": "ui-forger",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.2",
   "description": "UI Forger — Editor visual de UI/UX offline, agnóstico y multi-destino (HTML/CSS, Unity, Unreal, Godot).",
   "type": "module",
   "scripts": {
