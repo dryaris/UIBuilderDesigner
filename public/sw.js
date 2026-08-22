@@ -3,7 +3,7 @@
  * Cachea los assets estáticos y permite uso sin conexión.
  */
 
-const CACHE_NAME = "uiforger-v0.3.0";
+const CACHE_NAME = "uiforger-v0.3.6";
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",
