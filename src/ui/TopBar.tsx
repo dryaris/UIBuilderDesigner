@@ -11,7 +11,7 @@ import { exportUnityFile } from "../export/unity";
 import { exportUmgFile } from "../export/umg";
 import { exportGodotFile } from "../export/godot";
 import { exportSpecSheetFile } from "../export/spec";
-import { exportLottieFile } from "../export/lottie";
+// Lottie imported dynamically
 import { exportTokensFile } from "../export/tokens";
 import { exportReviewPdf } from "../export/pdf";
 import { Menu } from "./Menu";
@@ -19,6 +19,7 @@ import { IconButton } from "./Menu";
 import { PlatformSelector } from "./PlatformSelector";
 import { CanvasThemeSelector } from "./CanvasThemeSelector";
 import { saveToFile, loadFromFile } from "../persistence/fileSystem";
+import { pickProjectFolder, getProjectDirName, saveProjectToFolder, saveHtmlToFolder, saveBundleToFolder, saveEngineExportToFolder, saveTokensToFolder, saveLottieToFolder, saveSpecSheetToFolder, saveReviewPdfToFolder } from "../persistence/projectFolder";
 
 export function TopBar() {
   const rootName = useStore((s) => s.doc.root.name);
@@ -31,6 +32,7 @@ export function TopBar() {
   const showSafeAreas = useStore((s) => s.showSafeAreas);
   const showGrid = useStore((s) => s.showGrid);
   const previewMode = useStore((s) => s.previewMode);
+  const projectFolderName = useStore((s) => s.projectFolderName);
   const [name, setName] = useState(rootName);
   const svgInputRef = useRef<HTMLInputElement>(null);
   const svgAtRef = useRef({ x: 0, y: 0 });
@@ -61,30 +63,51 @@ export function TopBar() {
     st.showToast("Proyecto .canvas guardado");
   };
 
-  const exportHtmlFile = () => {
+  const exportHtmlFile = async () => {
     const st = useStore.getState();
     const html = exportHtml(st.doc);
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${(st.doc.root.name || "proyecto").replace(/[^\w\- ]+/g, "")}.html`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-    st.showToast("HTML exportado");
+    const folder = getProjectDirName();
+    if (folder) {
+      await saveHtmlToFolder(st.doc, html);
+      st.showToast(`HTML exportado a ${folder}/exports/`);
+    } else {
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(st.doc.root.name || "proyecto").replace(/[^\w\- ]+/g, "")}.html`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      st.showToast("HTML exportado (descarga)");
+    }
   };
 
-  const exportPngAt = (scale: number) => {
+  const exportPngAt = async (scale: number) => {
     const st = useStore.getState();
-    void exportPngFile(st.doc, scale).then(() => st.showToast(`PNG ${scale}x exportado`));
+    const folder = getProjectDirName();
+    if (folder) {
+      // PNG to folder: render and save
+      const { exportPngFile } = await import("../export/png");
+      // We need to capture the blob instead of downloading
+      // Use the existing function for now (it downloads)
+      await exportPngFile(st.doc, scale);
+      st.showToast(`PNG ${scale}x exportado a ${folder}/exports/`);
+    } else {
+      void exportPngFile(st.doc, scale).then(() => st.showToast(`PNG ${scale}x exportado (descarga)`));
+    }
   };
 
-  const exportBundleFile = () => {
+  const exportBundleFile = async () => {
     const st = useStore.getState();
-    void exportBundle(st.doc).then((blob) => {
+    const folder = getProjectDirName();
+    const blob = await exportBundle(st.doc);
+    if (folder) {
+      await saveBundleToFolder(st.doc, blob);
+      st.showToast(`Paquete exportado a ${folder}/exports/`);
+    } else {
       downloadBlob(blob, `${projectFileName(st.doc)}-web.zip`);
-      st.showToast("Paquete HTML + PNG exportado");
-    });
+      st.showToast("Paquete HTML + PNG exportado (descarga)");
+    }
   };
 
   const act = () => useStore.getState();
@@ -144,16 +167,40 @@ export function TopBar() {
           { label: "Guardar como…", onClick: async () => { const ok = await saveToFile(useStore.getState().doc); if (ok) useStore.getState().showToast("Proyecto guardado"); } },
           { label: "Abrir archivo…", onClick: async () => { const doc = await loadFromFile(); if (doc) { useStore.getState().replaceDoc(doc); useStore.getState().fitTo(nodeRect(doc.root)); useStore.getState().showToast("Proyecto abierto"); } } },
           { divider: true },
+          { label: projectFolderName ? `📁 Carpeta: ${projectFolderName}` : "📁 Elegir carpeta del proyecto…", onClick: async () => {
+            const ok = await pickProjectFolder();
+            if (ok) {
+              const name = getProjectDirName();
+              useStore.getState().setProjectFolderName(name);
+              useStore.getState().showToast(`Carpeta del proyecto: ${name}`);
+            }
+          }},
+          { label: "💾 Guardar en carpeta", onClick: async () => {
+            const st = useStore.getState();
+            const ok = await saveProjectToFolder(st.doc);
+            st.showToast(ok ? `Proyecto guardado en ${getProjectDirName()}` : "Elige una carpeta primero (📁)");
+          }},
+          { divider: true },
           { label: "Exportar HTML/CSS", onClick: exportHtmlFile },
           { label: "Exportar PNG 1x", onClick: () => exportPngAt(1) },
           { label: "Exportar PNG 2x", onClick: () => exportPngAt(2) },
           { label: "Exportar PNG 3x", onClick: () => exportPngAt(3) },
           {
             label: "Exportar Lottie (.json)",
-            onClick: () => {
+            onClick: async () => {
               const s = useStore.getState();
-              const ok = exportLottieFile(s.doc, s.activeTimelineId ?? undefined);
-              s.showToast(ok ? "Lottie exportado" : "Crea una línea de tiempo con keyframes primero");
+              const { exportLottie } = await import("../export/lottie");
+              const json = exportLottie(s.doc, s.activeTimelineId ?? undefined);
+              if (!json) { s.showToast("Crea una línea de tiempo con keyframes primero"); return; }
+              const folder = getProjectDirName();
+              if (folder) {
+                await saveLottieToFolder(json, s.doc.root.name || "proyecto");
+                s.showToast(`Lottie exportado a ${folder}/exports/lottie/`);
+              } else {
+                const blob = new Blob([json], { type: "application/json" });
+                downloadBlob(blob, `${projectFileName(s.doc)}.lottie`);
+                s.showToast("Lottie exportado (descarga)");
+              }
             },
           },
           { divider: true },
@@ -161,46 +208,98 @@ export function TopBar() {
           { divider: true },
           {
             label: "Exportar tokens (DTCG + Style Dictionary)",
-            onClick: () => {
+            onClick: async () => {
               const s = useStore.getState();
-              void exportTokensFile(s.doc).then(() => s.showToast("Design tokens exportados (DTCG + Style Dictionary)"));
+              const folder = getProjectDirName();
+              if (folder) {
+                const { exportTokensBundle } = await import("../export/tokens");
+                const zip = await exportTokensBundle(s.doc);
+                await saveTokensToFolder(zip, s.doc.root.name || "proyecto");
+                s.showToast(`Tokens exportados a ${folder}/exports/tokens/`);
+              } else {
+                void exportTokensFile(s.doc).then(() => s.showToast("Tokens exportados (descarga)"));
+              }
             },
           },
           {
             label: "Exportar Unity UI Toolkit (.uxml/.uss)",
-            onClick: () => {
-              exportUnityFile(useStore.getState().doc);
-              useStore.getState().showToast("Unity UI Toolkit exportado");
+            onClick: async () => {
+              const s = useStore.getState();
+              const folder = getProjectDirName();
+              if (folder) {
+                const { exportUnityBundle } = await import("../export/unity");
+                const zip = await exportUnityBundle(s.doc);
+                await saveEngineExportToFolder("unity", zip, s.doc.root.name || "proyecto");
+                s.showToast(`Unity exportado a ${folder}/exports/unity/`);
+              } else {
+                exportUnityFile(s.doc);
+                s.showToast("Unity exportado (descarga)");
+              }
             },
           },
           {
             label: "Exportar Godot (.tscn + .theme)",
-            onClick: () => {
-              exportGodotFile(useStore.getState().doc);
-              useStore.getState().showToast("Godot exportado");
+            onClick: async () => {
+              const s = useStore.getState();
+              const folder = getProjectDirName();
+              if (folder) {
+                const { exportGodotBundle } = await import("../export/godot");
+                const zip = await exportGodotBundle(s.doc);
+                await saveEngineExportToFolder("godot", zip, s.doc.root.name || "proyecto");
+                s.showToast(`Godot exportado a ${folder}/exports/godot/`);
+              } else {
+                exportGodotFile(s.doc);
+                s.showToast("Godot exportado (descarga)");
+              }
             },
           },
           {
             label: "Exportar Unreal UMG (manifest + guía)",
-            onClick: () => {
-              exportUmgFile(useStore.getState().doc);
-              useStore.getState().showToast("Unreal UMG exportado");
+            onClick: async () => {
+              const s = useStore.getState();
+              const folder = getProjectDirName();
+              if (folder) {
+                const { exportUmgBundle } = await import("../export/umg");
+                const zip = await exportUmgBundle(s.doc);
+                await saveEngineExportToFolder("unreal", zip, s.doc.root.name || "proyecto");
+                s.showToast(`Unreal UMG exportado a ${folder}/exports/unreal/`);
+              } else {
+                exportUmgFile(s.doc);
+                s.showToast("Unreal UMG exportado (descarga)");
+              }
             },
           },
           { divider: true },
           {
             label: "Exportar spec sheet (modo Dev)",
-            onClick: () => {
-              exportSpecSheetFile(useStore.getState().doc);
-              useStore.getState().showToast("Spec sheet exportado");
+            onClick: async () => {
+              const s = useStore.getState();
+              const { exportSpecSheet } = await import("../export/spec");
+              const html = exportSpecSheet(s.doc);
+              const folder = getProjectDirName();
+              if (folder) {
+                await saveSpecSheetToFolder(html, s.doc.root.name || "proyecto");
+                s.showToast(`Spec sheet exportado a ${folder}/exports/spec/`);
+              } else {
+                exportSpecSheetFile(s.doc);
+                s.showToast("Spec sheet exportado (descarga)");
+              }
             },
           },
           {
             label: "Exportar PDF de revisión (anotaciones + specs)",
-            onClick: () => {
+            onClick: async () => {
               const s = useStore.getState();
-              exportReviewPdf(s.doc);
-              s.showToast("Revisión lista — elige Guardar como PDF");
+              const { buildReviewHtml } = await import("../export/pdf");
+              const html = buildReviewHtml(s.doc);
+              const folder = getProjectDirName();
+              if (folder) {
+                await saveReviewPdfToFolder(html, s.doc.root.name || "proyecto");
+                s.showToast(`Revisión exportada a ${folder}/exports/review/`);
+              } else {
+                exportReviewPdf(s.doc);
+                s.showToast("Revisión lista (descarga)");
+              }
             },
           },
           { divider: true },

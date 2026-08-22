@@ -296,6 +296,10 @@ interface EditorState {
   canvasTheme: "dark" | "light";
   setCanvasTheme: (t: "dark" | "light") => void;
 
+  // ---- Project folder ----
+  projectFolderName: string | null;
+  setProjectFolderName: (name: string | null) => void;
+
   // ---- Shortcuts cheatsheet interactivo (Feature 14) ----
   recentShortcuts: string[];
   addRecentShortcut: (shortcut: string) => void;
@@ -1269,6 +1273,8 @@ export const useStore = create<EditorState>()((set, get) => ({
 
   // ------------------------------------------------------------------ Feature 15: Canvas theme
   canvasTheme: "dark",
+  projectFolderName: null,
+  setProjectFolderName: (projectFolderName) => set({ projectFolderName }),
   setCanvasTheme: (canvasTheme) => {
     set({ canvasTheme });
     document.documentElement.setAttribute("data-canvas-theme", canvasTheme);
