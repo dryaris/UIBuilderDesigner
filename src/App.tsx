@@ -4,183 +4,39 @@
  * presets de pantalla con safe areas TV, undo/redo y autosave).
  */
 import { Editor } from "./editor/Editor";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { installGlobalErrorHooks, logGpu } from "./core/logger";
-
-/**
- * Detecta GPUs problemáticas (NVIDIA, AMD) mostrando información del renderer WebGL.
- * Si el renderer contiene "NVIDIA" o "AMD/Radeon", sugerimos desactivar GPU.
- */
-function detectGPU(): { isProblematic: boolean; renderer: string } {
-  try {
-    const canvas = document.createElement("canvas");
-    const ctx =
-      canvas.getContext("webgl2") ||
-      canvas.getContext("webgl") ||
-      canvas.getContext("experimental-webgl");
-    if (!ctx) return { isProblematic: false, renderer: "no-webgl" };
-    const gl = ctx as WebGLRenderingContext;
-    const ext = gl.getExtension("WEBGL_debug_renderer_info");
-    const renderer = ext
-      ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)
-      : gl.getParameter(gl.RENDERER);
-    const r = String(renderer).toLowerCase();
-    return {
-      isProblematic: r.includes("nvidia") || r.includes("amd") || r.includes("radeon"),
-      renderer: String(renderer),
-    };
-  } catch {
-    return { isProblematic: false, renderer: "error" };
-  }
-}
 
 export default function App() {
   // Instalar hooks de logging globales al montar
   useEffect(() => { installGlobalErrorHooks(); }, []);
 
-  const [gpuError, setGpuError] = useState<string | null>(null);
-  const [gpuInfo, setGpuInfo] = useState<string>("");
-
+  // Log GPU renderer info for diagnostics (does NOT block the app).
   useEffect(() => {
-    // Catch unhandled errors that indicate GPU rendering failure.
-    const onError = (e: ErrorEvent) => {
-      const msg = e.message || "";
-      const isGPU =
-        msg.includes("GPU") ||
-        msg.includes("gpu") ||
-        msg.includes("render") ||
-        msg.includes("webgl") ||
-        msg.includes("drawArrays") ||
-        msg.includes("paint") ||
-        msg.includes("Skia") ||
-        msg.includes("OOM") ||
-        msg.includes("composit");
-      if (isGPU) {
-        setGpuError(msg);
-        const { renderer } = detectGPU();
-        setGpuInfo(renderer);
-        logGpu(`GPU error caught: ${msg}`, "gpu-error-handler");
+    try {
+      const canvas = document.createElement("canvas");
+      const ctx =
+        canvas.getContext("webgl2") ||
+        canvas.getContext("webgl") ||
+        canvas.getContext("experimental-webgl");
+      if (ctx) {
+        const gl = ctx as WebGLRenderingContext;
+        const ext = gl.getExtension("WEBGL_debug_renderer_info");
+        const renderer = ext
+          ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)
+          : gl.getParameter(gl.RENDERER);
+        const vendor = ext
+          ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)
+          : gl.getParameter(gl.VENDOR);
+        logGpu(
+          `GPU detected: ${String(renderer)} (${String(vendor)})`,
+          "gpu-detection",
+        );
       }
-    };
-    window.addEventListener("error", onError);
-    return () => window.removeEventListener("error", onError);
+    } catch {
+      // Silently ignore — web app works regardless of GPU detection.
+    }
   }, []);
-
-  // Show GPU error fallback screen
-  if (gpuError) {
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#14161f",
-          color: "#e8eaf2",
-          fontFamily: "'Inter', system-ui, sans-serif",
-          padding: 40,
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 64,
-            marginBottom: 16,
-          }}
-        >
-          ⚠️
-        </div>
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 600,
-            margin: "0 0 8px",
-          }}
-        >
-          Problema de rendering GPU detectado
-        </h1>
-        <p
-          style={{
-            fontSize: 14,
-            color: "#9aa1b5",
-            maxWidth: 560,
-            lineHeight: 1.6,
-            margin: "0 0 20px",
-          }}
-        >
-          Tu GPU ({gpuInfo}) está causando problemas de rendering. Esto es
-          conocido con GPUs NVIDIA y AMD en Windows.
-        </p>
-        <div
-          style={{
-            background: "#1b1e2a",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 8,
-            padding: "16px 24px",
-            maxWidth: 560,
-            textAlign: "left",
-            fontSize: 13,
-            lineHeight: 1.7,
-          }}
-        >
-          <strong style={{ color: "#ff6b9d" }}>Soluciones:</strong>
-          <ol style={{ margin: "8px 0 0", paddingLeft: 20 }}>
-            <li>
-              <strong>Abrir Chrome/Edge con:</strong>{" "}
-              <code
-                style={{
-                  background: "rgba(124,92,255,0.18)",
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                }}
-              >
-                --disable-gpu --disable-gpu-compositing
-              </code>
-            </li>
-            <li>
-              <strong>Actualizar drivers GPU</strong> a la última versión desde
-              nvidia.com (NVIDIA) o amd.com (AMD)
-            </li>
-            <li>
-              <strong>En el panel de control de la GPU:</strong> Configuración 3D →
-              "Preferencia de procesamiento gráfico" → "Integrada"
-            </li>
-            <li>
-              <strong>Abrir desde terminal con variable:</strong>{" "}
-              <code
-                style={{
-                  background: "rgba(124,92,255,0.18)",
-                  padding: "2px 6px",
-                  borderRadius: 4,
-                }}
-              >
-                UIFORGER_DISABLE_GPU=1
-              </code>
-            </li>
-          </ol>
-        </div>
-        <button
-          onClick={() => {
-            setGpuError(null);
-          }}
-          style={{
-            marginTop: 20,
-            padding: "10px 24px",
-            background: "#7c5cff",
-            color: "#fff",
-            border: "none",
-            borderRadius: 6,
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-        >
-          Intentar de todos modos
-        </button>
-      </div>
-    );
-  }
 
   return <Editor />;
 }
