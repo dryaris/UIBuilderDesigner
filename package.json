@@ -1,7 +1,7 @@
 {
   "name": "ui-forger",
   "private": true,
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "UI Forger — Editor visual de UI/UX offline, agnóstico y multi-destino (HTML/CSS, Unity, Unreal, Godot).",
   "type": "module",
   "scripts": {
@@ -23,6 +23,8 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.6.0",
+    "puppeteer": "^25.8.0",
+    "puppeteer-core": "^25.8.0",
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
   }
