@@ -14,6 +14,9 @@ on:
 permissions:
   contents: write
 
+env:
+  QT_VERSION: '6.6.3'
+
 jobs:
   # ─── Windows Build ───
   build-windows:
@@ -22,30 +25,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
         with:
-          python-version: '3.11'
-
-      - name: Install Qt via aqtinstall
-        run: |
-          pip install aqtinstall==3.1.1
-          aqt install-qt windows desktop 6.6.3 win64_msvc2019_64 -m qtsvg --outputdir ${{ github.workspace }}\Qt
+          version: ${{ env.QT_VERSION }}
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+          modules: 'qtsvg'
+          cache: true
 
       - name: Build
-        shell: cmd
         run: |
-          set CMAKE_PREFIX_PATH=%CD%\Qt\6.6.3\msvc2019_64
-          mkdir build
-          cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%CD%\..\..\Qt\6.6.3\msvc2019_64
-          cmake --build . --config Release
+          cmake -B build -G "Visual Studio 17 2022" -A x64
+          cmake --build build --config Release
 
       - name: Package
-        shell: cmd
         run: |
-          cd build\Release
-          %CD%\..\..\..\Qt\6.6.3\msvc2019_64\bin\windeployqt.exe UIForger.exe
+          cd build/Release
+          windeployqt.exe UIForger.exe
           cd ..
           7z a UIForger-Windows-x64.zip Release/*
 
@@ -62,26 +60,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
         with:
-          python-version: '3.11'
-
-      - name: Install Qt via aqtinstall
-        run: |
-          pip install aqtinstall==3.1.1
-          aqt install-qt mac desktop 6.6.3 clang_64 -m qtsvg --outputdir ${{ github.workspace }}/Qt
+          version: ${{ env.QT_VERSION }}
+          host: 'mac'
+          target: 'desktop'
+          arch: 'clang_64'
+          modules: 'qtsvg'
+          cache: true
 
       - name: Build
         run: |
-          mkdir build
-          cd build
-          cmake .. -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/6.6.3/clang_64 -DCMAKE_BUILD_TYPE=Release
-          cmake --build . -j$(sysctl -n hw.ncpu)
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j$(sysctl -n hw.ncpu)
 
       - name: Bundle
         run: |
-          ${{ github.workspace }}/Qt/6.6.3/clang_64/bin/macdeployqt build/UIForger.app -dmg
+          macdeployqt build/UIForger.app -dmg
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -101,24 +97,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev libglib2.0-dev cmake g++
 
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
         with:
-          python-version: '3.11'
-
-      - name: Install Qt via aqtinstall
-        run: |
-          pip install aqtinstall==3.1.1
-          aqt install-qt linux desktop 6.6.3 gcc_64 -m qtsvg --outputdir ${{ github.workspace }}/Qt
+          version: ${{ env.QT_VERSION }}
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+          modules: 'qtsvg'
+          cache: true
 
       - name: Build
         run: |
-          mkdir build
-          cd build
-          cmake .. -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/6.6.3/gcc_64 -DCMAKE_BUILD_TYPE=Release
-          cmake --build . -j$(nproc)
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j$(nproc)
 
-      - name: Create tar.gz
+      - name: Package
         run: |
           cd build
           tar czf UIForger-Linux-x64.tar.gz UIForger
@@ -183,6 +177,8 @@ jobs:
             ### 🔧 Requisitos
             - Windows 10+, macOS 12+, Ubuntu 22.04+
             - Qt 6.2+ (para compilar desde código)
+
+            🤖 Generated with Codebuff
           files: |
             artifacts/**/*
           make_latest: true
