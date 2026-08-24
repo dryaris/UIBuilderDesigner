@@ -21,6 +21,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
@@ -28,8 +33,9 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
-          modules: 'qtsvg qt5compat'
+          modules: 'qtsvg'
           cache: true
+          setup-python: false
 
       - name: Build
         shell: cmd
@@ -61,6 +67,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
@@ -68,8 +79,9 @@ jobs:
           host: 'mac'
           target: 'desktop'
           arch: 'macos'
-          modules: 'qtsvg qt5compat'
+          modules: 'qtsvg'
           cache: true
+          setup-python: false
 
       - name: Build (arm64)
         run: |
@@ -122,6 +134,11 @@ jobs:
             libgl1-mesa-dev libglib2.0-dev \
             cmake g++ libfuse2
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
@@ -129,8 +146,9 @@ jobs:
           host: 'linux'
           target: 'desktop'
           arch: 'gcc_64'
-          modules: 'qtsvg qt5compat'
+          modules: 'qtsvg'
           cache: true
+          setup-python: false
 
       - name: Build
         run: |
