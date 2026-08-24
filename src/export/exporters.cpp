@@ -82,14 +82,16 @@ QString toUnity(const QList<Node>& nodes, const QString& projectName) {
 
 QString toUnreal(const QList<Node>& nodes, const QString& projectName) {
     QString result;
+    QString safeName = projectName;
+    safeName.replace(" ", "");
     result += "// " + projectName + " — UI Forger → Unreal UMG Widget Blueprint\n";
     result += "// Copy these into your UMG Widget Blueprint\n\n";
 
     result += "#pragma once\n#include \"CoreMinimal.h\"\n#include \"Blueprint/UserWidget.h\"\n";
-    result += "#include \"" + projectName.replace(" ", "") + "Widget.generated.h\"\n\n";
+    result += "#include \"" + safeName + "Widget.generated.h\"\n\n";
 
     result += "UCLASS()\n";
-    result += "class U" + projectName.replace(" ", "") + "Widget : public UUserWidget\n{\n    GENERATED_BODY()\n\nprotected:\n";
+    result += "class U" + safeName + "Widget : public UUserWidget\n{\n    GENERATED_BODY()\n\nprotected:\n";
 
     for (const auto& n : nodes) {
         if (n.hidden) continue;
