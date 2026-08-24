@@ -4,6 +4,7 @@
 
 > 🌐 **100% Web**: editor completo en el navegador — sin instalación, sin problemas de GPU  
 > 📱 **PWA**: funciona offline después de la primera visita  
+> 🖥️ **Desktop Qt/C++**: aplicación nativa para Windows, macOS y Linux — sin Chromium, sin dependencias de navegador  
 
 ---
 
@@ -95,12 +96,23 @@ Al ser una app web, el navegador maneja la GPU. No hay problemas de pantalla neg
 | **Componentes** | Definiciones en IR con variantes, props boolean/string, instancias con overrides |
 | **Tokens** | Colores, radios, espaciado, tipografía, sombras, easings — exportables como DTCG |
 
+### Desktop — Qt/C++ (alternativa nativa)
+
+| Tecnología | Versión | Uso |
+|---|---|---|
+| **C++** | 20 | Lenguaje del desktop |
+| **Qt** | 6.7 | Framework GUI (Widgets + OpenGL) |
+| **QGraphicsView** | Qt6 | Canvas 2D hardware-accelerado |
+| **CMake** | 3.20+ | Build system |
+| **QJsonDocument** | Qt6 | Persistencia `.canvas` JSON |
+| **QUndoStack** | Qt6 | Undo/Redo |
+
 ### Herramientas de desarrollo
 
 | Herramienta | Uso |
 |---|---|
 | **Git** | Control de versiones |
-| **GitHub** | Repositorio + Releases con artifacts (Windows .msi, macOS .dmg, Linux .deb/.AppImage) |
+| **GitHub** | Repositorio + Releases con artifacts (Windows .exe, macOS .dmg, Linux .AppImage) |
 | **GitHub Actions** | CI/CD: build automático por plataforma en cada tag |
 | **Bun** | Runtime JS + package manager |
 | **ESLint / TypeScript** | Type checking estricto (`tsc --noEmit`) |
@@ -111,6 +123,10 @@ Al ser una app web, el navegador maneja la GPU. No hay problemas de pantalla neg
 |---|---|---|
 | **Web** | HTML estático + PWA | GitHub Pages / cualquier hosting |
 | **ZIP** | `uiforger.zip` | Descarga para uso offline |
+| **Windows** | `UIForger-Windows-x64.zip` (`.exe`) | GitHub Releases |
+| **macOS** | `UIForger.dmg` (Universal Binary) | GitHub Releases |
+| **Linux** | `UIForger-x86_64.AppImage` | GitHub Releases |
+| **Qt Source** | `qt-ui-forger/` (C++20 + CMake) | Compilar desde código |
 
 ---
 

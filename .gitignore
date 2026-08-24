@@ -10,6 +10,14 @@ dist-ssr
 src-tauri/target
 src-tauri/gen/schemas
 
+# Qt / C++ build
+qt-ui-forger/build/
+qt-ui-forger/build-*/
+qt-ui-forger/AppDir/
+qt-ui-forger/*.AppImage
+qt-ui-forger/*.dmg
+qt-ui-forger/UIForger.app/
+
 # Editor / OS
 .DS_Store
 *.local
