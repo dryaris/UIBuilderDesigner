@@ -28,9 +28,6 @@ public:
 signals:
     void propertyChanged(const QString& nodeId, const QString& prop, const QVariant& value);
 
-private slots:
-    void onColorClicked();
-
 private:
     void buildUI();
     void populateFromNode();

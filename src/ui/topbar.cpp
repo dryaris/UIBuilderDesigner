@@ -133,3 +133,7 @@ void TopBar::buildUI() {
 void TopBar::setProjectName(const QString& name) {
     m_projectLabel->setText(name);
 }
+
+void TopBar::setZoom(float z) {
+    m_zoomLabel->setText(QString::number((int)(z * 100)) + "%");
+}

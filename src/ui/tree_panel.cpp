@@ -87,6 +87,18 @@ void TreePanel::setNodes(const QList<Node>& nodes, const QString& selectedId) {
     }
 }
 
+void TreePanel::filterNodes(const QString& query) {
+    for (int i = 0; i < m_tree->topLevelItemCount(); ++i) {
+        auto* item = m_tree->topLevelItem(i);
+        if (query.isEmpty()) {
+            item->setHidden(false);
+        } else {
+            bool match = item->text(0).contains(query, Qt::CaseInsensitive);
+            item->setHidden(!match);
+        }
+    }
+}
+
 void TreePanel::clear() {
     m_tree->clear();
 }

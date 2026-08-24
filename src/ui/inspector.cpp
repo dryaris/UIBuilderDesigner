@@ -88,7 +88,6 @@ void Inspector::buildUI() {
 
     m_bgColorBtn = new QPushButton("  Background");
     m_bgColorBtn->setStyleSheet("background: #1e2130; color: #e6e6f0; border: 1px solid #2a2d3e; border-radius: 4px; padding: 6px; text-align: left;");
-    connect(m_bgColorBtn, &QPushButton::clicked, this, &Inspector::onColorClicked);
     styleForm->addRow("BG Color:", m_bgColorBtn);
 
     m_accentColorBtn = new QPushButton("  Accent");
@@ -145,6 +144,13 @@ void Inspector::buildUI() {
 
     m_textColorBtn = new QPushButton("  Text Color");
     m_textColorBtn->setStyleSheet("background: #14161f; color: #e6e6f0; border: 1px solid #2a2d3e; border-radius: 4px; padding: 6px; text-align: left;");
+    connect(m_textColorBtn, &QPushButton::clicked, this, [this]() {
+        QColor color = QColorDialog::getColor(Qt::white, this, "Text Color");
+        if (color.isValid() && m_currentNode) {
+            m_textColorBtn->setStyleSheet(QString("background: %1; color: white; border-radius: 4px; padding: 6px;").arg(color.name()));
+            emit propertyChanged(QString::fromStdString(m_currentNode->id), "textColor", color.name());
+        }
+    });
     textForm->addRow("Color:", m_textColorBtn);
 
     m_layout->addWidget(textGroup);
@@ -161,6 +167,58 @@ void Inspector::buildUI() {
 
     m_layout->addWidget(condGroup);
     m_layout->addStretch();
+
+    // ── Connect all controls to emit propertyChanged ──
+    auto connectSpin = [this](QSpinBox* spin, const QString& prop) {
+        connect(spin, &QSpinBox::valueChanged, this, [this, prop](int val) {
+            if (m_currentNode) emit propertyChanged(QString::fromStdString(m_currentNode->id), prop, val);
+        });
+    };
+    connectSpin(m_xSpin, "x");
+    connectSpin(m_ySpin, "y");
+    connectSpin(m_widthSpin, "width");
+    connectSpin(m_heightSpin, "height");
+    connectSpin(m_borderWidthSpin, "borderWidth");
+    connectSpin(m_borderRadiusSpin, "borderRadius");
+    connectSpin(m_opacitySpin, "opacity");
+    connectSpin(m_fontSizeSpin, "fontSize");
+
+    connect(m_typeCombo, &QComboBox::currentTextChanged, this, [this](const QString& val) {
+        if (m_currentNode && m_typeCombo->isEnabled())
+            emit propertyChanged(QString::fromStdString(m_currentNode->id), "type", val);
+    });
+    connect(m_lockedCheck, &QCheckBox::toggled, this, [this](bool val) {
+        if (m_currentNode) emit propertyChanged(QString::fromStdString(m_currentNode->id), "locked", val);
+    });
+    connect(m_hiddenCheck, &QCheckBox::toggled, this, [this](bool val) {
+        if (m_currentNode) emit propertyChanged(QString::fromStdString(m_currentNode->id), "hidden", val);
+    });
+    connect(m_borderStyleCombo, &QComboBox::currentTextChanged, this, [this](const QString& val) {
+        if (m_currentNode) emit propertyChanged(QString::fromStdString(m_currentNode->id), "borderStyle", val);
+    });
+    connect(m_textAlignCombo, &QComboBox::currentTextChanged, this, [this](const QString& val) {
+        if (m_currentNode) emit propertyChanged(QString::fromStdString(m_currentNode->id), "textAlign", val);
+    });
+    connect(m_boldCheck, &QCheckBox::toggled, this, [this](bool val) {
+        if (m_currentNode) emit propertyChanged(QString::fromStdString(m_currentNode->id), "fontWeight", val ? "bold" : "normal");
+    });
+    connect(m_italicCheck, &QCheckBox::toggled, this, [this](bool val) {
+        if (m_currentNode) emit propertyChanged(QString::fromStdString(m_currentNode->id), "fontStyle", val ? "italic" : "normal");
+    });
+    connect(m_bgColorBtn, &QPushButton::clicked, this, [this]() {
+        QColor color = QColorDialog::getColor(Qt::white, this, "Background Color");
+        if (color.isValid() && m_currentNode) {
+            m_bgColorBtn->setStyleSheet(QString("background: %1; color: white; border-radius: 4px; padding: 6px;").arg(color.name()));
+            emit propertyChanged(QString::fromStdString(m_currentNode->id), "backgroundColor", color.name());
+        }
+    });
+    connect(m_accentColorBtn, &QPushButton::clicked, this, [this]() {
+        QColor color = QColorDialog::getColor(Qt::white, this, "Accent Color");
+        if (color.isValid() && m_currentNode) {
+            m_accentColorBtn->setStyleSheet(QString("background: %1; color: white; border-radius: 4px; padding: 6px;").arg(color.name()));
+            emit propertyChanged(QString::fromStdString(m_currentNode->id), "color", color.name());
+        }
+    });
 
     m_scroll->setWidget(m_content);
     mainLayout->addWidget(m_scroll);
@@ -218,11 +276,4 @@ void Inspector::populateFromNode() {
     m_textAlignCombo->setCurrentText(QString::fromStdString(n.style.textAlign.empty() ? "left" : n.style.textAlign));
 }
 
-void Inspector::onColorClicked() {
-    QColor color = QColorDialog::getColor(Qt::white, this, "Choose Color");
-    if (color.isValid()) {
-        sender() == m_bgColorBtn
-            ? m_bgColorBtn->setStyleSheet(QString("background: %1; color: white; border-radius: 4px; padding: 6px;").arg(color.name()))
-            : m_accentColorBtn->setStyleSheet(QString("background: %1; color: white; border-radius: 4px; padding: 6px;").arg(color.name()));
-    }
-}
+

@@ -5,6 +5,7 @@
 #include <QSplitter>
 #include <QUndoStack>
 #include <QTimer>
+#include <QSet>
 
 class CanvasView;
 class Inspector;
@@ -12,6 +13,7 @@ class TopBar;
 class TreePanel;
 class MiniMap;
 class SceneStore;
+struct Node;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -30,10 +32,16 @@ private slots:
     void onAddNode();
     void onDeleteNode();
     void onDuplicateNode();
+    void onDuplicateNodeById(const QString& nodeId);
+    void onDeleteNodeById(const QString& nodeId);
+    void onCopyStyle(const QString& nodeId);
+    void onPasteStyle(const QString& nodeId);
     void onNodeSelected(const QString& nodeId);
+    void onMultiSelectionChanged(const QSet<QString>& nodeIds);
     void onNodeMoved(const QString& nodeId, const QPointF& pos);
     void onSearchNodes(const QString& query);
     void onToggleGrid();
+    void onToggleSnap();
     void onToggleMiniMap();
     void onHelp();
     void updateUI();
@@ -51,4 +59,9 @@ private:
     MiniMap* m_miniMap;
     SceneStore* m_store;
     QTimer* m_autosaveTimer;
+
+    // Copy/paste style
+    Node m_copiedStyle;
+    bool m_hasCopiedStyle = false;
+    QSet<QString> m_multiSelectedIds;
 };

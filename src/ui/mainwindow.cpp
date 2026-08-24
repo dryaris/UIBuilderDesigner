@@ -66,6 +66,8 @@ void MainWindow::setupUI() {
     connect(m_topBar, &TopBar::toggleGrid, this, &MainWindow::onToggleGrid);
     connect(m_topBar, &TopBar::toggleMiniMap, this, &MainWindow::onToggleMiniMap);
     connect(m_topBar, &TopBar::helpClicked, this, &MainWindow::onHelp);
+    connect(m_topBar, &TopBar::undo, m_store->undoStack(), &QUndoStack::undo);
+    connect(m_topBar, &TopBar::redo, m_store->undoStack(), &QUndoStack::redo);
     mainLayout->addWidget(m_topBar);
 
     // Content area
@@ -85,7 +87,12 @@ void MainWindow::setupUI() {
 
     m_canvas = new CanvasView;
     connect(m_canvas, &CanvasView::nodeSelected, this, &MainWindow::onNodeSelected);
+    connect(m_canvas, &CanvasView::selectionChanged, this, &MainWindow::onMultiSelectionChanged);
     connect(m_canvas, &CanvasView::nodeMoved, this, &MainWindow::onNodeMoved);
+    connect(m_canvas, &CanvasView::duplicateRequested, this, &MainWindow::onDuplicateNodeById);
+    connect(m_canvas, &CanvasView::deleteRequested, this, &MainWindow::onDeleteNodeById);
+    connect(m_canvas, &CanvasView::copyStyleRequested, this, &MainWindow::onCopyStyle);
+    connect(m_canvas, &CanvasView::pasteStyleRequested, this, &MainWindow::onPasteStyle);
     canvasLayout->addWidget(m_canvas);
 
     content->addWidget(canvasArea);
@@ -121,7 +128,33 @@ void MainWindow::setupUI() {
         setWindowTitle(name + " — UI Forger");
     });
     connect(m_store, &SceneStore::zoomChanged, this, [this](float z) {
+        m_topBar->setZoom(z);
         statusBar()->showMessage(QString("Zoom: %1%").arg((int)(z * 100)), 2000);
+    });
+
+    // Inspector property changes -> update store
+    connect(m_inspector, &Inspector::propertyChanged, this, [this](const QString& nodeId, const QString& prop, const QVariant& value) {
+        m_store->updateNode(nodeId, [&](Node& n) {
+            if (prop == "label") n.label = value.toString().toStdString();
+            else if (prop == "type") n.type = value.toString().toStdString();
+            else if (prop == "x") n.x = value.toFloat();
+            else if (prop == "y") n.y = value.toFloat();
+            else if (prop == "width") n.width = value.toFloat();
+            else if (prop == "height") n.height = value.toFloat();
+            else if (prop == "backgroundColor") n.style.backgroundColor = value.toString().toStdString();
+            else if (prop == "color") n.style.color = value.toString().toStdString();
+            else if (prop == "borderStyle") n.style.borderStyle = value.toString().toStdString();
+            else if (prop == "borderWidth") n.style.borderWidth = value.toInt();
+            else if (prop == "borderRadius") n.style.borderRadius = value.toInt();
+            else if (prop == "opacity") n.style.opacity = value.toFloat() / 100.0f;
+            else if (prop == "fontSize") n.style.fontSize = value.toInt();
+            else if (prop == "fontWeight") n.style.fontWeight = value.toString().toStdString();
+            else if (prop == "fontStyle") n.style.fontStyle = value.toString().toStdString();
+            else if (prop == "textAlign") n.style.textAlign = value.toString().toStdString();
+            else if (prop == "textColor") n.style.textColor = value.toString().toStdString();
+            else if (prop == "locked") n.locked = value.toBool();
+            else if (prop == "hidden") n.hidden = value.toBool();
+        });
     });
 }
 
@@ -148,6 +181,13 @@ void MainWindow::setupMenus() {
     viewMenu->addAction("&Zoom In", this, [this]() { m_store->setZoom(m_store->zoom() * 1.2f); }, QKeySequence::ZoomIn);
     viewMenu->addAction("Zoom &Out", this, [this]() { m_store->setZoom(m_store->zoom() / 1.2f); }, QKeySequence::ZoomOut);
     viewMenu->addAction("&Reset Zoom", this, [this]() { m_store->setZoom(1.0f); }, QKeySequence("Ctrl+0"));
+    viewMenu->addSeparator();
+    auto* snapAction = viewMenu->addAction("Snap to &Grid", this, &MainWindow::onToggleSnap);
+    snapAction->setCheckable(true);
+    snapAction->setChecked(true);
+    auto* gridAction = viewMenu->addAction("Show &Grid Lines", this, &MainWindow::onToggleGrid);
+    gridAction->setCheckable(true);
+    gridAction->setChecked(true);
 
     menuBar()->setStyleSheet("QMenuBar { background: #1a1d2e; color: #e6e6f0; border-bottom: 1px solid #2a2d3e; }"
                              "QMenuBar::item:selected { background: #2a2d3e; }"
@@ -365,8 +405,42 @@ void MainWindow::onDuplicateNode() {
     if (!id.isEmpty()) m_store->duplicateNode(id);
 }
 
+void MainWindow::onDuplicateNodeById(const QString& nodeId) {
+    m_store->duplicateNode(nodeId);
+}
+
+void MainWindow::onDeleteNodeById(const QString& nodeId) {
+    m_store->removeNode(nodeId);
+}
+
+void MainWindow::onCopyStyle(const QString& nodeId) {
+    for (const auto& n : m_store->nodes()) {
+        if (n.id == nodeId.toStdString()) {
+            m_copiedStyle = n;
+            m_hasCopiedStyle = true;
+            statusBar()->showMessage("Style copied", 2000);
+            return;
+        }
+    }
+}
+
+void MainWindow::onPasteStyle(const QString& nodeId) {
+    if (!m_hasCopiedStyle) return;
+    m_store->updateNode(nodeId, [this](Node& n) {
+        n.style = m_copiedStyle.style;
+    });
+    statusBar()->showMessage("Style pasted", 2000);
+}
+
 void MainWindow::onNodeSelected(const QString& nodeId) {
     m_store->selectNode(nodeId);
+}
+
+void MainWindow::onMultiSelectionChanged(const QSet<QString>& nodeIds) {
+    m_multiSelectedIds = nodeIds;
+    if (!nodeIds.isEmpty()) {
+        m_store->selectNode(*nodeIds.constBegin());
+    }
 }
 
 void MainWindow::onNodeMoved(const QString& nodeId, const QPointF& pos) {
@@ -374,13 +448,18 @@ void MainWindow::onNodeMoved(const QString& nodeId, const QPointF& pos) {
 }
 
 void MainWindow::onSearchNodes(const QString& query) {
-    // Highlight matching nodes in the tree
+    m_treePanel->filterNodes(query);
     statusBar()->showMessage(query.isEmpty() ? "Ready" : "Filter: " + query, 5000);
 }
 
 void MainWindow::onToggleGrid() {
     m_store->toggleGrid();
     statusBar()->showMessage(m_store->showGrid() ? "Grid ON" : "Grid OFF", 2000);
+}
+
+void MainWindow::onToggleSnap() {
+    m_canvas->setSnapEnabled(!m_canvas->snapEnabled());
+    statusBar()->showMessage(m_canvas->snapEnabled() ? "Snap ON" : "Snap OFF", 2000);
 }
 
 void MainWindow::onToggleMiniMap() {

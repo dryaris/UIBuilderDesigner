@@ -9,6 +9,7 @@
 #include <QGraphicsDropShadowEffect>
 #include <QCursor>
 #include <QFontMetrics>
+#include <QtMath>
 
 NodeItem::NodeItem(const Node& node, QGraphicsItem* parent)
     : QGraphicsObject(parent)
@@ -27,6 +28,16 @@ NodeItem::NodeItem(const Node& node, QGraphicsItem* parent)
     shadow->setColor(QColor(0, 0, 0, 80));
     shadow->setOffset(0, 2);
     setGraphicsEffect(shadow);
+}
+
+QPointF NodeItem::snapToGrid(const QPointF& pos) const {
+    if (!m_snapEnabled) return pos;
+    float gx = m_gridSize;
+    float gy = m_gridSize;
+    return QPointF(
+        qRound(pos.x() / gx) * gx,
+        qRound(pos.y() / gy) * gy
+    );
 }
 
 QRectF NodeItem::boundingRect() const {
@@ -106,7 +117,12 @@ void NodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
 
 QVariant NodeItem::itemChange(GraphicsItemChange change, const QVariant& value) {
     if (change == ItemPositionHasChanged) {
-        emit positionChanged(QString::fromStdString(m_node.id), pos());
+        // Apply snap-to-grid
+        QPointF newPos = snapToGrid(pos());
+        if (newPos != pos()) {
+            setPos(newPos);
+        }
+        emit positionChanged(QString::fromStdString(m_node.id), newPos);
     }
     return QGraphicsObject::itemChange(change, value);
 }

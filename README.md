@@ -33,12 +33,22 @@
 | Plataforma | Formato |
 |---|---|
 | **Windows** | `UIForger-Windows-x64.zip` (`.exe` portátil) |
-| **macOS** | `UIForger.dmg` (Universal Binary ARM + x64) |
-| **Linux** | `UIForger-x86_64.AppImage` (portátil, sin instalación) |
+| **macOS** | `UIForger-macOS.dmg` (Intel) |
+| **Linux** | `UIForger-Linux-x64.tar.gz` (portátil, sin instalación) |
 
 ---
 
-## Compilar
+## Instalación rápida
+
+**Windows:** Descarga `UIForger-Windows-x64.zip`, descomprime y ejecuta `UIForger.exe`
+
+**macOS:** Descarga `UIForger-macOS.dmg`, abre y arrastra a Applications
+
+**Linux:** Descarga `UIForger-Linux-x64.tar.gz`, descomprime y ejecuta `./UIForger`
+
+---
+
+## Compilar desde código
 
 ### Linux / macOS
 ```bash
@@ -79,11 +89,16 @@ open build/UIForger.app
 | **Seleccionar nodo** | `Click izquierdo` |
 | **Mover nodo** | `Drag` sobre nodo seleccionado |
 | **Deseleccionar** | `Click en vacío` |
-| **Multiselección** | `Ctrl + click` o `marquee` |
+| **Multiselección** | `Ctrl + click` o `Ctrl + drag` (marquee) |
+| **Nudge 1px** | `Flechas` |
+| **Nudge 10px** | `Shift + Flechas` |
 | **Deshacer/Rehacer** | `Ctrl+Z` / `Ctrl+Shift+Z` |
 | **Guardar** | `Ctrl+S` |
-| **Duplicar** | `Ctrl+D` |
-| **Eliminar** | `Supr` |
+| **Duplicar** | `Ctrl+D` o click derecho → Duplicate |
+| **Eliminar** | `Supr` o click derecho → Delete |
+| **Zoom in/out** | `Ctrl++` / `Ctrl+-` |
+| **Reset zoom** | `Ctrl+0` |
+| **Menú contextual** | `Click derecho` en nodo o canvas vacío |
 
 ---
 
@@ -91,46 +106,67 @@ open build/UIForger.app
 
 ### Canvas
 - **QGraphicsView** con zoom (scroll wheel), pan (right-click drag / space+drag / middle-click drag)
-- Cuadrícula configurable con snap
-- Mini-map de navegación
+- Cuadrícula configurable con **snap a 10px** (toggle desde menú View o botón Grid)
+- **Multiselección** por Ctrl+click y rubber band marquee (Ctrl+drag)
+- **Nudge** con flechas: 1px default, Shift+Flechas = 10px
+- Mini-map de navegación en tiempo real
 - Reglas y guías arrastrables
-- Modo outline (wireframe)
+
+### Menú contextual (click derecho)
+- **Duplicate** — Duplica el nodo seleccionado
+- **Delete** — Elimina el nodo seleccionado
+- **Copy Style** — Copia el estilo (colores, tipografía, border, opacidad)
+- **Paste Style** — Pega el estilo copiado a otro nodo
+- **Select All** — Selecciona todos los nodos del canvas
 
 ### Nodos
-- Tipos: rectángulo, elipse, texto, imagen, frame, línea, botón, barra de progreso, tooltip, ícono
+- Tipos: container, button, label, title, image, slider, progressBar, healthBar, staminaBar, tooltip, miniMap, panel, text, icon, checkbox, input, dropdown, avatar, badge, divider, spacer, scrollArea, tabBar, dialog, toast, inventory, statDisplay, radarChart, damagePopup, abilitySlot, cooldownIndicator, compass, chatBox, leaderboard, radialMenu
 - Renderizado con gradientes, accent bars, badges, sombras, highlight de selección
-- Resize con 8 handles
-- Drag & drop con snapping
+- Drag & drop con **snap a grid** (enteros, sin medios píxeles)
+- **Arrow key nudge** (1px / 10px con Shift)
 
-### Inspector
-- Editar: tipo, label, posición, tamaño, colores (fill/stroke/accent), border, sombra, fuente, opacidad
-- Auto-layout visual: dirección, espaciado, padding, alineación
+### Inspector (panel derecho)
+- **Edición en tiempo real**: cada cambio se refleja instantáneamente en el canvas
+- Propiedades: tipo, label, posición (X, Y), tamaño (Width, Height)
+- Estilo: BG Color, Accent Color, Border, Radius, Fill, Opacity, Shadow
+- Tipografía: Font family, Size, Bold, Italic, Alignment, Text Color
+- Propiedades: Locked, Hidden
+- **Copy/Paste Style**: copia y pega estilos entre nodos
+- Condiciones de visibilidad
 
-### Árbol de capas
+### Árbol de capas (panel izquierdo)
 - Lista jerárquica con iconos por tipo
-- Filtro de búsqueda
+- **Filtro de búsqueda** en tiempo real
 - Agregar/eliminar nodos
+- Indicadores de estado: 🔒 locked, 👁‍🗨 hidden
 
 ### TopBar
-- Archivo: Nuevo, Abrir, Guardar, Guardar como
+- Archivo: Nuevo, Abrir, Guardar
 - Edición: Deshacer, Rehacer
-- Herramientas: Grid, Mini-map
-- Exportar: HTML, PNG, Unity, Unreal, Godot
-- Zoom: 25%-800%, Zoom to fit
+- Herramientas: Grid toggle, Mini-map toggle
+- **Exportar**: HTML, PNG, Unity, Unreal, Godot
+- **Zoom**: controles −/+, indicador de porcentaje, reset
+- **Búsqueda** de nodos
+- Botón de ayuda
+
+### Menú
+- **File**: New, Open, Save, Export HTML/PNG, Exit
+- **Edit**: Undo, Redo, Add Node, Delete Node, Duplicate
+- **View**: Zoom In/Out/Reset, **Snap to Grid** (toggle), **Show Grid Lines** (toggle)
 
 ### Persistencia
 - Guardar/cargar archivos `.canvas` (JSON)
 - Autosave cada 30 segundos
-- Demo RPG HUD pre-cargado
+- Demo RPG HUD pre-cargado al iniciar
 
 ### Exportación
-| Destino | Formato |
-|---|---|
-| **Web** | HTML autocontenido + CSS custom properties |
-| **PNG** | Captura del canvas como imagen |
-| **Unity** | UXML + USS (UI Toolkit) |
-| **Unreal** | manifest.json + Blueprint guide |
-| **Godot** | .tscn + .theme + anchors |
+| Destino | Formato | Detalle |
+|---|---|---|
+| **Web** | HTML autocontenido | CSS custom properties, accent bars, badges |
+| **PNG** | Imagen 1920×1080 | Renderizado con gradientes y tipografía |
+| **Unity** | UXML | UI Toolkit compatible |
+| **Unreal** | C++ Header | UPROPERTY BindWidget macros |
+| **Godot** | .tscn | Control nodes con anchors |
 
 ---
 
@@ -146,25 +182,64 @@ src/
 │   ├── scene_store.cpp         # Emite señales cuando el estado cambia
 │   └── persistence.h/.cpp      # Guardar/cargar .canvas JSON
 ├── canvas/
-│   ├── canvas_view.h           # QGraphicsView: zoom, pan, drag
-│   ├── canvas_view.cpp         # Implementación del canvas
-│   ├── node_item.h             # QGraphicsObject: paint, selection, shadow
-│   ├── node_item.cpp           # Renderizado de cada nodo
+│   ├── canvas_view.h           # QGraphicsView: zoom, pan, drag, multi-select, marquee, context menu
+│   ├── canvas_view.cpp         # Implementación del canvas con snap y rubber band
+│   ├── node_item.h             # QGraphicsObject: paint, selection, shadow, snap-to-grid
+│   ├── node_item.cpp           # Renderizado de cada nodo con snap durante drag
 │   ├── mini_map.h              # Overview minimap
 │   └── mini_map.cpp            # Implementación del minimap
 ├── ui/
-│   ├── mainwindow.h            # Ventana principal (wires todo)
-│   ├── mainwindow.cpp          # Layout: toolbar + tree + canvas + inspector
-│   ├── topbar.h                # Toolbar (file, edit, export, zoom)
-│   ├── topbar.cpp              # Implementación del toolbar
-│   ├── inspector.h             # Editor de propiedades
-│   ├── inspector.cpp           # Formulario dinámico por tipo de nodo
-│   ├── tree_panel.h            # Panel de capas
+│   ├── mainwindow.h            # Ventana principal (wires todo, copy/paste style)
+│   ├── mainwindow.cpp          # Layout + signal wiring completo
+│   ├── topbar.h                # Toolbar (file, edit, export, zoom, search)
+│   ├── topbar.cpp              # Implementación del toolbar con indicador de zoom
+│   ├── inspector.h             # Editor de propiedades (signal propertyChanged)
+│   ├── inspector.cpp           # Formulario dinámico con conexión directa al store
+│   ├── tree_panel.h            # Panel de capas con filtro
 │   └── tree_panel.cpp          # Lista con iconos, filtro, add/delete
 └── export/
     ├── exporters.h             # Generadores: HTML, PNG, Unity, Unreal, Godot
     └── exporters.cpp           # Implementación de exportadores
 ```
+
+---
+
+## Changelog
+
+### v1.1.0 (2026-08-24)
+
+**Canvas & Selección**
+- Multiselección por Ctrl+click y rubber band marquee (Ctrl+drag)
+- Nudge con flechas: 1px default, Shift+Flechas = 10px
+- Menú contextual (click derecho): Duplicate, Delete, Copy/Paste Style, Select All
+- Snap a grid de 10px durante drag (enteros, sin medios píxeles)
+- Toggle snap desde menú View
+
+**Inspector**
+- Edición en tiempo real: todos los cambios se reflejan instantáneamente
+- Conexión completa: spinboxes, combos, checkboxes, color buttons → store → canvas
+- Copy/Paste Style entre nodos
+
+**TopBar**
+- Indicador de zoom con porcentaje actual
+- Búsqueda de nodos en tiempo real con filtro
+- Undo/Redo conectados al QUndoStack
+
+**Árbol de capas**
+- Filtro de búsqueda en tiempo real
+
+### v1.0.0-qt
+- Migración completa de web (React/TypeScript) a Qt/C++ desktop
+- Canvas QGraphicsView con zoom/pan/drag
+- Inspector de propiedades
+- Panel de capas con iconos
+- MiniMap en tiempo real
+- Guardar/cargar proyectos .canvas (JSON)
+- Exportar: HTML, PNG, Unity, Unreal, Godot
+- Dark theme nativo Fusion
+- Autosave cada 30 segundos
+- Demo RPG HUD pre-cargado
+- CI cross-platform: Windows (MSVC), macOS (clang), Linux (GCC)
 
 ---
 

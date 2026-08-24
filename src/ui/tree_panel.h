@@ -15,6 +15,7 @@ public:
     explicit TreePanel(QWidget* parent = nullptr);
 
     void setNodes(const QList<Node>& nodes, const QString& selectedId);
+    void filterNodes(const QString& query);
     void clear();
 
 signals:

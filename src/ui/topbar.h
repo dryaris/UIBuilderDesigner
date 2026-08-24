@@ -13,6 +13,7 @@ public:
     explicit TopBar(QWidget* parent = nullptr);
 
     void setProjectName(const QString& name);
+    void setZoom(float z);
 
 signals:
     void newProject();

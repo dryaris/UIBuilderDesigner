@@ -17,6 +17,10 @@ public:
     const Node& node() const { return m_node; }
     void setNode(const Node& n) { prepareGeometryChange(); m_node = n; update(); }
 
+    void setSnapEnabled(bool enabled) { m_snapEnabled = enabled; }
+    bool snapEnabled() const { return m_snapEnabled; }
+    void setGridSize(int size) { m_gridSize = size; }
+
 signals:
     void positionChanged(const QString& nodeId, const QPointF& newPos);
 
@@ -26,5 +30,9 @@ protected:
     void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
 
 private:
+    QPointF snapToGrid(const QPointF& pos) const;
+
     Node m_node;
+    bool m_snapEnabled = true;
+    int m_gridSize = 10;
 };

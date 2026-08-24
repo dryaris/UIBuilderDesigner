@@ -7,6 +7,8 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QGraphicsSceneHoverEvent>
+#include <QContextMenuEvent>
+#include <QGraphicsRectItem>
 #include <QtMath>
 
 CanvasView::CanvasView(QWidget* parent)
@@ -53,6 +55,7 @@ void CanvasView::rebuildScene() {
         delete item;
     }
     m_nodeItems.clear();
+    m_selectedIds.clear();
 
     // Create new items
     for (const auto& node : m_nodes) {
@@ -64,8 +67,17 @@ void CanvasView::rebuildScene() {
     }
 }
 
+QPointF CanvasView::snapToGrid(const QPointF& pos) const {
+    if (!m_snapEnabled) return pos;
+    float gx = m_gridSize;
+    float gy = m_gridSize;
+    return QPointF(
+        qRound(pos.x() / gx) * gx,
+        qRound(pos.y() / gy) * gy
+    );
+}
+
 void CanvasView::wheelEvent(QWheelEvent* event) {
-    // Zoom with scroll wheel
     const double factor = 1.15;
     if (event->angleDelta().y() > 0) {
         setZoom(m_zoom * factor);
@@ -76,9 +88,25 @@ void CanvasView::wheelEvent(QWheelEvent* event) {
 }
 
 void CanvasView::mousePressEvent(QMouseEvent* event) {
+    // Rubber band / marquee selection with Ctrl+Left
+    if (event->button() == Qt::LeftButton && m_ctrlHeld) {
+        m_rubberBandActive = true;
+        m_rubberBandOrigin = mapToScene(event->pos());
+        if (!m_rubberBand) {
+            m_rubberBand = new QGraphicsRectItem;
+            m_rubberBand->setPen(QPen(QColor(99, 102, 241, 120), 1, Qt::DashLine));
+            m_rubberBand->setBrush(QColor(99, 102, 241, 25));
+            m_rubberBand->setZValue(9999);
+            m_scene->addItem(m_rubberBand);
+        }
+        m_rubberBand->setRect(QRectF(m_rubberBandOrigin, m_rubberBandOrigin));
+        m_rubberBand->setVisible(true);
+        event->accept();
+        return;
+    }
+
     if (event->button() == Qt::MiddleButton ||
         (event->button() == Qt::RightButton && !m_spaceHeld)) {
-        // Middle-click or right-click to pan
         m_panning = true;
         m_panStart = event->pos();
         setCursor(Qt::ClosedHandCursor);
@@ -87,7 +115,6 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
     }
 
     if (event->button() == Qt::LeftButton && m_spaceHeld) {
-        // Space + left-click to pan
         m_panning = true;
         m_panStart = event->pos();
         setCursor(Qt::ClosedHandCursor);
@@ -98,9 +125,40 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         QGraphicsItem* item = itemAt(event->pos());
         if (auto* nodeItem = qgraphicsitem_cast<NodeItem*>(item)) {
-            emit nodeSelected(nodeItem->nodeId());
-            setDragMode(QGraphicsView::NoDrag);
+            QString id = nodeItem->nodeId();
+            if (m_ctrlHeld) {
+                // Toggle selection
+                if (m_selectedIds.contains(id)) {
+                    m_selectedIds.remove(id);
+                    nodeItem->setSelected(false);
+                } else {
+                    m_selectedIds.insert(id);
+                    nodeItem->setSelected(true);
+                }
+            } else {
+                // Single selection
+                if (!m_selectedIds.contains(id)) {
+                    for (const auto& selId : m_selectedIds) {
+                        if (auto* si = m_nodeItems.value(selId, nullptr))
+                            si->setSelected(false);
+                    }
+                    m_selectedIds.clear();
+                    m_selectedIds.insert(id);
+                    nodeItem->setSelected(true);
+                }
+            }
+            emit selectionChanged(m_selectedIds);
+            emit nodeSelected(id);
         } else {
+            // Click on empty area
+            if (!m_ctrlHeld) {
+                for (const auto& selId : m_selectedIds) {
+                    if (auto* si = m_nodeItems.value(selId, nullptr))
+                        si->setSelected(false);
+                }
+                m_selectedIds.clear();
+                emit selectionChanged(m_selectedIds);
+            }
             emit sceneClicked();
         }
     }
@@ -109,6 +167,14 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
 }
 
 void CanvasView::mouseMoveEvent(QMouseEvent* event) {
+    if (m_rubberBandActive) {
+        QPointF current = mapToScene(event->pos());
+        QRectF rect(m_rubberBandOrigin, current).normalized();
+        if (m_rubberBand) m_rubberBand->setRect(rect);
+        event->accept();
+        return;
+    }
+
     if (m_panning) {
         QPointF delta = event->pos() - m_panStart;
         m_panStart = event->pos();
@@ -122,6 +188,17 @@ void CanvasView::mouseMoveEvent(QMouseEvent* event) {
 }
 
 void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
+    if (m_rubberBandActive) {
+        m_rubberBandActive = false;
+        if (m_rubberBand) {
+            QRectF rect = m_rubberBand->rect();
+            m_rubberBand->setVisible(false);
+            selectNodesInRect(rect, m_ctrlHeld);
+        }
+        event->accept();
+        return;
+    }
+
     if (m_panning) {
         m_panning = false;
         setCursor(Qt::ArrowCursor);
@@ -132,12 +209,104 @@ void CanvasView::mouseReleaseEvent(QMouseEvent* event) {
     QGraphicsView::mouseReleaseEvent(event);
 }
 
+void CanvasView::selectNodesInRect(const QRectF& rect, bool toggle) {
+    if (!toggle) {
+        for (const auto& id : m_selectedIds) {
+            if (auto* si = m_nodeItems.value(id, nullptr))
+                si->setSelected(false);
+        }
+        m_selectedIds.clear();
+    }
+
+    for (auto it = m_nodeItems.constBegin(); it != m_nodeItems.constEnd(); ++it) {
+        if (it.value()->boundingRect().translated(it.value()->pos()).intersects(rect)) {
+            it.value()->setSelected(true);
+            m_selectedIds.insert(it.key());
+        }
+    }
+
+    emit selectionChanged(m_selectedIds);
+    if (!m_selectedIds.isEmpty()) {
+        emit nodeSelected(*m_selectedIds.constBegin());
+    }
+}
+
+void CanvasView::contextMenuEvent(QContextMenuEvent* event) {
+    QGraphicsItem* item = itemAt(event->pos());
+    auto* nodeItem = qgraphicsitem_cast<NodeItem*>(item);
+
+    QMenu menu(this);
+    menu.setStyleSheet(
+        "QMenu { background: #1a1d2e; color: #e6e6f0; border: 1px solid #2a2d3e; padding: 4px; }"
+        "QMenu::item:selected { background: #2a3d5e; }"
+    );
+
+    if (nodeItem) {
+        QString id = nodeItem->nodeId();
+        menu.addAction("Duplicate", this, [this, id]() { emit duplicateRequested(id); });
+        menu.addAction("Delete", this, [this, id]() { emit deleteRequested(id); });
+        menu.addSeparator();
+        menu.addAction("Copy Style", this, [this, id]() { emit copyStyleRequested(id); });
+        menu.addAction("Paste Style", this, [this, id]() { emit pasteStyleRequested(id); });
+        menu.addSeparator();
+        menu.addAction("Select All", this, [this]() {
+            for (auto it = m_nodeItems.constBegin(); it != m_nodeItems.constEnd(); ++it) {
+                it.value()->setSelected(true);
+                m_selectedIds.insert(it.key());
+            }
+            emit selectionChanged(m_selectedIds);
+        });
+    } else {
+        menu.addAction("Select All", this, [this]() {
+            for (auto it = m_nodeItems.constBegin(); it != m_nodeItems.constEnd(); ++it) {
+                it.value()->setSelected(true);
+                m_selectedIds.insert(it.key());
+            }
+            emit selectionChanged(m_selectedIds);
+        });
+        menu.addSeparator();
+        menu.addAction("Paste", this, [this]() {
+            // TODO: clipboard paste
+        });
+    }
+
+    menu.exec(event->globalPos());
+}
+
 void CanvasView::keyPressEvent(QKeyEvent* event) {
     if (event->key() == Qt::Key_Space && !event->isAutoRepeat()) {
         m_spaceHeld = true;
         setCursor(Qt::OpenHandCursor);
         event->accept();
         return;
+    }
+
+    if (event->key() == Qt::Key_Control) {
+        m_ctrlHeld = true;
+    }
+
+    // Arrow key nudge
+    if (!m_selectedIds.isEmpty()) {
+        int dx = 0, dy = 0;
+        int step = (event->modifiers() & Qt::ShiftModifier) ? 10 : 1;
+        switch (event->key()) {
+            case Qt::Key_Left:  dx = -step; break;
+            case Qt::Key_Right: dx = step;  break;
+            case Qt::Key_Up:    dy = -step; break;
+            case Qt::Key_Down:  dy = step;  break;
+            default: break;
+        }
+        if (dx != 0 || dy != 0) {
+            for (const auto& id : m_selectedIds) {
+                if (auto* item = m_nodeItems.value(id, nullptr)) {
+                    QPointF newPos = snapToGrid(item->pos() + QPointF(dx, dy));
+                    item->setPos(newPos);
+                    emit nodeMoved(id, newPos);
+                }
+            }
+            event->accept();
+            return;
+        }
     }
 
     // Zoom shortcuts
@@ -168,6 +337,9 @@ void CanvasView::keyReleaseEvent(QKeyEvent* event) {
         setCursor(Qt::ArrowCursor);
         event->accept();
         return;
+    }
+    if (event->key() == Qt::Key_Control) {
+        m_ctrlHeld = false;
     }
     QGraphicsView::keyReleaseEvent(event);
 }

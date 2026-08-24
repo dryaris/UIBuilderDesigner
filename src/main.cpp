@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 
     // App metadata
     app.setApplicationName("UI Forger");
-    app.setApplicationVersion("1.0.0");
+    app.setApplicationVersion("1.1.0");
     app.setOrganizationName("UI Forger");
 
     MainWindow window;
