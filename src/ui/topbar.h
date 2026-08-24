@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QLineEdit>
 #include <QComboBox>
+#include <QMenu>
 
 class TopBar : public QWidget {
     Q_OBJECT

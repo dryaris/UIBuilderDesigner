@@ -3,7 +3,9 @@
 #include <QTreeWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLineEdit>
+#include <QLabel>
 
 struct Node;
 

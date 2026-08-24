@@ -39,7 +39,7 @@ void Inspector::buildUI() {
     m_labelEdit = new QLineEdit;
     m_labelEdit->setStyleSheet("background: #14161f; color: #e6e6f0; border: 1px solid #2a2d3e; border-radius: 4px; padding: 4px;");
     connect(m_labelEdit, &QLineEdit::editingFinished, this, [this]() {
-        if (m_currentNode) emit propertyChanged(m_currentNode->id, "label", m_labelEdit->text());
+        if (m_currentNode) emit propertyChanged(QString::fromStdString(m_currentNode->id), "label", m_labelEdit->text());
     });
     nodeForm->addRow("Label:", m_labelEdit);
 

@@ -1,5 +1,7 @@
 #pragma once
 #include <QMainWindow>
+#include <QMenuBar>
+#include <QMenu>
 #include <QSplitter>
 #include <QUndoStack>
 #include <QTimer>
