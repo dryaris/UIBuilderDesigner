@@ -1,0 +1,121 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtsvg'
+
+      - name: Build
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}/../.."
+          cmake --build build --config Release -j
+
+      - name: Package
+        run: |
+          mkdir staging
+          copy build\Release\UIForger.exe staging\
+          # Copy Qt DLLs
+          windeployqt --release --no-translations --no-opengl-sw staging\UIForger.exe
+          Compress-Archive -Path staging\* -DestinationPath UIForger-Windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: UIForger-Windows-x64.zip
+
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev libqt6svg6-dev libgl1-mesa-dev libfontconfig1-dev libfreetype-dev
+
+      - name: Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/cmake
+          cmake --build build -j$(nproc)
+
+      - name: Package
+        run: |
+          mkdir -p staging
+          cp build/UIForger staging/
+          tar czf UIForger-Linux-x64.tar.gz -C staging .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: UIForger-Linux-x64.tar.gz
+
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.3'
+          host: 'mac'
+          target: 'desktop'
+          arch: 'macos'
+          modules: 'qtsvg'
+
+      - name: Build
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="arm64" \
+            -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}/../../macos"
+          cmake --build build -j$(sysctl -n hw.ncpu)
+
+      - name: Package
+        run: |
+          mkdir -p staging
+          cp build/UIForger staging/
+          hdiutil create -volname "UI Forger" -srcfolder staging -ov -format UDZO UIForger-macOS-arm64.dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: UIForger-macOS-arm64.dmg
+
+  release:
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: UI Forger ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            windows/UIForger-Windows-x64.zip
+            linux/UIForger-Linux-x64.tar.gz
+            macos/UIForger-macOS-arm64.dmg
