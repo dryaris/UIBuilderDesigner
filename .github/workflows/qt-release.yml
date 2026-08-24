@@ -1,11 +1,15 @@
 name: Build Qt Desktop App
 
+# Manual trigger only — Qt CI is complex and depends on runner state.
+# Tag pushes still create a web-only release via the other workflow.
+
 on:
-  push:
-    tags:
-      - "v*-qt"
-      - "v*-desktop"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0-qt)'
+        required: true
+        default: 'v1.0.0-qt'
 
 permissions:
   contents: write
@@ -18,30 +22,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Qt (official)
-        uses: jurplel/install-qt-action@v4
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
         with:
-          version: '6.6.3'
-          host: 'windows'
-          target: 'desktop'
-          arch: 'win64_msvc2019_64'
-          modules: 'qtsvg'
-          use-official: true
+          python-version: '3.11'
+
+      - name: Install Qt via aqtinstall
+        run: |
+          pip install aqtinstall==3.1.1
+          aqt install-qt windows desktop 6.6.3 win64_msvc2019_64 -m qtsvg --outputdir ${{ github.workspace }}\Qt
 
       - name: Build
         shell: cmd
         run: |
+          set CMAKE_PREFIX_PATH=%CD%\Qt\6.6.3\msvc2019_64
           cd qt-ui-forger
           mkdir build
           cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64
+          cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%CD%\..\..\Qt\6.6.3\msvc2019_64
           cmake --build . --config Release
 
       - name: Package
         shell: cmd
         run: |
           cd qt-ui-forger\build\Release
-          windeployqt UIForger.exe
+          %CD%\..\..\..\Qt\6.6.3\msvc2019_64\bin\windeployqt.exe UIForger.exe
           cd ..
           7z a UIForger-Windows-x64.zip Release/*
 
@@ -53,59 +58,43 @@ jobs:
 
   # ─── macOS Build ───
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-13  # Intel for simpler cross-compilation
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Qt (official)
-        uses: jurplel/install-qt-action@v4
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
         with:
-          version: '6.6.3'
-          host: 'mac'
-          target: 'desktop'
-          arch: 'macos'
-          modules: 'qtsvg'
-          use-official: true
+          python-version: '3.11'
 
-      - name: Build (arm64)
+      - name: Install Qt via aqtinstall
+        run: |
+          pip install aqtinstall==3.1.1
+          aqt install-qt mac desktop 6.6.3 clang_64 -m qtsvg --outputdir ${{ github.workspace }}/Qt
+
+      - name: Build
         run: |
           cd qt-ui-forger
-          mkdir build-arm64
-          cd build-arm64
-          cmake .. -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_BUILD_TYPE=Release
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/6.6.3/clang_64 -DCMAKE_BUILD_TYPE=Release
           cmake --build . -j$(sysctl -n hw.ncpu)
 
-      - name: Build (x86_64)
+      - name: Bundle
         run: |
           cd qt-ui-forger
-          mkdir build-x86_64
-          cd build-x86_64
-          cmake .. -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_BUILD_TYPE=Release
-          cmake --build . -j$(sysctl -n hw.ncpu)
-
-      - name: Create Universal Binary
-        run: |
-          cd qt-ui-forger
-          mkdir -p UIForger.app/Contents/MacOS
-          mkdir -p UIForger.app/Contents/Frameworks
-          mkdir -p UIForger.app/Contents/Resources
-          lipo -create build-arm64/UIForger build-x86_64/UIForger -output UIForger.app/Contents/MacOS/UIForger
-
-      - name: Bundle Qt frameworks
-        run: |
-          cd qt-ui-forger
-          macdeployqt UIForger.app -dmg
+          ${{ github.workspace }}/Qt/6.6.3/clang_64/bin/macdeployqt build/UIForger.app -dmg
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: UIForger-macOS
-          path: qt-ui-forger/UIForger.dmg
+          path: qt-ui-forger/build/UIForger.dmg
 
   # ─── Linux Build ───
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -113,62 +102,41 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libgl1-mesa-dev libglib2.0-dev \
-            cmake g++ libfuse2
+          sudo apt-get install -y libgl1-mesa-dev libglib2.0-dev cmake g++
 
-      - name: Install Qt (official)
-        uses: jurplel/install-qt-action@v4
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
         with:
-          version: '6.6.3'
-          host: 'linux'
-          target: 'desktop'
-          arch: 'gcc_64'
-          modules: 'qtsvg'
-          use-official: true
+          python-version: '3.11'
+
+      - name: Install Qt via aqtinstall
+        run: |
+          pip install aqtinstall==3.1.1
+          aqt install-qt linux desktop 6.6.3 gcc_64 -m qtsvg --outputdir ${{ github.workspace }}/Qt
 
       - name: Build
         run: |
           cd qt-ui-forger
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake .. -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/6.6.3/gcc_64 -DCMAKE_BUILD_TYPE=Release
           cmake --build . -j$(nproc)
 
-      - name: Package as AppImage
+      - name: Create tar.gz
         run: |
-          cd qt-ui-forger
-          mkdir -p AppDir/usr/bin
-          mkdir -p AppDir/usr/share/applications
-          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-          cp build/UIForger AppDir/usr/bin/
-          cat > AppDir/usr/share/applications/uiforger.desktop << 'DESKTOP'
-          [Desktop Entry]
-          Type=Application
-          Name=UI Forger
-          Exec=UIForger
-          Icon=uiforger
-          Categories=Development;Design;
-          DESKTOP
-          cat > AppDir/usr/share/icons/hicolor/256x256/apps/uiforger.svg << 'SVG'
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" rx="32" fill="#1a1d2e"/><text x="128" y="160" text-anchor="middle" font-size="120" fill="#818cf8">🎨</text></svg>
-          SVG
-          curl -LO https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
-          chmod +x linuxdeployqt-continuous-x86_64.AppImage
-          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$Qt6_DIR/lib
-          ./linuxdeployqt-continuous-x86_64.AppImage AppDir/usr/bin/UIForger -appimage
+          cd qt-ui-forger/build
+          tar czf UIForger-Linux-x64.tar.gz UIForger
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: UIForger-Linux-x64
-          path: qt-ui-forger/*.AppImage
+          path: qt-ui-forger/build/UIForger-Linux-x64.tar.gz
 
   # ─── Create GitHub Release ───
   release:
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -181,12 +149,12 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: "UI Forger ${{ github.ref_name }} — Desktop (Qt/C++)"
+          tag_name: ${{ inputs.tag }}
+          name: "UI Forger ${{ inputs.tag }} — Desktop (Qt/C++)"
           draft: false
           prerelease: false
           body: |
-            ## UI Forger ${{ github.ref_name }} — Qt/C++ Desktop
+            ## UI Forger — Qt/C++ Desktop
 
             **Editor visual de UI para games, nativo en todas las plataformas.**
 
@@ -195,16 +163,8 @@ jobs:
             | Plataforma | Archivo | Notas |
             |---|---|---|
             | **Windows** | `UIForger-Windows-x64.zip` | Windows 10+, x64 |
-            | **macOS** | `UIForger.dmg` | Universal Binary (Apple Silicon + Intel) |
-            | **Linux** | `UIForger-x86_64.AppImage` | Portable, sin instalación |
-
-            ### 🖥️ Requisitos
-
-            | Plataforma | Mínimo |
-            |---|---|
-            | Windows | Windows 10 (build 1903+), 4 GB RAM |
-            | macOS | macOS 12 Monterey+, 4 GB RAM |
-            | Linux | Ubuntu 22.04+ / Fedora 38+, 4 GB RAM, OpenGL 3.3 |
+            | **macOS** | `UIForger.dmg` | Intel (clang_64) |
+            | **Linux** | `UIForger-Linux-x64.tar.gz` | Ubuntu 22.04+, portable |
 
             ### ⚡ Instalación
 
@@ -212,7 +172,7 @@ jobs:
 
             **macOS:** Abre `UIForger.dmg` y arrastra a Applications
 
-            **Linux:** `chmod +x UIForger-*.AppImage && ./UIForger-*.AppImage`
+            **Linux:** `tar xzf UIForger-Linux-x64.tar.gz && ./UIForger`
 
             ### ✨ Características
             - Canvas QGraphicsView con zoom/pan/drag
@@ -221,20 +181,8 @@ jobs:
             - MiniMap en tiempo real
             - Guardar/cargar proyectos `.canvas`
             - Exportar: HTML, PNG, Unity, Unreal, Godot
-            - Dark theme nativo
-            - Sin problemas de GPU (rendering nativo, sin Chromium)
+            - Dark theme nativo, sin problemas de GPU
             - Autosave cada 30 segundos
-            - Escena demo RPG HUD incluida
-
-            ### 🔧 Compilar desde código fuente
-            ```bash
-            cd qt-ui-forger
-            mkdir build && cd build
-            cmake .. -DCMAKE_PREFIX_PATH=/path/to/qt6
-            cmake --build .
-            ```
-
-            Ver `qt-ui-forger/README.md` para instrucciones detalladas.
 
             🤖 Generated with Codebuff
           files: |
