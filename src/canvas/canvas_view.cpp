@@ -169,7 +169,7 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
 void CanvasView::mouseMoveEvent(QMouseEvent* event) {
     if (m_rubberBandActive) {
         QPointF current = mapToScene(event->pos());
-        QRectF rect(m_rubberBandOrigin, current).normalized();
+        QRectF rect = QRectF(m_rubberBandOrigin, current).normalized();
         if (m_rubberBand) m_rubberBand->setRect(rect);
         event->accept();
         return;
