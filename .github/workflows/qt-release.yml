@@ -1,8 +1,5 @@
 name: Build Qt Desktop App
 
-# Build UI Forger Qt desktop executables for Windows, macOS, and Linux.
-# Triggered on tags matching v*-qt or manually.
-
 on:
   push:
     tags:
@@ -21,12 +18,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Qt
+      - name: Install Qt (official)
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.6.3'
@@ -34,8 +26,7 @@ jobs:
           target: 'desktop'
           arch: 'win64_msvc2019_64'
           modules: 'qtsvg'
-          cache: true
-          setup-python: false
+          use-official: true
 
       - name: Build
         shell: cmd
@@ -67,12 +58,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Qt
+      - name: Install Qt (official)
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.6.3'
@@ -80,8 +66,7 @@ jobs:
           target: 'desktop'
           arch: 'macos'
           modules: 'qtsvg'
-          cache: true
-          setup-python: false
+          use-official: true
 
       - name: Build (arm64)
         run: |
@@ -106,7 +91,6 @@ jobs:
           mkdir -p UIForger.app/Contents/Frameworks
           mkdir -p UIForger.app/Contents/Resources
           lipo -create build-arm64/UIForger build-x86_64/UIForger -output UIForger.app/Contents/MacOS/UIForger
-          cp build-arm64/UIForger.app/Contents/Info.plist UIForger.app/Contents/ 2>/dev/null || true
 
       - name: Bundle Qt frameworks
         run: |
@@ -126,20 +110,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            qt6-base-dev qt6-svg-dev \
             libgl1-mesa-dev libglib2.0-dev \
             cmake g++ libfuse2
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Qt
+      - name: Install Qt (official)
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.6.3'
@@ -147,8 +125,7 @@ jobs:
           target: 'desktop'
           arch: 'gcc_64'
           modules: 'qtsvg'
-          cache: true
-          setup-python: false
+          use-official: true
 
       - name: Build
         run: |
@@ -173,11 +150,9 @@ jobs:
           Icon=uiforger
           Categories=Development;Design;
           DESKTOP
-          # Create icon
           cat > AppDir/usr/share/icons/hicolor/256x256/apps/uiforger.svg << 'SVG'
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect width="256" height="256" rx="32" fill="#1a1d2e"/><text x="128" y="160" text-anchor="middle" font-size="120" fill="#818cf8">🎨</text></svg>
           SVG
-          # Download linuxdeployqt
           curl -LO https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
           chmod +x linuxdeployqt-continuous-x86_64.AppImage
           export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$Qt6_DIR/lib
