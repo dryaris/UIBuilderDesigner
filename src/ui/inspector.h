@@ -14,6 +14,7 @@
 #include <QGroupBox>
 #include <QScrollArea>
 #include <QListWidget>
+#include <QSignalBlocker>
 
 struct Node;
 

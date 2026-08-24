@@ -206,6 +206,29 @@ src/
 
 ## Changelog
 
+### v1.2.0 (2026-08-24)
+
+**Bug Fixes**
+- Inspector: controls now re-enable properly after deselecting and re-selecting a node
+- Tree panel: duplicate action now properly triggers node duplication instead of delete
+- MiniMap: repositions correctly on window resize (anchored to top-right of canvas)
+
+**UI/UX Improvements**
+- TopBar: refined button styles with subtle borders, improved spacing and separator styling
+- TopBar: node count indicator (e.g. "8 nodes") displayed next to project name
+- Inspector: all property changes (fill, shadow, opacity) now properly sync to canvas
+- Help dialog: comprehensive keyboard shortcuts table organized by category
+
+**New Node Types**
+- Dialog: card with header bar and close button hint
+- Avatar: circular with radial gradient and accent border
+- StatDisplay: styled value display card
+- Input: text field with bottom accent line
+- Dropdown: select field with chevron arrow
+
+**Version**
+- Updated to v1.2.0
+
 ### v1.1.0 (2026-08-24)
 
 **Canvas & Selección**

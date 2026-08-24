@@ -10,6 +10,8 @@
 #include <QContextMenuEvent>
 #include <QGraphicsRectItem>
 #include <QtMath>
+#include <QPen>
+#include <QFont>
 
 CanvasView::CanvasView(QWidget* parent)
     : QGraphicsView(parent)
@@ -67,6 +69,11 @@ void CanvasView::rebuildScene() {
     }
 }
 
+void CanvasView::setShowGrid(bool show) {
+    m_showGrid = show;
+    viewport()->update();
+}
+
 QPointF CanvasView::snapToGrid(const QPointF& pos) const {
     if (!m_snapEnabled) return pos;
     float gx = m_gridSize;
@@ -76,6 +83,51 @@ QPointF CanvasView::snapToGrid(const QPointF& pos) const {
         qRound(pos.y() / gy) * gy
     );
 }
+
+// ── Grid drawing ──
+
+void CanvasView::drawBackground(QPainter* painter, const QRectF& rect) {
+    QGraphicsView::drawBackground(painter, rect);
+    if (m_showGrid) {
+        drawGrid(painter, rect);
+    }
+}
+
+void CanvasView::drawGrid(QPainter* painter, const QRectF& rect) {
+    // Minor grid lines (10px)
+    QPen minorPen(QColor(40, 43, 60, 60), 0.5);
+    painter->setPen(minorPen);
+
+    int left = (int)qFloor(rect.left() / m_gridSize) * m_gridSize;
+    int right = (int)qCeil(rect.right() / m_gridSize) * m_gridSize;
+    int top = (int)qFloor(rect.top() / m_gridSize) * m_gridSize;
+    int bottom = (int)qCeil(rect.bottom() / m_gridSize) * m_gridSize;
+
+    for (int x = left; x <= right; x += m_gridSize) {
+        // Major lines every 50px
+        if (x % 50 == 0) {
+            painter->setPen(QPen(QColor(55, 58, 80, 90), 1.0));
+        } else {
+            painter->setPen(minorPen);
+        }
+        painter->drawLine(x, top, x, bottom);
+    }
+    for (int y = top; y <= bottom; y += m_gridSize) {
+        if (y % 50 == 0) {
+            painter->setPen(QPen(QColor(55, 58, 80, 90), 1.0));
+        } else {
+            painter->setPen(minorPen);
+        }
+        painter->drawLine(left, y, right, y);
+    }
+
+    // Origin crosshair
+    painter->setPen(QPen(QColor(99, 102, 241, 60), 1.5));
+    painter->drawLine(0, top, 0, bottom);
+    painter->drawLine(left, 0, right, 0);
+}
+
+// ── Zoom ──
 
 void CanvasView::wheelEvent(QWheelEvent* event) {
     const double factor = 1.15;
@@ -87,6 +139,20 @@ void CanvasView::wheelEvent(QWheelEvent* event) {
     event->accept();
 }
 
+void CanvasView::setZoom(float zoom) {
+    m_zoom = qBound(0.05f, zoom, 10.0f);
+    updateViewTransform();
+    emit zoomChanged(m_zoom);
+}
+
+void CanvasView::updateViewTransform() {
+    QTransform t;
+    t.scale(m_zoom, m_zoom);
+    setTransform(t);
+}
+
+// ── Mouse events ──
+
 void CanvasView::mousePressEvent(QMouseEvent* event) {
     // Rubber band / marquee selection with Ctrl+Left
     if (event->button() == Qt::LeftButton && m_ctrlHeld) {
@@ -94,7 +160,7 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
         m_rubberBandOrigin = mapToScene(event->pos());
         if (!m_rubberBand) {
             m_rubberBand = new QGraphicsRectItem;
-            m_rubberBand->setPen(QPen(QColor(99, 102, 241, 120), 1, Qt::DashLine));
+            m_rubberBand->setPen(QPen(QColor(99, 102, 241, 120), 1.5, Qt::DashLine));
             m_rubberBand->setBrush(QColor(99, 102, 241, 25));
             m_rubberBand->setZValue(9999);
             m_scene->addItem(m_rubberBand);
@@ -105,16 +171,10 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
         return;
     }
 
+    // Panning: middle button, right button, or space+left
     if (event->button() == Qt::MiddleButton ||
-        (event->button() == Qt::RightButton && !m_spaceHeld)) {
-        m_panning = true;
-        m_panStart = event->pos();
-        setCursor(Qt::ClosedHandCursor);
-        event->accept();
-        return;
-    }
-
-    if (event->button() == Qt::LeftButton && m_spaceHeld) {
+        (event->button() == Qt::RightButton && !m_spaceHeld) ||
+        (event->button() == Qt::LeftButton && m_spaceHeld)) {
         m_panning = true;
         m_panStart = event->pos();
         setCursor(Qt::ClosedHandCursor);
@@ -150,7 +210,7 @@ void CanvasView::mousePressEvent(QMouseEvent* event) {
             emit selectionChanged(m_selectedIds);
             emit nodeSelected(id);
         } else {
-            // Click on empty area
+            // Click on empty area — deselect all
             if (!m_ctrlHeld) {
                 for (const auto& selId : m_selectedIds) {
                     if (auto* si = m_nodeItems.value(selId, nullptr))
@@ -231,6 +291,8 @@ void CanvasView::selectNodesInRect(const QRectF& rect, bool toggle) {
     }
 }
 
+// ── Context menu ──
+
 void CanvasView::contextMenuEvent(QContextMenuEvent* event) {
     QGraphicsItem* item = itemAt(event->pos());
     auto* nodeItem = qgraphicsitem_cast<NodeItem*>(item);
@@ -238,18 +300,20 @@ void CanvasView::contextMenuEvent(QContextMenuEvent* event) {
     QMenu menu(this);
     menu.setStyleSheet(
         "QMenu { background: #1a1d2e; color: #e6e6f0; border: 1px solid #2a2d3e; padding: 4px; }"
+        "QMenu::item { padding: 6px 24px; }"
         "QMenu::item:selected { background: #2a3d5e; }"
+        "QMenu::separator { height: 1px; background: #2a2d3e; margin: 4px 8px; }"
     );
 
     if (nodeItem) {
         QString id = nodeItem->nodeId();
-        menu.addAction("Duplicate", this, [this, id]() { emit duplicateRequested(id); });
-        menu.addAction("Delete", this, [this, id]() { emit deleteRequested(id); });
+        menu.addAction("📋 Duplicate", this, [this, id]() { emit duplicateRequested(id); });
+        menu.addAction("🗑 Delete", this, [this, id]() { emit deleteRequested(id); });
         menu.addSeparator();
-        menu.addAction("Copy Style", this, [this, id]() { emit copyStyleRequested(id); });
-        menu.addAction("Paste Style", this, [this, id]() { emit pasteStyleRequested(id); });
+        menu.addAction("🎨 Copy Style", this, [this, id]() { emit copyStyleRequested(id); });
+        menu.addAction("🖌 Paste Style", this, [this, id]() { emit pasteStyleRequested(id); });
         menu.addSeparator();
-        menu.addAction("Select All", this, [this]() {
+        menu.addAction("✅ Select All", this, [this]() {
             for (auto it = m_nodeItems.constBegin(); it != m_nodeItems.constEnd(); ++it) {
                 it.value()->setSelected(true);
                 m_selectedIds.insert(it.key());
@@ -257,7 +321,7 @@ void CanvasView::contextMenuEvent(QContextMenuEvent* event) {
             emit selectionChanged(m_selectedIds);
         });
     } else {
-        menu.addAction("Select All", this, [this]() {
+        menu.addAction("✅ Select All", this, [this]() {
             for (auto it = m_nodeItems.constBegin(); it != m_nodeItems.constEnd(); ++it) {
                 it.value()->setSelected(true);
                 m_selectedIds.insert(it.key());
@@ -265,13 +329,15 @@ void CanvasView::contextMenuEvent(QContextMenuEvent* event) {
             emit selectionChanged(m_selectedIds);
         });
         menu.addSeparator();
-        menu.addAction("Paste", this, [this]() {
+        menu.addAction("📋 Paste", this, [this]() {
             // TODO: clipboard paste
         });
     }
 
     menu.exec(event->globalPos());
 }
+
+// ── Keyboard ──
 
 void CanvasView::keyPressEvent(QKeyEvent* event) {
     if (event->key() == Qt::Key_Space && !event->isAutoRepeat()) {
@@ -346,15 +412,9 @@ void CanvasView::keyReleaseEvent(QKeyEvent* event) {
 
 void CanvasView::resizeEvent(QResizeEvent* event) {
     QGraphicsView::resizeEvent(event);
-}
-
-void CanvasView::setZoom(float zoom) {
-    m_zoom = qBound(0.05f, zoom, 10.0f);
-    updateViewTransform();
-}
-
-void CanvasView::updateViewTransform() {
-    QTransform t;
-    t.scale(m_zoom, m_zoom);
-    setTransform(t);
+    // Keep MiniMap anchored to top-right of canvas
+    if (m_miniMap) {
+        int margin = 12;
+        m_miniMap->move(width() - m_miniMap->width() - margin, margin);
+    }
 }

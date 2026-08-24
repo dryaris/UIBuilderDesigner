@@ -8,6 +8,7 @@
 
 class NodeItem;
 struct Node;
+class MiniMap;
 
 class CanvasView : public QGraphicsView {
     Q_OBJECT
@@ -18,6 +19,8 @@ public:
     void updateNodePosition(const QString& nodeId, const QPointF& pos);
     void clearScene();
     void rebuildScene();
+    void setShowGrid(bool show);
+    void setMiniMap(MiniMap* map) { m_miniMap = map; }
 
     QGraphicsScene* scene() const { return m_scene; }
     float zoom() const { return m_zoom; }
@@ -33,6 +36,7 @@ signals:
     void deleteRequested(const QString& nodeId);
     void copyStyleRequested(const QString& nodeId);
     void pasteStyleRequested(const QString& nodeId);
+    void zoomChanged(float zoom);
 
 protected:
     void wheelEvent(QWheelEvent* event) override;
@@ -43,19 +47,23 @@ protected:
     void keyReleaseEvent(QKeyEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event) override;
+    void drawBackground(QPainter* painter, const QRectF& rect) override;
 
 private:
     void updateViewTransform();
     void setZoom(float zoom);
     QPointF snapToGrid(const QPointF& pos) const;
     void selectNodesInRect(const QRectF& rect, bool toggle = false);
+    void drawGrid(QPainter* painter, const QRectF& rect);
 
     QGraphicsScene* m_scene;
+    MiniMap* m_miniMap = nullptr;
     float m_zoom = 1.0f;
     bool m_panning = false;
     bool m_spaceHeld = false;
     bool m_rightDragPanning = false;
     bool m_snapEnabled = true;
+    bool m_showGrid = true;
     int m_gridSize = 10;
     QPointF m_panStart;
     QMap<QString, NodeItem*> m_nodeItems;

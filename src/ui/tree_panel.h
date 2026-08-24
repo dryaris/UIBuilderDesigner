@@ -24,6 +24,7 @@ signals:
     void nodeVisibilityToggled(const QString& nodeId, bool visible);
     void nodeLockedToggled(const QString& nodeId, bool locked);
     void deleteNodeRequested(const QString& nodeId);
+    void duplicateNodeRequested(const QString& nodeId);
     void addNodeRequested();
 
 private slots:

@@ -9,6 +9,7 @@
 #include "../core/ir.h"
 #include "../export/exporters.h"
 
+#include <QApplication>
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -78,6 +79,7 @@ void MainWindow::setupUI() {
     connect(m_treePanel, &TreePanel::nodeSelected, this, &MainWindow::onNodeSelected);
     connect(m_treePanel, &TreePanel::addNodeRequested, this, &MainWindow::onAddNode);
     connect(m_treePanel, &TreePanel::deleteNodeRequested, this, &MainWindow::onDeleteNode);
+    connect(m_treePanel, &TreePanel::duplicateNodeRequested, this, &MainWindow::onDuplicateNodeById);
     content->addWidget(m_treePanel);
 
     // Center: Canvas + MiniMap
@@ -110,6 +112,7 @@ void MainWindow::setupUI() {
     // MiniMap overlay
     m_miniMap = new MiniMap;
     m_miniMap->setParent(m_canvas);
+    m_canvas->setMiniMap(m_miniMap);
     m_miniMap->move(m_canvas->width() - 212, 12);
 
     setCentralWidget(central);
@@ -152,6 +155,8 @@ void MainWindow::setupUI() {
             else if (prop == "fontStyle") n.style.fontStyle = value.toString().toStdString();
             else if (prop == "textAlign") n.style.textAlign = value.toString().toStdString();
             else if (prop == "textColor") n.style.textColor = value.toString().toStdString();
+            else if (prop == "fill") n.style.fill = value.toString().toStdString();
+            else if (prop == "shadow") n.style.shadow = value.toString().toStdString();
             else if (prop == "locked") n.locked = value.toBool();
             else if (prop == "hidden") n.hidden = value.toBool();
         });
@@ -274,6 +279,7 @@ void MainWindow::updateUI() {
     m_canvas->setNodes(m_store->nodes());
     m_miniMap->setNodes(m_store->nodes());
     m_topBar->setProjectName(m_store->projectName());
+    m_topBar->setNodeCount(m_store->nodes().size());
 }
 
 void MainWindow::onNewProject() {
@@ -470,22 +476,37 @@ void MainWindow::onToggleMiniMap() {
 void MainWindow::onHelp() {
     QMessageBox::about(this, "UI Forger Help",
         "<h2>UI Forger — Quick Help</h2>"
-        "<p><b>Shortcuts:</b></p>"
-        "<ul>"
-        "<li>Space + Drag: Pan canvas</li>"
-        "<li>Scroll Wheel: Zoom in/out</li>"
-        "<li>Ctrl++ / Ctrl+-: Zoom</li>"
-        "<li>Ctrl+0: Reset zoom</li>"
-        "<li>Ctrl+Z / Ctrl+Y: Undo/Redo</li>"
-        "<li>N: Add node</li>"
-        "<li>Delete: Remove selected</li>"
-        "<li>Ctrl+D: Duplicate selected</li>"
-        "<li>Ctrl+S: Save project</li>"
-        "<li>Ctrl+O: Open project</li>"
-        "</ul>"
-        "<p><b>Canvas:</b> Drag nodes to move them. Click to select. "
-        "Right-click or middle-click to pan.</p>"
-        "<p><b>Export:</b> File → Export to save as HTML, PNG, Unity UXML, "
-        "Unreal header, or Godot scene.</p>"
+        "<table cellpadding='4'>"
+        "<tr><td colspan='2'><b>Canvas Navigation</b></td></tr>"
+        "<tr><td>Space + Drag</td><td>Pan canvas</td></tr>"
+        "<tr><td>Right-click Drag</td><td>Pan canvas</td></tr>"
+        "<tr><td>Middle-click Drag</td><td>Pan canvas</td></tr>"
+        "<tr><td>Scroll Wheel</td><td>Zoom in/out</td></tr>"
+        "<tr><td>Ctrl + +/−</td><td>Zoom in/out</td></tr>"
+        "<tr><td>Ctrl + 0</td><td>Reset zoom to 100%</td></tr>"
+        "<tr><td colspan='2'><br><b>Selection</b></td></tr>"
+        "<tr><td>Click</td><td>Select node</td></tr>"
+        "<tr><td>Ctrl + Click</td><td>Toggle multi-select</td></tr>"
+        "<tr><td>Ctrl + Drag</td><td>Marquee select (rubber band)</td></tr>"
+        "<tr><td>Click empty area</td><td>Deselect all</td></tr>"
+        "<tr><td colspan='2'><br><b>Editing</b></td></tr>"
+        "<tr><td>Arrow keys</td><td>Nudge selected 1px</td></tr>"
+        "<tr><td>Shift + Arrows</td><td>Nudge selected 10px</td></tr>"
+        "<tr><td>Ctrl + D</td><td>Duplicate selected</td></tr>"
+        "<tr><td>Delete</td><td>Remove selected</td></tr>"
+        "<tr><td>Right-click</td><td>Context menu (duplicate, delete, copy/paste style)</td></tr>"
+        "<tr><td colspan='2'><br><b>File</b></td></tr>"
+        "<tr><td>Ctrl + S</td><td>Save project</td></tr>"
+        "<tr><td>Ctrl + O</td><td>Open project</td></tr>"
+        "<tr><td>Ctrl + N</td><td>New project</td></tr>"
+        "<tr><td>Ctrl + Z</td><td>Undo</td></tr>"
+        "<tr><td>Ctrl + Shift + Z</td><td>Redo</td></tr>"
+        "<tr><td>N</td><td>Add new node</td></tr>"
+        "<tr><td colspan='2'><br><b>View</b></td></tr>"
+        "<tr><td>Grid toggle</td><td>View → Show Grid Lines</td></tr>"
+        "<tr><td>Snap toggle</td><td>View → Snap to Grid</td></tr>"
+        "<tr><td>MiniMap toggle</td><td>TopBar 🗺 Map button</td></tr>"
+        "</table>"
+        "<p style='margin-top:12px; color:#888;'><i>UI Forger v" + QApplication::applicationVersion() + "</i></p>"
     );
 }

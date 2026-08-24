@@ -14,6 +14,7 @@ public:
 
     void setProjectName(const QString& name);
     void setZoom(float z);
+    void setNodeCount(int count);
 
 signals:
     void newProject();
@@ -38,6 +39,7 @@ private:
     void buildUI();
 
     QLabel* m_projectLabel;
+    QLabel* m_nodeCountLabel;
     QLineEdit* m_searchBar;
     QLabel* m_zoomLabel;
 };
