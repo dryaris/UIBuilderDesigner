@@ -121,14 +121,24 @@ jobs:
           path: build/UIForger-Linux-x64.tar.gz
 
   # ─── Create GitHub Release ───
+  # Release runs after Windows+Linux succeed. macOS is optional (may still be queued).
   release:
-    needs: [build-windows, build-macos, build-linux]
+    needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
+      - name: Download Windows & Linux artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
+          pattern: UIForger-(Windows|Linux)-*
+
+      - name: Download macOS artifact (optional)
+        uses: actions/download-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          path: artifacts/
+          name: UIForger-macOS
 
       - name: List artifacts
         run: find artifacts/ -type f | sort
@@ -163,9 +173,13 @@ jobs:
 
             ### ✨ Características
             - Canvas QGraphicsView con zoom/pan/drag
-            - Inspector de propiedades completo
-            - Panel de capas con iconos
+            - Multiselección (Ctrl+click, marquee rubber band)
+            - Menú contextual click derecho (Duplicate, Delete, Copy/Paste Style)
+            - Snap a grid 10px con nudge por flechas (1px / Shift+10px)
+            - Inspector de propiedades en tiempo real
+            - Panel de capas con iconos y búsqueda
             - MiniMap en tiempo real
+            - Undo/Redo completo
             - Guardar/cargar proyectos `.canvas`
             - Exportar: HTML, PNG, Unity, Unreal, Godot
             - Dark theme nativo, sin problemas de GPU
