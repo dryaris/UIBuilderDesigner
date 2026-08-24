@@ -106,7 +106,7 @@ void NodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
 
 QVariant NodeItem::itemChange(GraphicsItemChange change, const QVariant& value) {
     if (change == ItemPositionHasChanged) {
-        emit positionChanged(m_node.id, pos());
+        emit positionChanged(QString::fromStdString(m_node.id), pos());
     }
     return QGraphicsObject::itemChange(change, value);
 }

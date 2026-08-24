@@ -58,7 +58,7 @@ void CanvasView::rebuildScene() {
     for (const auto& node : m_nodes) {
         auto* item = new NodeItem(node);
         m_scene->addItem(item);
-        m_nodeItems[node.id] = item;
+        m_nodeItems[QString::fromStdString(node.id)] = item;
 
         connect(item, &NodeItem::positionChanged, this, &CanvasView::nodeMoved);
     }

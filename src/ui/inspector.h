@@ -6,6 +6,7 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QComboBox>
+#include <QFontComboBox>
 #include <QCheckBox>
 #include <QColorDialog>
 #include <QPushButton>

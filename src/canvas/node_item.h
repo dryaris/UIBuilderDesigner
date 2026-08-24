@@ -1,10 +1,9 @@
 #pragma once
+#include "core/ir.h"
 #include <QGraphicsObject>
 #include <QRectF>
 #include <QPainter>
 #include <QString>
-
-struct Node;
 
 class NodeItem : public QGraphicsObject {
     Q_OBJECT
