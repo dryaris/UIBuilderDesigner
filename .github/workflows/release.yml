@@ -18,22 +18,21 @@ jobs:
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.3'
+          version: '6.6.3'
           host: 'windows'
           target: 'desktop'
-          arch: 'win64_msvc2022_64'
+          arch: 'win64_msvc2019_64'
           modules: 'qtsvg'
 
       - name: Build
         run: |
-          cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}/../.."
+          cmake -B build -G "Visual Studio 17 2022" -A x64
           cmake --build build --config Release -j
 
       - name: Package
         run: |
           mkdir staging
           copy build\Release\UIForger.exe staging\
-          # Copy Qt DLLs
           windeployqt --release --no-translations --no-opengl-sw staging\UIForger.exe
           Compress-Archive -Path staging\* -DestinationPath UIForger-Windows-x64.zip
 
@@ -54,7 +53,7 @@ jobs:
 
       - name: Build
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/cmake
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build -j$(nproc)
 
       - name: Package
@@ -76,7 +75,7 @@ jobs:
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.3'
+          version: '6.6.3'
           host: 'mac'
           target: 'desktop'
           arch: 'macos'
@@ -86,8 +85,7 @@ jobs:
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_OSX_ARCHITECTURES="arm64" \
-            -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}/../../macos"
+            -DCMAKE_OSX_ARCHITECTURES="arm64"
           cmake --build build -j$(sysctl -n hw.ncpu)
 
       - name: Package
@@ -105,6 +103,8 @@ jobs:
     needs: [build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
 
       - name: Create Release

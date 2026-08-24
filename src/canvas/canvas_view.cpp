@@ -1,5 +1,6 @@
 #include "canvas_view.h"
 #include "node_item.h"
+#include "mini_map.h"
 #include "../core/ir.h"
 #include <QWheelEvent>
 #include <QScrollBar>

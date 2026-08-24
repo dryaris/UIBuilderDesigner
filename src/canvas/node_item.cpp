@@ -146,7 +146,7 @@ void NodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, 
         // Bottom edge depth
         painter->setPen(Qt::NoPen);
         painter->setBrush(bgColor.darker(130));
-        painter->drawRoundedRect(QRectF(0, h - 3, w, 3), 0, 0, r, r);
+        painter->drawRoundedRect(QRectF(0, h - 3, w, 3), 0, 0);
 
     } else if (m_node.type == "tooltip" || m_node.type == "toast") {
         // Floating card with tail
