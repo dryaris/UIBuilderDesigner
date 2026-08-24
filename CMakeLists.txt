@@ -7,7 +7,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt6 QUIET COMPONENTS Svg)
 
 set(SOURCES
     src/main.cpp
@@ -44,8 +45,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
-    Qt6::Svg
 )
+
+if(Qt6Svg_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Svg)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE HAVE_QT_SVG)
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 

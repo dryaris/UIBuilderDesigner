@@ -32,7 +32,6 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
-          modules: 'qtsvg'
           cache: true
 
       - name: Build
@@ -67,7 +66,6 @@ jobs:
           host: 'mac'
           target: 'desktop'
           arch: 'clang_64'
-          modules: 'qtsvg'
           cache: true
 
       - name: Build
@@ -104,7 +102,6 @@ jobs:
           host: 'linux'
           target: 'desktop'
           arch: 'gcc_64'
-          modules: 'qtsvg'
           cache: true
 
       - name: Build
