@@ -6,6 +6,7 @@
 #include <QUndoStack>
 #include <QTimer>
 #include <QSet>
+#include "../core/ir.h"
 
 class CanvasView;
 class Inspector;
