@@ -1,15 +1,15 @@
-name: Build Qt Desktop App
-
-# Manual trigger only — Qt CI is complex and depends on runner state.
-# Tag pushes still create a web-only release via the other workflow.
+name: Build & Release
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v1.0.0-qt)'
+        description: 'Release tag (e.g. v1.0.0)'
         required: true
-        default: 'v1.0.0-qt'
+        default: 'v1.0.0'
 
 permissions:
   contents: write
@@ -36,7 +36,6 @@ jobs:
         shell: cmd
         run: |
           set CMAKE_PREFIX_PATH=%CD%\Qt\6.6.3\msvc2019_64
-          cd qt-ui-forger
           mkdir build
           cd build
           cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH=%CD%\..\..\Qt\6.6.3\msvc2019_64
@@ -45,7 +44,7 @@ jobs:
       - name: Package
         shell: cmd
         run: |
-          cd qt-ui-forger\build\Release
+          cd build\Release
           %CD%\..\..\..\Qt\6.6.3\msvc2019_64\bin\windeployqt.exe UIForger.exe
           cd ..
           7z a UIForger-Windows-x64.zip Release/*
@@ -54,11 +53,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: UIForger-Windows-x64
-          path: qt-ui-forger/build/UIForger-Windows-x64.zip
+          path: build/UIForger-Windows-x64.zip
 
   # ─── macOS Build ───
   build-macos:
-    runs-on: macos-13  # Intel for simpler cross-compilation
+    runs-on: macos-13
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,7 +74,6 @@ jobs:
 
       - name: Build
         run: |
-          cd qt-ui-forger
           mkdir build
           cd build
           cmake .. -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/6.6.3/clang_64 -DCMAKE_BUILD_TYPE=Release
@@ -83,14 +81,13 @@ jobs:
 
       - name: Bundle
         run: |
-          cd qt-ui-forger
           ${{ github.workspace }}/Qt/6.6.3/clang_64/bin/macdeployqt build/UIForger.app -dmg
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: UIForger-macOS
-          path: qt-ui-forger/build/UIForger.dmg
+          path: build/UIForger.dmg
 
   # ─── Linux Build ───
   build-linux:
@@ -116,7 +113,6 @@ jobs:
 
       - name: Build
         run: |
-          cd qt-ui-forger
           mkdir build
           cd build
           cmake .. -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/6.6.3/gcc_64 -DCMAKE_BUILD_TYPE=Release
@@ -124,14 +120,14 @@ jobs:
 
       - name: Create tar.gz
         run: |
-          cd qt-ui-forger/build
+          cd build
           tar czf UIForger-Linux-x64.tar.gz UIForger
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: UIForger-Linux-x64
-          path: qt-ui-forger/build/UIForger-Linux-x64.tar.gz
+          path: build/UIForger-Linux-x64.tar.gz
 
   # ─── Create GitHub Release ───
   release:
@@ -149,20 +145,20 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag }}
-          name: "UI Forger ${{ inputs.tag }} — Desktop (Qt/C++)"
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: "UI Forger ${{ inputs.tag || github.ref_name }}"
           draft: false
           prerelease: false
           body: |
-            ## UI Forger — Qt/C++ Desktop
+            ## UI Forger — Editor visual de UI para videojuegos
 
-            **Editor visual de UI para games, nativo en todas las plataformas.**
+            **Editor nativo de escritorio, Qt/C++. Sin navegador, sin problemas de GPU.**
 
             ### 📥 Downloads
 
             | Plataforma | Archivo | Notas |
             |---|---|---|
-            | **Windows** | `UIForger-Windows-x64.zip` | Windows 10+, x64 |
+            | **Windows** | `UIForger-Windows-x64.zip` | Windows 10+, x64, portátil |
             | **macOS** | `UIForger.dmg` | Intel (clang_64) |
             | **Linux** | `UIForger-Linux-x64.tar.gz` | Ubuntu 22.04+, portable |
 
@@ -184,7 +180,9 @@ jobs:
             - Dark theme nativo, sin problemas de GPU
             - Autosave cada 30 segundos
 
-            🤖 Generated with Codebuff
+            ### 🔧 Requisitos
+            - Windows 10+, macOS 12+, Ubuntu 22.04+
+            - Qt 6.2+ (para compilar desde código)
           files: |
             artifacts/**/*
           make_latest: true
