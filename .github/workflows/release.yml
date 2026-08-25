@@ -18,7 +18,7 @@ jobs:
       - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.6.3'
+          version: '6.5.3'
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
@@ -72,20 +72,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Qt 6
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.6.3'
-          host: 'mac'
-          target: 'desktop'
-          arch: 'macos'
-          modules: 'qtsvg'
+      - name: Install Qt 6 via brew
+        run: |
+          brew install qt@6
+          echo "$(brew --prefix qt@6)/bin" >> $GITHUB_PATH
 
       - name: Build
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_OSX_ARCHITECTURES="arm64"
+            -DCMAKE_OSX_ARCHITECTURES="arm64" \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix qt@6)"
           cmake --build build -j$(sysctl -n hw.ncpu)
 
       - name: Package
