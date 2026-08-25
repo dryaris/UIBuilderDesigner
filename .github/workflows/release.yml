@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
 
@@ -23,15 +23,21 @@ jobs:
           target: 'desktop'
           arch: 'win64_msvc2019_64'
 
-      - name: Build
+      - name: Install Ninja
+        run: choco install ninja -y
+
+      - name: Configure
         run: |
-          cmake -B build -G "Visual Studio 17 2022" -A x64
-          cmake --build build --config Release -j
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
 
       - name: Package
+        shell: pwsh
         run: |
-          mkdir staging
-          copy build\Release\UIForger.exe staging\
+          New-Item -ItemType Directory -Path staging -Force
+          Copy-Item build\UIForger.exe staging\
           windeployqt --release --no-translations --no-opengl-sw staging\UIForger.exe
           Compress-Archive -Path staging\* -DestinationPath UIForger-Windows-x64.zip
 
